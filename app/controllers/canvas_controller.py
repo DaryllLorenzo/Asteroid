@@ -2,6 +2,10 @@ from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 from app.ui.components.dependency_item.simple_edge_item import SimpleArrowItem
 from app.ui.components.dependency_item.dashed_edge_item import DashedArrowItem
+from app.ui.components.tropos_element_item.hard_goal_item import HardGoalNodeItem
+from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
+from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
+from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeItem
 
 
 class CanvasController:
@@ -30,6 +34,14 @@ class CanvasController:
             node_item = ActorNodeItem(x, y)
         elif node_type == "agent":
             node_item = AgentNodeItem(x, y)
+        elif node_type == "hard_goal":
+            node_item = HardGoalNodeItem(x, y)
+        elif node_type == "soft_goal":
+            node_item = SoftGoalNodeItem(x, y)
+        elif node_type == "plan":
+            node_item = PlanNodeItem(x, y)
+        elif node_type == "resource":
+            node_item = ResourceNodeItem(x, y)
         else:
             return None
 

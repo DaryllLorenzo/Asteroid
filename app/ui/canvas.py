@@ -46,7 +46,7 @@ class Canvas(QGraphicsView):
         item_type = event.mimeData().text()
         scene_pos = self.mapToScene(event.position().toPoint())
 
-        if item_type in ["actor", "agent"]:
+        if item_type in ["actor", "agent", "hard_goal", "soft_goal", "plan", "resource"]:
             self.node_dropped.emit(item_type, scene_pos.x(), scene_pos.y())
             event.acceptProposedAction()
 
