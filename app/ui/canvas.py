@@ -1,6 +1,8 @@
+# app/ui/components/canvas.py
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView
 from PyQt6.QtGui import QPainter, QWheelEvent
 from PyQt6.QtCore import Qt, pyqtSignal
+
 
 class Canvas(QGraphicsView):
     """Vista del lienzo. Gestiona la escena y el zoom."""
@@ -46,10 +48,25 @@ class Canvas(QGraphicsView):
         item_type = event.mimeData().text()
         scene_pos = self.mapToScene(event.position().toPoint())
 
+        # revisar si se soltó sobre un subcanvas
+        viewport_pos = event.position().toPoint()
+        items = self.items(viewport_pos)
+        for it in items:
+            if hasattr(it, "subnode_dropped") or hasattr(it, "subarrow_dropped"):
+                local_pt = it.mapFromScene(scene_pos)
+                if item_type in ["simple", "dashed"]:
+                    it.subarrow_dropped.emit(item_type)
+                    print(f"Canvas: forwarded arrow '{item_type}' to subcanvas {it}")
+                else:
+                    it.subnode_dropped.emit(item_type, float(local_pt.x()), float(local_pt.y()))
+                    print(f"Canvas: forwarded node '{item_type}' to subcanvas {it} at local {local_pt}")
+                event.acceptProposedAction()
+                return
+
+        # si no hay subcanvas debajo
         if item_type in ["actor", "agent", "hard_goal", "soft_goal", "plan", "resource"]:
             self.node_dropped.emit(item_type, scene_pos.x(), scene_pos.y())
             event.acceptProposedAction()
-
         elif item_type in ["simple", "dashed"]:
             self.arrow_dropped.emit(item_type)
             event.acceptProposedAction()

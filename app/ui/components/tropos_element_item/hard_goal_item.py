@@ -1,10 +1,10 @@
 # app/ui/components/tropos_element_item/hard_goal_item.py
-from app.ui.components.base_node_item import BaseNodeItem
+from app.ui.components.base_tropos_item import BaseTroposItem
 from app.core.models.tropos_element.hard_goal import HardGoal
 from PyQt6.QtGui import QBrush, QPen, QColor, QPainterPath
 from PyQt6.QtCore import QRectF
 
-class HardGoalNodeItem(BaseNodeItem):
+class HardGoalNodeItem(BaseTroposItem):
     def __init__(self, x=0, y=0, radius=60):
         super().__init__(HardGoal(x, y, radius))
 

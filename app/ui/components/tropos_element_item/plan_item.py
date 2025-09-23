@@ -1,11 +1,11 @@
 # app/ui/components/tropos_element_item/plan_item.py
-from app.ui.components.base_node_item import BaseNodeItem
+from app.ui.components.base_tropos_item import BaseTroposItem
 from app.core.models.tropos_element.plan import Plan
 from PyQt6.QtGui import QBrush, QPen, QColor
 from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QPolygonF
 
-class PlanNodeItem(BaseNodeItem):
+class PlanNodeItem(BaseTroposItem):
     def __init__(self, x=0, y=0, radius=50):
         super().__init__(Plan(x, y, radius))
 
