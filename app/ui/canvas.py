@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 # app/ui/components/canvas.py
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView
 from PyQt6.QtGui import QPainter, QWheelEvent
@@ -44,10 +51,10 @@ class Canvas(QGraphicsView):
     def dropEvent(self, event):
         if not event.mimeData().hasText():
             return
-    
+
         item_type = event.mimeData().text()
         scene_pos = self.mapToScene(event.position().toPoint())
-    
+
         # revisar si se soltó sobre un subcanvas
         viewport_pos = event.position().toPoint()
         items = self.items(viewport_pos)
@@ -65,7 +72,7 @@ class Canvas(QGraphicsView):
                     print(f"Canvas: forwarded node '{item_type}' to subcanvas {it} at local {local_pt}")
                 event.acceptProposedAction()
                 return
-    
+
         # si no hay subcanvas debajo, dropeo global
         if item_type in ["actor", "agent", "hard_goal", "soft_goal", "plan", "resource"]:
             self.node_dropped.emit(item_type, scene_pos.x(), scene_pos.y())

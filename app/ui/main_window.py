@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 # main_window.py
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QPushButton

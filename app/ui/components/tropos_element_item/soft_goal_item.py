@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 from app.ui.components.base_tropos_item import BaseTroposItem
 from app.core.models.tropos_element.soft_goal import SoftGoal
 from PyQt6.QtGui import QBrush, QPen, QColor, QPainterPath

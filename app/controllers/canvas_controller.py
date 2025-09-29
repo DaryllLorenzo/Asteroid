@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 # app/controllers/canvas_controller.py
 from functools import partial
 from typing import Dict, Tuple

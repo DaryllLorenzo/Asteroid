@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 # app/core/models/tropos_element/resource.py
 from app.core.models.base_node import BaseNode
 

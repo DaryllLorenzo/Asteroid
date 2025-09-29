@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 from app.ui.components.base_node_item import BaseNodeItem
 from app.core.models.entity.actor import Actor
 from PyQt6.QtGui import QBrush, QPen, QColor

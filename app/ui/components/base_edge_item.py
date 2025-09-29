@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 from PyQt6.QtWidgets import QGraphicsLineItem
 from PyQt6.QtGui import QPen, QPolygonF, QColor
 from PyQt6.QtCore import QPointF, QRectF, Qt

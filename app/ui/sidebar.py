@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 # app/ui/sidebar.py
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QLabel, QGraphicsScene, QGraphicsEllipseItem
 from PyQt6.QtCore import Qt, QMimeData, QRectF, QPointF

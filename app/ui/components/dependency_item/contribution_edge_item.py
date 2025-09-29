@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 # app/ui/components/dependency_item/contribution_edge_item.py
 from PyQt6.QtGui import QPainter, QFont, QPen
 from PyQt6.QtCore import QPointF

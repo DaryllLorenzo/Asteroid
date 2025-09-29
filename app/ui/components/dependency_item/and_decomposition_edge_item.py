@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 from PyQt6.QtGui import QPainter, QPen, QPolygonF
 from PyQt6.QtCore import QPointF, Qt
 import math

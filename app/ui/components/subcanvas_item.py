@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 # app/ui/components/subcanvas_item.py
 from PyQt6.QtWidgets import QGraphicsObject, QGraphicsRectItem, QGraphicsItem
 from PyQt6.QtGui import QBrush, QPen, QPainterPath
