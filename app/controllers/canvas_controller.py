@@ -8,11 +8,18 @@ from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 
 from app.ui.components.dependency_item.simple_edge_item import SimpleArrowItem
 from app.ui.components.dependency_item.dashed_edge_item import DashedArrowItem
+from app.ui.components.dependency_item.dependency_link_edge_item import DependencyLinkArrowItem
+from app.ui.components.dependency_item.why_link_edge_item import WhyLinkArrowItem
+from app.ui.components.dependency_item.or_decomposition_edge_item import OrDecompositionArrowItem
+from app.ui.components.dependency_item.and_decomposition_edge_item import AndDecompositionArrowItem
+from app.ui.components.dependency_item.contribution_edge_item import ContributionArrowItem
+from app.ui.components.dependency_item.means_end_edge_item import MeansEndArrowItem
 
 from app.ui.components.tropos_element_item.hard_goal_item import HardGoalNodeItem
 from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
 from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
 from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeItem
+from app.ui.components.base_edge_item import BaseEdgeItem
 
 _NODE_MAP = {
     "actor": ActorNodeItem,
@@ -23,7 +30,16 @@ _NODE_MAP = {
     "resource": ResourceNodeItem,
 }
 
-_ARROW_TYPES = {"simple", "dashed"}
+_ARROW_TYPES = {
+    "simple": SimpleArrowItem,
+    "dashed": DashedArrowItem,
+    "dependency_link": DependencyLinkArrowItem,
+    "why_link": WhyLinkArrowItem,
+    "or_decomposition": OrDecompositionArrowItem,
+    "and_decomposition": AndDecompositionArrowItem,
+    "contribution": ContributionArrowItem,
+    "means_end": MeansEndArrowItem
+}
 
 
 class CanvasController:
@@ -35,18 +51,18 @@ class CanvasController:
         self.arrow_mode = False
         self.selected_arrow_type = None
         self.selected_nodes_for_arrow = []
-        self._current_subcanvas = None   # << flechas dentro de subcanvas
+        self._current_subcanvas = None  # subcanvas activo, si hay
 
         # parent_node -> (subcanvas, handler_node, handler_arrow)
         self._subcanvas_handlers: Dict[object, Tuple[object, callable, callable]] = {}
 
-        # connect canvas signals
+        # conectar señales
         self.canvas.node_dropped.connect(self.add_node)
         self.canvas.arrow_dropped.connect(self.start_arrow_mode)
         self.canvas.node_clicked.connect(self.handle_node_click)
 
     # ---------------------
-    # add top-level node
+    # agregar nodo global
     # ---------------------
     def add_node(self, node_type: str, x: float, y: float):
         NodeClass = _NODE_MAP.get(node_type)
@@ -64,7 +80,7 @@ class CanvasController:
         return node_item
 
     # ---------------------
-    # arrow mode (global)
+    # iniciar modo flecha global
     # ---------------------
     def start_arrow_mode(self, arrow_type: str):
         if arrow_type not in _ARROW_TYPES:
@@ -72,16 +88,27 @@ class CanvasController:
         self.arrow_mode = True
         self.selected_arrow_type = arrow_type
         self.selected_nodes_for_arrow = []
-        self._current_subcanvas = None   # global arrow mode
+        self._current_subcanvas = None
         print(f"CanvasController: start global arrow mode '{arrow_type}'")
 
+    # ---------------------
+    # manejar click en nodo
+    # ---------------------
     def handle_node_click(self, node_item):
         if not self.arrow_mode:
             return
 
-        if self._current_subcanvas is not None:
-            # flechas dentro de un subcanvas: validar que node_item pertenece a él
-            if node_item.parentItem() is not self._current_subcanvas:
+        # Si es un edge, redirigir al nodo origen
+        if isinstance(node_item, BaseEdgeItem):
+            print(f"Clicked on an edge, redirecting to its source node {node_item.source_node}")
+            node_item = node_item.source_node
+
+        node_subcanvas = getattr(node_item, "subcanvas_parent", None)
+        print(f"Clicked node {node_item}, subcanvas_parent={node_subcanvas}, current_subcanvas={self._current_subcanvas}")
+
+        # Validar si estamos en un subcanvas activo
+        if self._current_subcanvas:
+            if node_subcanvas is not self._current_subcanvas:
                 print("CanvasController: node not in current subcanvas, ignored")
                 return
 
@@ -92,19 +119,21 @@ class CanvasController:
         if len(self.selected_nodes_for_arrow) == 2:
             self.create_arrow()
 
+
+    # ---------------------
+    # crear flecha
+    # ---------------------
     def create_arrow(self):
         if len(self.selected_nodes_for_arrow) != 2:
             return None
 
         src, dst = self.selected_nodes_for_arrow
-        if self.selected_arrow_type == "simple":
-            edge_item = SimpleArrowItem(src, dst)
-        elif self.selected_arrow_type == "dashed":
-            edge_item = DashedArrowItem(src, dst)
-        else:
+        ArrowClass = _ARROW_TYPES.get(self.selected_arrow_type)
+        if ArrowClass is None:
             return None
 
-        # Si estamos en subcanvas, parentar la flecha al subcanvas
+        edge_item = ArrowClass(src, dst)
+
         if self._current_subcanvas:
             edge_item.setParentItem(self._current_subcanvas)
         else:
@@ -112,7 +141,7 @@ class CanvasController:
 
         self.edges.append(edge_item)
 
-        # reset arrow mode
+        # reset
         self.arrow_mode = False
         self.selected_arrow_type = None
         self.selected_nodes_for_arrow = []
@@ -125,19 +154,15 @@ class CanvasController:
         return edge_item
 
     # ---------------------
-    # subcanvas handling
+    # subcanvas
     # ---------------------
     def _on_subcanvas_toggled(self, parent_node_item, subcanvas):
-        print(f"_on_subcanvas_toggled called for {parent_node_item} -> subcanvas={subcanvas}")
         if subcanvas is None:
             stored = self._subcanvas_handlers.pop(parent_node_item, None)
             if stored:
                 prev_subcanvas, handler_node, handler_arrow = stored
                 try:
                     prev_subcanvas.subnode_dropped.disconnect(handler_node)
-                except Exception:
-                    pass
-                try:
                     prev_subcanvas.subarrow_dropped.disconnect(handler_arrow)
                 except Exception:
                     pass
@@ -147,17 +172,12 @@ class CanvasController:
         if stored:
             prev_subcanvas, handler_node, handler_arrow = stored
             if prev_subcanvas is subcanvas:
-                print("already connected to this subcanvas; skipping")
                 return
-            else:
-                try:
-                    prev_subcanvas.subnode_dropped.disconnect(handler_node)
-                except Exception:
-                    pass
-                try:
-                    prev_subcanvas.subarrow_dropped.disconnect(handler_arrow)
-                except Exception:
-                    pass
+            try:
+                prev_subcanvas.subnode_dropped.disconnect(handler_node)
+                prev_subcanvas.subarrow_dropped.disconnect(handler_arrow)
+            except Exception:
+                pass
 
         handler_node = partial(self._add_to_subcanvas, parent_node_item, subcanvas)
         handler_arrow = partial(self._start_subarrow_mode, parent_node_item, subcanvas)
@@ -170,8 +190,6 @@ class CanvasController:
             subcanvas.setZValue(parent_node_item.zValue() - 1)
         except Exception:
             pass
-
-        print("connected subcanvas.subnode_dropped + subarrow_dropped")
 
     def _add_to_subcanvas(self, parent_node_item, subcanvas, item_type: str, local_x: float, local_y: float):
         NodeClass = _NODE_MAP.get(item_type)
@@ -186,6 +204,9 @@ class CanvasController:
         child.setPos(local_x, local_y)
         child.setVisible(subcanvas.isVisible())
 
+        # registrar el subcanvas padre en el nodo
+        child.subcanvas_parent = subcanvas
+
         if not hasattr(parent_node_item, "child_nodes"):
             parent_node_item.child_nodes = []
         parent_node_item.child_nodes.append(child)
@@ -195,14 +216,14 @@ class CanvasController:
     def _start_subarrow_mode(self, parent_node_item, subcanvas, arrow_type: str):
         if arrow_type not in _ARROW_TYPES:
             return
-        print(f"CanvasController: start subarrow mode '{arrow_type}' in {subcanvas}")
         self.arrow_mode = True
         self.selected_arrow_type = arrow_type
         self.selected_nodes_for_arrow = []
         self._current_subcanvas = subcanvas
+        print(f"CanvasController: start subarrow mode '{arrow_type}' in {subcanvas}")
 
     # ---------------------
-    # utility
+    # util
     # ---------------------
     def find_node_by_ui(self, ui_item):
         for n in self.nodes:

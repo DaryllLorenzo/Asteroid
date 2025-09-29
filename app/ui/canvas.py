@@ -44,32 +44,39 @@ class Canvas(QGraphicsView):
     def dropEvent(self, event):
         if not event.mimeData().hasText():
             return
-
+    
         item_type = event.mimeData().text()
         scene_pos = self.mapToScene(event.position().toPoint())
-
+    
         # revisar si se soltó sobre un subcanvas
         viewport_pos = event.position().toPoint()
         items = self.items(viewport_pos)
         for it in items:
             if hasattr(it, "subnode_dropped") or hasattr(it, "subarrow_dropped"):
                 local_pt = it.mapFromScene(scene_pos)
-                if item_type in ["simple", "dashed"]:
+                if item_type in ["simple", "dashed", "dependency_link", "why_link",
+                                 "or_decomposition", "and_decomposition", "contribution", "means_end"]:
+                    # forward a subcanvas
                     it.subarrow_dropped.emit(item_type)
                     print(f"Canvas: forwarded arrow '{item_type}' to subcanvas {it}")
                 else:
+                    # forward a subcanvas node
                     it.subnode_dropped.emit(item_type, float(local_pt.x()), float(local_pt.y()))
                     print(f"Canvas: forwarded node '{item_type}' to subcanvas {it} at local {local_pt}")
                 event.acceptProposedAction()
                 return
-
-        # si no hay subcanvas debajo
+    
+        # si no hay subcanvas debajo, dropeo global
         if item_type in ["actor", "agent", "hard_goal", "soft_goal", "plan", "resource"]:
             self.node_dropped.emit(item_type, scene_pos.x(), scene_pos.y())
+            print(f"Canvas: node dropped globally '{item_type}' at scene {scene_pos}")
             event.acceptProposedAction()
-        elif item_type in ["simple", "dashed"]:
+        elif item_type in ["simple", "dashed", "dependency_link", "why_link",
+                           "or_decomposition", "and_decomposition", "contribution", "means_end"]:
             self.arrow_dropped.emit(item_type)
+            print(f"Canvas: arrow dropped globally '{item_type}'")
             event.acceptProposedAction()
+
 
     # ---------------------
     # Eventos de mouse
