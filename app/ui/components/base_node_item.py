@@ -14,6 +14,7 @@ import math
 class BaseNodeItem(QGraphicsObject):
     nodeDoubleClicked = pyqtSignal(object)
     subcanvas_toggled = pyqtSignal(object, object)
+    properties_changed = pyqtSignal(object, dict)  # ✅ Nuevo: emitir cambios de propiedades
 
     def __init__(self, model):
         super().__init__()
@@ -157,3 +158,15 @@ class BaseNodeItem(QGraphicsObject):
             # Asegurar que el handle esté posicionado
             self.subcanvas._update_handle_pos()
         return self.subcanvas
+    
+    def update_properties(self, properties: dict):
+        """Actualiza las propiedades visuales del nodo"""
+        for key, value in properties.items():
+            if hasattr(self.model, key):
+                setattr(self.model, key, value)
+        
+        self.update()  # Forzar redibujado
+        
+        # Si hay subcanvas, actualizar su radio también
+        if 'radius' in properties and self.subcanvas:
+            self.subcanvas.set_radius(properties['radius'] * 1.05)

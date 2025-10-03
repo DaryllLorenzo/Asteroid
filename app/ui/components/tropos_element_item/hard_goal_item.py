@@ -7,10 +7,9 @@
 
 from app.ui.components.base_tropos_item import BaseTroposItem
 from app.core.models.tropos_element.hard_goal import HardGoal
-from PyQt6.QtGui import QBrush, QPen, QColor, QPainterPath
-from PyQt6.QtCore import QRectF, QPointF
+from PyQt6.QtGui import QBrush, QPen, QColor, QPainterPath, QFont
+from PyQt6.QtCore import QRectF, QPointF, Qt
 import math
-
 
 class HardGoalNodeItem(BaseTroposItem):
     def __init__(self, x=0, y=0, radius=60):
@@ -44,12 +43,36 @@ class HardGoalNodeItem(BaseTroposItem):
         return max(new_r, 20.0)  # mínimo r=20
 
     def paint(self, painter, option, widget=None):
+        # ✅ USAR COLORES PERSONALIZADOS del modelo, pero mantener el verde por defecto si no están personalizados
+        default_color = QColor(150, 200, 150)  # Tu verde original
+        default_border = QColor(0, 0, 0)       # Borde negro original
+        default_text = QColor(255, 255, 255)   # Texto blanco
+        
+        fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
+        border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
+        text_color = QColor(self.model.text_color) if hasattr(self.model, 'text_color') else default_text
+        
         painter.setRenderHint(painter.RenderHint.Antialiasing)
-        painter.setBrush(QBrush(QColor(150, 200, 150)))
-        painter.setPen(QPen(QColor(0, 0, 0), 2))
+        painter.setBrush(QBrush(fill_color))
+        painter.setPen(QPen(border_color, 2))
 
         r = self.model.radius
         rect = QRectF(-r, -r/2, 2 * r, r)
         path = QPainterPath()
         path.addRoundedRect(rect, r/2, r/2)
         painter.drawPath(path)
+
+        # Dibujar texto
+        if hasattr(self.model, 'label') and self.model.label:
+            painter.setPen(QPen(text_color))
+            font = QFont()
+            font.setPointSize(10)
+            font.setBold(True)
+            painter.setFont(font)
+            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.model.label)
+
+        # Indicador de selección
+        if self.isSelected():
+            painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawPath(path)

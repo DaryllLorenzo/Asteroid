@@ -11,6 +11,7 @@ import math
 
 class BaseTroposItem(QGraphicsObject):
     nodeDoubleClicked = pyqtSignal(object)
+    roperties_changed = pyqtSignal(object, dict)  # ✅ Nuevo: emitir cambios de propiedades
 
     def __init__(self, model):
         super().__init__()
@@ -82,3 +83,11 @@ class BaseTroposItem(QGraphicsObject):
     def mouseDoubleClickEvent(self, event):
         event.ignore()
         super().mouseDoubleClickEvent(event)
+
+    def update_properties(self, properties: dict):
+        """Actualiza las propiedades visuales del nodo"""
+        for key, value in properties.items():
+            if hasattr(self.model, key):
+                setattr(self.model, key, value)
+        
+        self.update()  # Forzar redibujado

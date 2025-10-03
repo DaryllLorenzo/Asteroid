@@ -7,10 +7,9 @@
 
 from app.ui.components.base_tropos_item import BaseTroposItem
 from app.core.models.tropos_element.plan import Plan
-from PyQt6.QtGui import QBrush, QPen, QColor, QPolygonF
-from PyQt6.QtCore import QPointF
+from PyQt6.QtGui import QBrush, QPen, QColor, QPolygonF, QFont
+from PyQt6.QtCore import QPointF, Qt, QRectF
 import math
-
 
 class PlanNodeItem(BaseTroposItem):
     def __init__(self, x=0, y=0, radius=50):
@@ -54,8 +53,17 @@ class PlanNodeItem(BaseTroposItem):
         return max((pos.x()**2 + pos.y()**2) ** 0.5, 15.0)
 
     def paint(self, painter, option, widget=None):
-        painter.setBrush(QBrush(QColor(150, 180, 250)))
-        painter.setPen(QPen(QColor(0, 0, 0), 2))
+        # ✅ USAR COLORES PERSONALIZADOS del modelo, pero mantener el azul pastel por defecto si no están personalizados
+        default_color = QColor(150, 180, 250)  # Tu azul pastel original
+        default_border = QColor(0, 0, 0)       # Borde negro original
+        default_text = QColor(255, 255, 255)   # Texto blanco
+        
+        fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
+        border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
+        text_color = QColor(self.model.text_color) if hasattr(self.model, 'text_color') else default_text
+        
+        painter.setBrush(QBrush(fill_color))
+        painter.setPen(QPen(border_color, 2))
 
         r = self.model.radius
         points = [
@@ -63,3 +71,21 @@ class PlanNodeItem(BaseTroposItem):
             QPointF(r, 0), QPointF(r/2, r/2), QPointF(-r/2, r/2)
         ]
         painter.drawPolygon(QPolygonF(points))
+
+        # Dibujar texto
+        if hasattr(self.model, 'label') and self.model.label:
+            painter.setPen(QPen(text_color))
+            font = QFont()
+            font.setPointSize(9)
+            font.setBold(True)
+            painter.setFont(font)
+            
+            # Ajustar rectángulo para texto (hexágono)
+            text_rect = QRectF(-r, -r/2, 2*r, r)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, self.model.label)
+
+        # Indicador de selección
+        if self.isSelected():
+            painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawPolygon(QPolygonF(points))

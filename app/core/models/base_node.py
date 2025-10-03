@@ -12,6 +12,10 @@ class BaseNode(ABC):
         self.x = x
         self.y = y
         self.radius = radius
+        self.label = "Nodo"  # ✅ Nuevo: label personalizable
+        self.color = "#3498db"  # ✅ Nuevo: color personalizable (azul por defecto)
+        self.border_color = "#2980b9"  # ✅ Nuevo: color del borde
+        self.text_color = "#ffffff"  # ✅ Nuevo: color del texto
         self.child_nodes = []
         self.show_subcanvas = False
 

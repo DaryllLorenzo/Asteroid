@@ -9,6 +9,8 @@ from functools import partial
 from typing import Dict, Tuple
 import math
 
+from PyQt6.QtCore import QObject, pyqtSignal  # ✅ Importar QObject y pyqtSignal
+
 from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 
@@ -48,8 +50,12 @@ _ARROW_TYPES = {
 }
 
 
-class CanvasController:
+class CanvasController(QObject):  # ✅ Heredar de QObject
+    # ✅ Definir señales
+    node_selected = pyqtSignal(object)  # Emite el nodo seleccionado (o None)
+
     def __init__(self, canvas):
+        super().__init__()  # ✅ Llamar al constructor de QObject
         self.canvas = canvas
         self.nodes = []
         self.edges = []
@@ -65,6 +71,10 @@ class CanvasController:
 
         self._current_subcanvas = None  # subcanvas activo, si hay
 
+        # modo seleccion para edicion
+        self.selection_mode = False  # ✅ Modo selección
+        self.selected_node = None    # ✅ Nodo actualmente seleccionado
+
         # parent_node -> (subcanvas, handler_node, handler_arrow)
         self._subcanvas_handlers: Dict[object, Tuple[object, callable, callable]] = {}
 
@@ -72,6 +82,41 @@ class CanvasController:
         self.canvas.node_dropped.connect(self.add_node)
         self.canvas.arrow_dropped.connect(self.start_arrow_mode)
         self.canvas.node_clicked.connect(self.handle_node_click)
+
+        # Conectar señales de selección
+        self.canvas.scene.selectionChanged.connect(self.on_selection_changed)
+
+    def set_selection_mode(self, enabled):
+        """Activa/desactiva el modo selección"""
+        self.selection_mode = enabled
+        
+        if not enabled:
+            # Limpiar selección cuando se desactiva el modo
+            self.canvas.scene.clearSelection()
+            self.selected_node = None
+            
+            # Notificar que no hay selección
+            self.node_selected.emit(None)
+    
+    def on_selection_changed(self):
+        """Maneja cambios en la selección del canvas - solo en modo selección"""
+        if not self.selection_mode:
+            return  # ✅ Ignorar selecciones cuando no está en modo selección
+            
+        selected_items = self.canvas.scene.selectedItems()
+        
+        if selected_items:
+            self.selected_node = selected_items[0]
+        else:
+            self.selected_node = None
+            
+        # Notificar a los observadores
+        self.node_selected.emit(self.selected_node)
+    
+    def update_node_properties(self, properties: dict):
+        """Actualiza las propiedades del nodo seleccionado"""
+        if self.selected_node and hasattr(self.selected_node, 'update_properties'):
+            self.selected_node.update_properties(properties)
 
     # ---------------------
     # agregar nodo global
@@ -129,6 +174,10 @@ class CanvasController:
     # manejar click en nodo
     # ---------------------
     def handle_node_click(self, node_item):
+        # ✅ Si estamos en modo selección, no procesar para flechas o composites
+        if self.selection_mode:
+            return
+
         # si el usuario clickea un edge, redirigimos al source node (conveniencia)
         if isinstance(node_item, BaseEdgeItem):
             node_item = node_item.source_node
@@ -200,7 +249,7 @@ class CanvasController:
 
         return edge_item
 
-       # ---------------------
+    # ---------------------
     # crear composite dependency (actor/agent -> tropos_node -> actor/agent)
     # ---------------------
     def create_composite_dependency(self):
