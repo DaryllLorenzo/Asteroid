@@ -24,6 +24,11 @@ class Canvas(QGraphicsView):
         self.scene = QGraphicsScene()
         self.setScene(self.scene)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # ✅ Fondo blanco
+        self.setBackgroundBrush(Qt.GlobalColor.white)
+        self.scene.setBackgroundBrush(Qt.GlobalColor.white)
+
 
         # Drag & Drop
         self.setAcceptDrops(True)

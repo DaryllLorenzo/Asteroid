@@ -33,12 +33,17 @@ class MainWindow(QMainWindow):
         # Layout vertical para sidebar + controles
         sidebar_layout = QVBoxLayout()
 
-        # Instancias de UI
-        self.sidebar = Sidebar()
-        self.canvas = Canvas()
+        ## Instancias de UI
+        #self.sidebar = Sidebar()
+        #self.canvas = Canvas()
+#
+        ## Conectar controlador
+        #self.canvas_controller = CanvasController(self.canvas)
 
-        # Conectar controlador
-        self.canvas_controller = CanvasController(self.canvas)
+        # Instancias de UI
+        self.canvas = Canvas()
+        self.canvas_controller = CanvasController(self.canvas)   # crear controlador primero
+        self.sidebar = Sidebar(controller=self.canvas_controller)  # pasar controlador
 
         # ------------------
         # Controles de zoom

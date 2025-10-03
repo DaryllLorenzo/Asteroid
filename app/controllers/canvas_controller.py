@@ -5,7 +5,6 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-# app/controllers/canvas_controller.py
 from functools import partial
 from typing import Dict, Tuple
 import math
@@ -55,9 +54,15 @@ class CanvasController:
         self.nodes = []
         self.edges = []
 
+        # modos
         self.arrow_mode = False
         self.selected_arrow_type = None
         self.selected_nodes_for_arrow = []
+
+        # composite mode
+        self.composite_mode = False
+        self.composite_node_type = None
+
         self._current_subcanvas = None  # subcanvas activo, si hay
 
         # parent_node -> (subcanvas, handler_node, handler_arrow)
@@ -90,45 +95,84 @@ class CanvasController:
     # iniciar modo flecha global
     # ---------------------
     def start_arrow_mode(self, arrow_type: str):
+        # arrow_type puede ser una clave en _ARROW_TYPES
         if arrow_type not in _ARROW_TYPES:
             return
+        self._reset_modes()
         self.arrow_mode = True
         self.selected_arrow_type = arrow_type
-        self.selected_nodes_for_arrow = []
-        self._current_subcanvas = None
         print(f"CanvasController: start global arrow mode '{arrow_type}'")
+
+    # ---------------------
+    # iniciar modo composite (desde sidebar)
+    # ---------------------
+    def start_composite_dependency_mode(self, node_type: str):
+        if node_type not in _NODE_MAP:
+            print(f"CanvasController: unknown composite node_type '{node_type}'")
+            return
+        self._reset_modes()
+        self.composite_mode = True
+        self.composite_node_type = node_type
+        self.selected_nodes_for_arrow = []
+        print(f"CanvasController: start composite mode for '{node_type}'. Click two Actor/Agent nodes.")
+
+    def _reset_modes(self):
+        # limpia los modos (no resetea selection visual de nodos)
+        self.arrow_mode = False
+        self.selected_arrow_type = None
+        self.selected_nodes_for_arrow = []
+        self.composite_mode = False
+        self.composite_node_type = None
+        self._current_subcanvas = None
 
     # ---------------------
     # manejar click en nodo
     # ---------------------
     def handle_node_click(self, node_item):
+        # si el usuario clickea un edge, redirigimos al source node (conveniencia)
+        if isinstance(node_item, BaseEdgeItem):
+            node_item = node_item.source_node
+    
+        # Si estamos en modo composite priorizamos eso
+        if self.composite_mode:
+            original_node = node_item
+            # Buscar hacia arriba hasta encontrar un Actor/Agent
+            while node_item is not None and not isinstance(node_item, (ActorNodeItem, AgentNodeItem)):
+                node_item = node_item.parentItem()
+            
+            # Si no encontramos un Actor/Agent, ignoramos
+            if node_item is None or not isinstance(node_item, (ActorNodeItem, AgentNodeItem)):
+                print("CanvasController: composite mode - only Actor/Agent selectable; ignored.")
+                return
+    
+            if node_item not in self.selected_nodes_for_arrow:
+                self.selected_nodes_for_arrow.append(node_item)
+                node_item.setSelected(True)
+    
+            if len(self.selected_nodes_for_arrow) == 2:
+                self.create_composite_dependency()
+            return  # no procesar modo flecha normal
+    
+        # Si no estamos en modo flecha, ignorar
         if not self.arrow_mode:
             return
-
-        # Si es un edge, redirigir al nodo origen
-        if isinstance(node_item, BaseEdgeItem):
-            print(f"Clicked on an edge, redirecting to its source node {node_item.source_node}")
-            node_item = node_item.source_node
-
+    
+        # modo flecha normal
         node_subcanvas = getattr(node_item, "subcanvas_parent", None)
-        print(f"Clicked node {node_item}, subcanvas_parent={node_subcanvas}, current_subcanvas={self._current_subcanvas}")
-
-        # Validar si estamos en un subcanvas activo
         if self._current_subcanvas:
             if node_subcanvas is not self._current_subcanvas:
                 print("CanvasController: node not in current subcanvas, ignored")
                 return
-
+    
         if node_item not in self.selected_nodes_for_arrow:
             self.selected_nodes_for_arrow.append(node_item)
             node_item.setSelected(True)
-
+    
         if len(self.selected_nodes_for_arrow) == 2:
             self.create_arrow()
 
-
     # ---------------------
-    # crear flecha
+    # crear flecha normal entre dos nodos
     # ---------------------
     def create_arrow(self):
         if len(self.selected_nodes_for_arrow) != 2:
@@ -149,19 +193,75 @@ class CanvasController:
         self.edges.append(edge_item)
 
         # reset
-        self.arrow_mode = False
-        self.selected_arrow_type = None
-        self.selected_nodes_for_arrow = []
-        self._current_subcanvas = None
-
-        # limpiar selección
+        self._reset_modes()
+        # limpiar selección visual de nodos
         for n in self.nodes:
             n.setSelected(False)
 
         return edge_item
 
+       # ---------------------
+    # crear composite dependency (actor/agent -> tropos_node -> actor/agent)
     # ---------------------
-    # subcanvas
+    def create_composite_dependency(self):
+        if len(self.selected_nodes_for_arrow) != 2 or not self.composite_node_type:
+            return None
+
+        src, dst = self.selected_nodes_for_arrow
+        NodeClass = _NODE_MAP[self.composite_node_type]
+
+        # nodo intermedio global
+        mid_x = (src.pos().x() + dst.pos().x()) / 2.0
+        mid_y = (src.pos().y() + dst.pos().y()) / 2.0
+        mid_node = NodeClass(0, 0)
+        mid_node.setPos(mid_x, mid_y)
+        self.canvas.scene.addItem(mid_node)
+        self.nodes.append(mid_node)
+
+        # Crear flechas globales
+        e1 = DependencyLinkArrowItem(src, mid_node)
+        e2 = DependencyLinkArrowItem(mid_node, dst)
+        self.canvas.scene.addItem(e1)
+        self.canvas.scene.addItem(e2)
+        self.edges.extend([e1, e2])
+
+        # ✅ Preparar subcanvas SIN mostrarlo
+        subcanvas = None
+        if hasattr(dst, "prepare_subcanvas_for_internal_use"):
+            subcanvas = dst.prepare_subcanvas_for_internal_use()
+        else:
+            print("⚠️ El nodo destino no soporta subcanvas, se omite la inserción interna.")
+
+        # ✅ Crear nodo interno en el subcanvas (si existe), FUERA DEL CENTRO
+        if subcanvas:
+            internal_node = NodeClass(0, 0)
+            internal_node.setParentItem(subcanvas)
+            
+            # Posicionar en un lugar visible pero no centrado
+            # Ej: a la derecha, dentro del círculo
+            offset_x = subcanvas.radius * 0.6
+            offset_y = 0
+            internal_node.setPos(offset_x, offset_y)
+            
+            internal_node.setVisible(True)
+            internal_node.subcanvas_parent = subcanvas
+
+            if not hasattr(dst, "child_nodes"):
+                dst.child_nodes = []
+            dst.child_nodes.append(internal_node)
+
+            print(f"✅ Composite: nodo '{self.composite_node_type}' agregado al subcanvas de {dst} en ({offset_x:.1f}, {offset_y:.1f})")
+
+        # 🔥 Deseleccionar nodos y salir del modo compuesto
+        for node in self.selected_nodes_for_arrow:
+            node.setSelected(False)
+
+        self._reset_modes()
+        return (mid_node, e1, e2)
+
+
+    # ---------------------
+    # subcanvas management
     # ---------------------
     def _on_subcanvas_toggled(self, parent_node_item, subcanvas):
         if subcanvas is None:
@@ -223,6 +323,7 @@ class CanvasController:
     def _start_subarrow_mode(self, parent_node_item, subcanvas, arrow_type: str):
         if arrow_type not in _ARROW_TYPES:
             return
+        self._reset_modes()
         self.arrow_mode = True
         self.selected_arrow_type = arrow_type
         self.selected_nodes_for_arrow = []

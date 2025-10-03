@@ -114,3 +114,46 @@ class BaseNodeItem(QGraphicsObject):
         self.update()
         self.nodeDoubleClicked.emit(self.model)
         super().mouseDoubleClickEvent(event)
+
+    # Hace lo mismo que el doble clic, pero puede llamarse desde el controlador.
+    def ensure_subcanvas_visible(self):
+        """Crea y muestra el subcanvas si no existe."""
+        if not getattr(self.model, "show_subcanvas", False):
+            self.model.show_subcanvas = True
+
+        if not self.subcanvas:
+            # Usa un radio razonable por defecto
+            initial_radius = max(120.0, self.model.radius * 2.0)
+            self.subcanvas = SubCanvasItem(radius=initial_radius)
+            self.subcanvas.setParentItem(self)
+            self.subcanvas.setPos(0, 0)  # ✅ Centrado en el nodo padre
+            self.subcanvas.setVisible(False)
+            try:
+                self.subcanvas.setZValue(self.zValue() - 1)
+            except Exception:
+                pass
+        else:
+            self.subcanvas.setVisible(True)
+
+        self.subcanvas_toggled.emit(self, self.subcanvas)
+        return self.subcanvas
+    
+    def prepare_subcanvas_for_internal_use(self):
+        """
+        Crea el subcanvas si no existe, SIN mostrarlo ni emitir señales.
+        Usa un radio más grande para dar espacio a los nodos internos.
+        """
+        if not self.subcanvas:
+            # ✅ Subcanvas más grande: al menos 180px, o 2.5x el radio del nodo
+            initial_radius = max(250.0, self.model.radius * 3.0)
+            self.subcanvas = SubCanvasItem(radius=initial_radius)
+            self.subcanvas.setParentItem(self)
+            self.subcanvas.setPos(0, 0)
+            self.subcanvas.setVisible(False)
+            try:
+                self.subcanvas.setZValue(self.zValue() - 1)
+            except Exception:
+                pass
+            # Asegurar que el handle esté posicionado
+            self.subcanvas._update_handle_pos()
+        return self.subcanvas
