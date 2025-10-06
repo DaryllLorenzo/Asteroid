@@ -1,4 +1,3 @@
-# hard_goal.py
 # ---------------------------------------------------
 # Proyecto: Asteroid
 # Autor: Daryll Lorenzo Alfonso

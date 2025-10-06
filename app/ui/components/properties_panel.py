@@ -1,4 +1,10 @@
-# app/ui/components/properties_panel.py
+# ---------------------------------------------------
+# Proyecto: Asteroid
+# Autor: Daryll Lorenzo Alfonso
+# Año: 2025
+# Licencia: MIT License
+# ---------------------------------------------------
+
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                             QLineEdit, QPushButton, QColorDialog, QFrame,
                             QSpinBox, QFormLayout, QGroupBox, QCheckBox)

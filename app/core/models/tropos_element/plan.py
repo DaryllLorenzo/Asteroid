@@ -1,4 +1,3 @@
-# plan.py
 # ---------------------------------------------------
 # Proyecto: Asteroid
 # Autor: Daryll Lorenzo Alfonso

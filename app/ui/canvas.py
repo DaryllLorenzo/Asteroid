@@ -5,7 +5,6 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-# app/ui/components/canvas.py
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView
 from PyQt6.QtGui import QPainter, QWheelEvent
 from PyQt6.QtCore import Qt, pyqtSignal
