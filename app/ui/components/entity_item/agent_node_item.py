@@ -21,12 +21,11 @@ class AgentNodeItem(BaseNodeItem):
         return abs(center_dist - r)
 
     def paint(self, painter, option, widget=None):
-        # ✅ USAR COLORES PERSONALIZADOS del modelo, pero mantener el naranja por defecto si no están personalizados
-        default_color = QColor(250, 150, 100)  # Tu naranja original
-        default_border = QColor(0, 0, 0)       # Tu borde negro original
-        default_text = QColor(255, 255, 255)   # Texto blanco
+        # ✅ USAR COLORES PERSONALIZADOS del modelo
+        default_color = QColor(250, 150, 100)
+        default_border = QColor(0, 0, 0)
+        default_text = QColor(255, 255, 255)
         
-        # Usar colores del modelo si existen, si no usar defaults
         fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
         border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
         text_color = QColor(self.model.text_color) if hasattr(self.model, 'text_color') else default_text
@@ -48,13 +47,9 @@ class AgentNodeItem(BaseNodeItem):
         y_position = int(-self.model.radius * 0.3)
         painter.drawLine(int(-self.model.radius), y_position, int(self.model.radius), y_position)
 
-        if self.model.show_subcanvas:
-            painter.setBrush(QBrush(QColor(255, 200, 150, 50)))
-            r = self.model.radius
-            painter.drawEllipse(int(-r * 1.5), int(-r * 1.5), int(r * 3), int(r * 3))
-
         # Indicador de selección
         if self.isSelected():
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawEllipse(self.boundingRect())
+

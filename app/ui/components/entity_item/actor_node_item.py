@@ -38,11 +38,6 @@ class ActorNodeItem(BaseNodeItem):
             painter.setFont(font)
             painter.drawText(self.boundingRect(), Qt.AlignmentFlag.AlignCenter, self.model.label)
 
-        if self.model.show_subcanvas:
-            painter.setBrush(QBrush(QColor(200, 200, 255, 50)))
-            r = self.model.radius
-            painter.drawEllipse(int(-r * 1.5), int(-r * 1.5), int(r * 3), int(r * 3))
-
         # Indicador de selección
         if self.isSelected():
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))

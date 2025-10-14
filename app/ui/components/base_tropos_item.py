@@ -1,3 +1,4 @@
+# base_tropos_item.py (corregido)
 # ---------------------------------------------------
 # Proyecto: Asteroid
 # Autor: Daryll Lorenzo Alfonso
@@ -11,7 +12,7 @@ import math
 
 class BaseTroposItem(QGraphicsObject):
     nodeDoubleClicked = pyqtSignal(object)
-    roperties_changed = pyqtSignal(object, dict)  # ✅ Nuevo: emitir cambios de propiedades
+    properties_changed = pyqtSignal(object, dict)  # ✅ CORREGIDO: "properties_changed"
 
     def __init__(self, model):
         super().__init__()
@@ -20,6 +21,7 @@ class BaseTroposItem(QGraphicsObject):
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable)
         self.setAcceptHoverEvents(True)
         self._resizing = False
+        self.setZValue(10)
 
     def boundingRect(self) -> QRectF:
         r = getattr(self.model, "radius", 50)
@@ -54,6 +56,7 @@ class BaseTroposItem(QGraphicsObject):
             dist = self._get_distance_to_border(event.pos())
             if dist < 8:  # Solo activar redimensionamiento si está cerca del borde
                 self._resizing = True
+                self.setSelected(True)  # ✅ Añadido: seleccionar durante resize
                 event.accept()
                 return
         # Si no es resize, delegamos (para permitir movimiento)
@@ -76,9 +79,15 @@ class BaseTroposItem(QGraphicsObject):
         super().mouseReleaseEvent(event)
 
     def set_radius(self, new_r: float):
+        """Actualiza el radio del modelo"""
         self.prepareGeometryChange()
+        old_r = getattr(self.model, 'radius', new_r)
         self.model.radius = new_r
         self.update()
+
+        # ✅ Emitir señal solo si el valor realmente cambió
+        if old_r != new_r:
+            self.properties_changed.emit(self, {"radius": new_r})
 
     def mouseDoubleClickEvent(self, event):
         event.ignore()
@@ -87,7 +96,16 @@ class BaseTroposItem(QGraphicsObject):
     def update_properties(self, properties: dict):
         """Actualiza las propiedades visuales del nodo"""
         for key, value in properties.items():
-            if hasattr(self.model, key):
+            if key == 'radius':
+                # ✅ Usar set_radius para garantizar prepareGeometryChange y emisión
+                self.set_radius(float(value))
+            elif hasattr(self.model, key):
                 setattr(self.model, key, value)
         
-        self.update()  # Forzar redibujado
+        # Solo update() si no fue radio (porque set_radius ya hace update)
+        if 'radius' not in properties:
+            self.update()
+        
+        # Emitir señal para el panel (aunque set_radius ya emite para radius)
+        if 'radius' not in properties:
+            self.properties_changed.emit(self, properties)

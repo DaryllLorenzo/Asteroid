@@ -53,9 +53,19 @@ class MainWindow(QMainWindow):
         properties_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         # ✅ Conectar señales entre controlador y panel de propiedades
-        self.canvas_controller.node_selected.connect(self.properties_panel.set_node)
+        #self.canvas_controller.node_selected.connect(self.properties_panel.set_node)
+        self.canvas_controller.node_selected.connect(self.properties_panel.on_node_selected)
         self.properties_panel.properties_changed.connect(self.canvas_controller.update_node_properties)
         self.properties_panel.selection_mode_changed.connect(self.canvas_controller.set_selection_mode)
+        
+        # ✅ Conectar señales unificadas
+        self.canvas_controller.selection_changed.connect(self.properties_panel.on_selection_changed)
+        self.properties_panel.delete_requested.connect(self.canvas_controller.delete_selected_item)
+
+        # ✅ Conectar la señal de eliminación del panel al controlador
+        #self.properties_panel.delete_node_requested.connect(
+        #    self.canvas_controller.delete_selected_node
+        #)
 
         # ------------------
         # Controles de zoom (ahora en la parte inferior del canvas)

@@ -1,3 +1,4 @@
+# subcanvas_item.py (corregido)
 # ---------------------------------------------------
 # Proyecto: Asteroid
 # Autor: Daryll Lorenzo Alfonso
@@ -47,6 +48,7 @@ class SubCanvasItem(QGraphicsObject):
     def __init__(self, radius: float = 80.0, parent=None):
         super().__init__(parent)
         self.radius = float(radius)
+        self.original_radius = float(radius)
 
         # Clip children visually to the circular shape
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemClipsChildrenToShape, True)
@@ -78,7 +80,7 @@ class SubCanvasItem(QGraphicsObject):
         painter.setRenderHint(painter.RenderHint.Antialiasing)
         r = float(self.radius)
         painter.setBrush(self.bg_brush)
-        painter.setOpacity(0.04)
+        painter.setOpacity(0.04)  # ✅ Muy transparente para no interferir
         painter.drawEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
         painter.setOpacity(1.0)
         painter.setPen(self.border_pen)
@@ -93,11 +95,23 @@ class SubCanvasItem(QGraphicsObject):
 
     def _update_handle_pos(self):
         if hasattr(self, "handle") and self.handle is not None:
-            # sitúa el handle en el borde derecho del círculo
             self.handle.setPos(self.radius, 0.0)
 
+    # ✅ MODIFICADO: Ahora el subcanvas NO acepta eventos de mouse, para permitir que pasen al nodo padre
+    def mousePressEvent(self, event):
+        """NO aceptar eventos - permitir que pasen al nodo padre"""
+        event.ignore()  # ❌ IMPORTANTE: Ignorar para permitir que el evento llegue al nodo padre
+
+    def mouseDoubleClickEvent(self, event):
+        """NO aceptar eventos - permitir que pasen al nodo padre"""
+        event.ignore()  # ❌ IMPORTANTE: Ignorar para permitir que el evento llegue al nodo padre
+
+    def reset_to_original_size(self):
+        """Restaura el subcanvas a su tamaño original"""
+        self.set_radius(self.original_radius)
+
     # -------------------------
-    # Drag & Drop
+    # Drag & Drop (mantener funcionalidad)
     # -------------------------
     def dragEnterEvent(self, event):
         if event.mimeData().hasText():
@@ -118,11 +132,10 @@ class SubCanvasItem(QGraphicsObject):
             return
 
         item_type = event.mimeData().text()
-        pos = event.pos()  # QPointF local a este item
+        pos = event.pos()
 
         # Si es un tipo de flecha (links nuevos)
         if item_type in ARROW_TYPES:
-            # Emitimos sólo el tipo de flecha (tu controller espera subarrow_dropped -> handler(arrow_type))
             print(f"SubCanvasItem: arrow dropped '{item_type}' (local {pos})")
             self.subarrow_dropped.emit(item_type)
             event.acceptProposedAction()

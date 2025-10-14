@@ -9,6 +9,9 @@ from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView
 from PyQt6.QtGui import QPainter, QWheelEvent
 from PyQt6.QtCore import Qt, pyqtSignal
 
+from app.ui.components.base_edge_item import BaseEdgeItem
+from app.ui.components.subcanvas_item import SubCanvasItem
+
 
 class Canvas(QGraphicsView):
     """Vista del lienzo. Gestiona la escena y el zoom."""
@@ -87,17 +90,29 @@ class Canvas(QGraphicsView):
             self.arrow_dropped.emit(item_type)
             print(f"Canvas: arrow dropped globally '{item_type}'")
             event.acceptProposedAction()
-
-
-    # ---------------------
-    # Eventos de mouse
-    # ---------------------
+    
     def mousePressEvent(self, event):
         items = self.items(event.pos())
+        
+        # ✅ Prioridad: primero buscar nodos regulares (incluyendo nodos padre con subcanvas)
+        for item in items:
+            # Si es un nodo regular (no edge, no subcanvas)
+            if not isinstance(item, (BaseEdgeItem, SubCanvasItem)):
+                self.node_clicked.emit(item)
+                super().mousePressEvent(event)
+                return
+                
+            # Si es un subcanvas, ignorar (los eventos pasarán al nodo padre)
+            if isinstance(item, SubCanvasItem):
+                # ❌ NO emitir node_clicked para subcanvas - los eventos pasarán al nodo padre
+                super().mousePressEvent(event)
+                return
+        
+        # Comportamiento por defecto
         if items:
             self.node_clicked.emit(items[0])
         super().mousePressEvent(event)
-
+    
     # ---------------------
     # Zoom
     # ---------------------
@@ -134,3 +149,9 @@ class Canvas(QGraphicsView):
         self.resetTransform()
         self.zoom_factor = 1.0
         self.zoom_changed.emit(self.zoom_factor)
+
+    def keyPressEvent(self, event):
+        """Maneja eventos de teclado para eliminación"""
+        # Delegar el manejo de teclas al controlador
+        # Las teclas Delete y Ctrl+D ya están manejadas por los QShortcut
+        super().keyPressEvent(event)

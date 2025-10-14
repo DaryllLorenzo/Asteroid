@@ -1,3 +1,4 @@
+# base_node_item.py (corregido)
 # ---------------------------------------------------
 # Proyecto: Asteroid
 # Autor: Daryll Lorenzo Alfonso
@@ -14,7 +15,7 @@ import math
 class BaseNodeItem(QGraphicsObject):
     nodeDoubleClicked = pyqtSignal(object)
     subcanvas_toggled = pyqtSignal(object, object)
-    properties_changed = pyqtSignal(object, dict)  # ✅ Nuevo: emitir cambios de propiedades
+    properties_changed = pyqtSignal(object, dict)
 
     def __init__(self, model):
         super().__init__()
@@ -24,44 +25,42 @@ class BaseNodeItem(QGraphicsObject):
         self.setAcceptHoverEvents(True)
         self._resizing = False
         self.subcanvas = None
+        self._subcanvas_visible = False
+        self.setZValue(10) # para superponer sobre flechas
 
     def boundingRect(self) -> QRectF:
         r = getattr(self.model, "radius", 50)
         return QRectF(-r, -r, 2 * r, 2 * r)
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        """Distancia al borde del círculo (implementación por defecto)."""
         r = getattr(self.model, "radius", 50)
         center_dist = (pos.x()**2 + pos.y()**2) ** 0.5
         return abs(center_dist - r)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
-        """Calcula nuevo radio basado en la posición del mouse."""
         center_dist = (pos.x()**2 + pos.y()**2) ** 0.5
         return max(center_dist, 10.0)
 
     def hoverMoveEvent(self, event):
-        """Solo activar cursor de redimensionamiento cerca del borde."""
         dist = self._get_distance_to_border(event.pos())
-        if dist < 8:  # Umbral de proximidad al borde
+        if dist < 8:
             self.setCursor(Qt.CursorShape.SizeAllCursor)
         else:
             self.setCursor(Qt.CursorShape.ArrowCursor)
         super().hoverMoveEvent(event)
 
     def hoverLeaveEvent(self, event):
-        """Restaurar cursor al salir del item."""
         self.setCursor(Qt.CursorShape.ArrowCursor)
         super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             dist = self._get_distance_to_border(event.pos())
-            if dist < 8:  # Solo activar redimensionamiento si está cerca del borde
+            if dist < 8:
                 self._resizing = True
+                self.setSelected(True)
                 event.accept()
                 return
-        # Si no es resize, delegamos (para permitir movimiento)
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -81,23 +80,34 @@ class BaseNodeItem(QGraphicsObject):
         super().mouseReleaseEvent(event)
 
     def set_radius(self, new_r: float):
-        """Actualiza el radio del modelo y del subcanvas si existe."""
         self.prepareGeometryChange()
+        old_r = getattr(self.model, 'radius', new_r)
         self.model.radius = new_r
-        if self.subcanvas:
-            self.subcanvas.set_radius(new_r * 1.05)
         self.update()
+
+        if old_r != new_r:
+            self.properties_changed.emit(self, {"radius": new_r})
 
     def mouseDoubleClickEvent(self, event):
         """Maneja el doble click para mostrar/ocultar subcanvas."""
+        # ✅ Solo procesar si el clic es directamente en este nodo
+        self._toggle_subcanvas()
+        self.nodeDoubleClicked.emit(self.model)
+        event.accept()
+
+    def _toggle_subcanvas(self):
+        """Alterna la visibilidad del subcanvas"""
         if hasattr(self.model, "toggle_subcanvas"):
             self.model.toggle_subcanvas()
         else:
             self.model.show_subcanvas = not getattr(self.model, "show_subcanvas", False)
 
-        if getattr(self.model, "show_subcanvas", False):
+        show = getattr(self.model, "show_subcanvas", False)
+        
+        if show:
             if not self.subcanvas:
-                self.subcanvas = SubCanvasItem(radius=self.model.radius * 1.05)
+                subcanvas_radius = max(120.0, self.model.radius * 2.0)
+                self.subcanvas = SubCanvasItem(radius=subcanvas_radius)
                 self.subcanvas.setParentItem(self)
                 self.subcanvas.setPos(0.0, 0.0)
                 try:
@@ -107,27 +117,24 @@ class BaseNodeItem(QGraphicsObject):
             else:
                 self.subcanvas.setVisible(True)
             self.subcanvas_toggled.emit(self, self.subcanvas)
+            self._subcanvas_visible = True
         else:
             if self.subcanvas:
                 self.subcanvas.setVisible(False)
             self.subcanvas_toggled.emit(self, None)
+            self._subcanvas_visible = False
 
         self.update()
-        self.nodeDoubleClicked.emit(self.model)
-        super().mouseDoubleClickEvent(event)
 
-    # Hace lo mismo que el doble clic, pero puede llamarse desde el controlador.
     def ensure_subcanvas_visible(self):
-        """Crea y muestra el subcanvas si no existe."""
         if not getattr(self.model, "show_subcanvas", False):
             self.model.show_subcanvas = True
 
         if not self.subcanvas:
-            # Usa un radio razonable por defecto
             initial_radius = max(120.0, self.model.radius * 2.0)
             self.subcanvas = SubCanvasItem(radius=initial_radius)
             self.subcanvas.setParentItem(self)
-            self.subcanvas.setPos(0, 0)  # ✅ Centrado en el nodo padre
+            self.subcanvas.setPos(0, 0)
             self.subcanvas.setVisible(False)
             try:
                 self.subcanvas.setZValue(self.zValue() - 1)
@@ -137,15 +144,11 @@ class BaseNodeItem(QGraphicsObject):
             self.subcanvas.setVisible(True)
 
         self.subcanvas_toggled.emit(self, self.subcanvas)
+        self._subcanvas_visible = True
         return self.subcanvas
     
     def prepare_subcanvas_for_internal_use(self):
-        """
-        Crea el subcanvas si no existe, SIN mostrarlo ni emitir señales.
-        Usa un radio más grande para dar espacio a los nodos internos.
-        """
         if not self.subcanvas:
-            # ✅ Subcanvas más grande: al menos 180px, o 2.5x el radio del nodo
             initial_radius = max(250.0, self.model.radius * 3.0)
             self.subcanvas = SubCanvasItem(radius=initial_radius)
             self.subcanvas.setParentItem(self)
@@ -155,18 +158,27 @@ class BaseNodeItem(QGraphicsObject):
                 self.subcanvas.setZValue(self.zValue() - 1)
             except Exception:
                 pass
-            # Asegurar que el handle esté posicionado
             self.subcanvas._update_handle_pos()
         return self.subcanvas
     
     def update_properties(self, properties: dict):
-        """Actualiza las propiedades visuales del nodo"""
         for key, value in properties.items():
-            if hasattr(self.model, key):
+            if key == 'radius':
+                self.set_radius(float(value))
+            elif hasattr(self.model, key):
                 setattr(self.model, key, value)
         
-        self.update()  # Forzar redibujado
+        if 'radius' not in properties:
+            self.update()
         
-        # Si hay subcanvas, actualizar su radio también
-        if 'radius' in properties and self.subcanvas:
-            self.subcanvas.set_radius(properties['radius'] * 1.05)
+        if 'radius' not in properties:
+            self.properties_changed.emit(self, properties)
+
+    #def is_subcanvas_visible(self):
+    #    return self._subcanvas_visible and self.subcanvas and self.subcanvas.isVisible()
+    def is_subcanvas_visible(self):
+        return (
+            self.subcanvas is not None 
+            and self.subcanvas.isVisible() 
+            and getattr(self.model, "show_subcanvas", False)
+        )
