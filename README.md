@@ -75,3 +75,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```bash
 uv run main.py
 ```
+
+# Examples
+![Main interface 1](images/main_interface_example1.png)
+![Main interface 2](images/main_interface_example2.png)
