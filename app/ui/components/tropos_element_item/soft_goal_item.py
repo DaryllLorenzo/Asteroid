@@ -108,3 +108,13 @@ class SoftGoalNodeItem(BaseTroposItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPath(self.path)
+
+    def get_serializable_properties(self):
+        """Devuelve propiedades serializables específicas de SoftGoal"""
+        base_properties = super().get_serializable_properties()
+        base_properties['node_type'] = 'soft_goal'
+        return base_properties
+
+    def update_properties(self, properties: dict):
+        """Actualiza propiedades específicas de SoftGoal"""
+        super().update_properties(properties)

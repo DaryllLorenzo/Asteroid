@@ -43,3 +43,15 @@ class ActorNodeItem(BaseNodeItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawEllipse(self.boundingRect())
+
+    def get_serializable_properties(self):
+        """Devuelve propiedades serializables específicas de Actor"""
+        base_properties = super().get_serializable_properties()
+        # Agrega propiedades específicas de Actor aquí si las tienes
+        base_properties['node_type'] = 'actor'  # Para identificar el tipo al cargar
+        return base_properties
+    
+    def update_properties(self, properties: dict):
+        """Actualiza propiedades específicas de Actor"""
+        # Primero actualiza las propiedades base
+        super().update_properties(properties)

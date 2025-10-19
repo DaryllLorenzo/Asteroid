@@ -76,3 +76,15 @@ class HardGoalNodeItem(BaseTroposItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPath(path)
+
+    def get_serializable_properties(self):
+        """Devuelve propiedades serializables específicas de HardGoal"""
+        base_properties = super().get_serializable_properties()
+        base_properties['node_type'] = 'hard_goal'  # Para identificar el tipo al cargar
+        # Agrega propiedades específicas de HardGoal aquí si las tienes
+        return base_properties
+
+    def update_properties(self, properties: dict):
+        """Actualiza propiedades específicas de HardGoal"""
+        # Primero actualiza las propiedades base
+        super().update_properties(properties)

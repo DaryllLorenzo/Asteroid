@@ -9,12 +9,15 @@
 from functools import partial
 from typing import Dict, Tuple
 import math
-
-from PyQt6.QtCore import QObject, pyqtSignal
-from PyQt6.QtGui import QKeySequence, QShortcut
+import json
+from pathlib import Path
+from PyQt6.QtCore import QObject, pyqtSignal, Qt
+from PyQt6.QtGui import QKeySequence, QShortcut, QPixmap, QPainter
+from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem
+from app.utils.astr_format import AstrFormat
 
 from app.ui.components.dependency_item.simple_edge_item import SimpleArrowItem
 from app.ui.components.dependency_item.dashed_edge_item import DashedArrowItem
@@ -58,7 +61,8 @@ class CanvasController(QObject):
     node_deleted = pyqtSignal(object)
     edge_selected = pyqtSignal(object)
     edge_deleted = pyqtSignal(object)
-    selection_changed = pyqtSignal(object)  # ✅ Nueva señal unificada para cualquier selección
+    selection_changed = pyqtSignal(object)
+    project_modified = pyqtSignal(bool)
 
     def __init__(self, canvas):
         super().__init__()
@@ -81,9 +85,13 @@ class CanvasController(QObject):
         self.selection_mode = False
         self.selected_node = None
         self.selected_edge = None
-        self.current_selection = None  # ✅ Referencia unificada al elemento seleccionado
+        self.current_selection = None
 
         self._subcanvas_handlers: Dict[object, Tuple[object, callable, callable]] = {}
+
+        # Seguimiento de estado del proyecto
+        self._current_file_path = None
+        self._is_modified = False
 
         # conectar señales
         self.canvas.node_dropped.connect(self.add_node)
@@ -92,8 +100,28 @@ class CanvasController(QObject):
 
         self.canvas.scene.selectionChanged.connect(self.on_selection_changed)
 
-        # ✅ Configurar atajos de teclado para eliminar
+        # Configurar atajos de teclado para eliminar
         self._setup_delete_shortcut()
+
+    @property
+    def is_modified(self):
+        return self._is_modified
+
+    @is_modified.setter
+    def is_modified(self, value):
+        if self._is_modified != value:
+            self._is_modified = value
+            self.project_modified.emit(value)
+
+    def mark_as_modified(self):
+        """Marca el proyecto como modificado"""
+        self.is_modified = True
+
+    def mark_as_saved(self, file_path=None):
+        """Marca el proyecto como guardado"""
+        self.is_modified = False
+        if file_path:
+            self._current_file_path = file_path
 
     def _setup_delete_shortcut(self):
         """Configura el atajo de teclado para eliminar elementos seleccionados"""
@@ -114,48 +142,55 @@ class CanvasController(QObject):
             self.current_selection = None
 
     def on_selection_changed(self):
-        """Manejar selección considerando subcanvases Y edges"""
+        """Manejar selección considerando subcanvases Y edges - VERSIÓN MEJORADA"""
         selected_items = self.canvas.scene.selectedItems()
 
         if not selected_items:
-            self.selection_changed.emit(None)  # ✅ Emitir None cuando no hay selección
+            self.selection_changed.emit(None)
+            self.selected_node = None
+            self.selected_edge = None
+            self.current_selection = None
             return
 
         item = selected_items[0]
 
         # ✅ VERIFICAR SI ES UN EDGE
         if isinstance(item, BaseEdgeItem):
+            print(f"🔗 Edge seleccionado: {item}")
             self.edge_selected.emit(item)
             self.selected_edge = item
             self.selected_node = None
-            self.current_selection = item  # ✅ Guardar referencia unificada
-            self.selection_changed.emit(item)  # ✅ Emitir señal unificada
-            print(f"🔗 Edge seleccionado: {item}")
+            self.current_selection = item
+            self.selection_changed.emit(item)
             return
 
-        # ✅ Verificar si el nodo está dentro de un subcanvas
-        if hasattr(item, 'subcanvas_parent') and item.subcanvas_parent:
-            self.node_selected.emit(item)
-            self.selected_node = item
-            self.selected_edge = None
-            self.current_selection = item  # ✅ Guardar referencia unificada
+        # ✅ PARA NODOS: Actualizar referencia ANTES de emitir señales
+        old_selected_node = self.selected_node
+        self.selected_node = item
+        self.selected_edge = None
+        self.current_selection = item
 
+        # ✅ SOLO emitir node_selected si el nodo realmente cambió
+        if old_selected_node != item:
+            print(f"🔧 CanvasController: nodo seleccionado cambiado a {item}")
+            self.node_selected.emit(item)
+
+        # Verificar si el nodo está dentro de un subcanvas
+        if hasattr(item, 'subcanvas_parent') and item.subcanvas_parent:
             parent_node = item.subcanvas_parent.parentItem()
             if parent_node and hasattr(parent_node, 'subcanvas'):
                 if not parent_node.is_subcanvas_visible():
                     parent_node.ensure_subcanvas_visible()
-        else:
-            self.node_selected.emit(item)
-            self.selected_node = item
-            self.selected_edge = None
-            self.current_selection = item  # ✅ Guardar referencia unificada
 
-        self.selection_changed.emit(item)  # ✅ Emitir señal unificada
+        # ✅ SIEMPRE emitir selection_changed para notificar cambios de selección
+        self.selection_changed.emit(item)
 
     def update_node_properties(self, properties: dict):
         """Actualiza las propiedades del nodo seleccionado"""
         if self.selected_node and hasattr(self.selected_node, 'update_properties'):
             self.selected_node.update_properties(properties)
+            # Marcar como modificado
+            self.mark_as_modified()
 
     # ---------------------
     # agregar nodo global
@@ -166,8 +201,17 @@ class CanvasController(QObject):
         if NodeClass is None:
             return None
 
+        # ✅ Crear el nodo sin posición inicial en el modelo
         node_item = NodeClass(0, 0)
+        
+        # ✅ Establecer posición inmediatamente
         node_item.setPos(x, y)
+        
+        # ✅ Actualizar el modelo con la posición correcta
+        if hasattr(node_item, 'model'):
+            node_item.model.x = x
+            node_item.model.y = y
+        
         self.canvas.scene.addItem(node_item)
         self.nodes.append(node_item)
 
@@ -179,6 +223,9 @@ class CanvasController(QObject):
         if hasattr(node_item, "subcanvas_toggled"):
             node_item.subcanvas_toggled.connect(self._on_subcanvas_toggled)
 
+        # Marcar como modificado
+        self.mark_as_modified()
+
         return node_item
 
     def on_node_properties_changed(self, node_item, properties):
@@ -188,6 +235,9 @@ class CanvasController(QObject):
             
         if node_item == self.selected_node or (hasattr(node_item, '_resizing') and node_item._resizing):
             self.selected_node_properties_changed.emit(properties)
+        
+        # Marcar como modificado cuando cambian las propiedades
+        self.mark_as_modified()
 
     # ---------------------
     # iniciar modo flecha global
@@ -267,6 +317,17 @@ class CanvasController(QObject):
     # ---------------------
     # crear flecha normal entre dos nodos
     # ---------------------
+
+    def _start_subarrow_mode(self, parent_node_item, subcanvas, arrow_type: str):
+        if arrow_type not in _ARROW_TYPES:
+            return
+        self._reset_modes()
+        self.arrow_mode = True
+        self.selected_arrow_type = arrow_type
+        self.selected_nodes_for_arrow = []
+        self._current_subcanvas = subcanvas
+        print(f"CanvasController: start subarrow mode '{arrow_type}' in {subcanvas}")
+
     def create_arrow(self):
         if len(self.selected_nodes_for_arrow) != 2:
             return None
@@ -280,6 +341,7 @@ class CanvasController(QObject):
 
         if self._current_subcanvas:
             edge_item.setParentItem(self._current_subcanvas)
+            print(f"✅ Edge creada dentro de subcanvas: {self._current_subcanvas}")
         else:
             self.canvas.scene.addItem(edge_item)
 
@@ -288,6 +350,9 @@ class CanvasController(QObject):
         self._reset_modes()
         for n in self.nodes:
             n.setSelected(False)
+
+        # Marcar como modificado
+        self.mark_as_modified()
 
         return edge_item
 
@@ -341,6 +406,10 @@ class CanvasController(QObject):
             node.setSelected(False)
 
         self._reset_modes()
+
+        # Marcar como modificado
+        self.mark_as_modified()
+
         return (mid_node, e1, e2)
 
     # ---------------------
@@ -405,18 +474,11 @@ class CanvasController(QObject):
         if not hasattr(parent_node_item, "child_nodes"):
             parent_node_item.child_nodes = []
         parent_node_item.child_nodes.append(child)
+
+        # Marcar como modificado
+        self.mark_as_modified()
     
         return child
-
-    def _start_subarrow_mode(self, parent_node_item, subcanvas, arrow_type: str):
-        if arrow_type not in _ARROW_TYPES:
-            return
-        self._reset_modes()
-        self.arrow_mode = True
-        self.selected_arrow_type = arrow_type
-        self.selected_nodes_for_arrow = []
-        self._current_subcanvas = subcanvas
-        print(f"CanvasController: start subarrow mode '{arrow_type}' in {subcanvas}")
 
     def find_node_by_ui(self, ui_item):
         for n in self.nodes:
@@ -505,6 +567,9 @@ class CanvasController(QObject):
 
         self.node_deleted.emit(node_to_delete)
         
+        # Marcar como modificado
+        self.mark_as_modified()
+        
         print(f"✅ Nodo eliminado exitosamente: {node_to_delete}")
 
     def delete_edge(self, edge_to_delete):
@@ -522,6 +587,10 @@ class CanvasController(QObject):
                 self.selection_changed.emit(None)
                 
             self.edge_deleted.emit(edge_to_delete)
+            
+            # Marcar como modificado
+            self.mark_as_modified()
+            
             print(f"✅ Flecha eliminada: {edge_to_delete}")
         else:
             print(f"⚠️ Edge no encontrado en la lista: {edge_to_delete}")
@@ -530,3 +599,363 @@ class CanvasController(QObject):
         """Elimina un nodo de la escena de forma segura"""
         if node.scene():
             node.scene().removeItem(node)
+
+    # ---------------------
+    # Export/Import
+    # ---------------------
+    def export_to_astr(self, filename: str = None) -> bool:
+        """Exporta el estado actual del canvas a archivo .astr"""
+        try:
+            if not filename:
+                filename, _ = QFileDialog.getSaveFileName(
+                    self.canvas, 
+                    "Exportar como .astr", 
+                    "", 
+                    "Asteroid Files (*.astr)"
+                )
+                if not filename:
+                    return False
+                
+                if not filename.endswith('.astr'):
+                    filename += '.astr'
+            
+            # Serializar escena
+            scene_data = AstrFormat.serialize_scene(self.nodes, self.edges)
+            
+            # Guardar archivo
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(scene_data, f, indent=2, ensure_ascii=False)
+            
+            print(f"✅ Proyecto exportado exitosamente: {filename}")
+            
+            # Marcar como guardado
+            self.mark_as_saved(filename)
+            
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error exportando proyecto: {e}")
+            QMessageBox.critical(self.canvas, "Error", f"No se pudo exportar el proyecto:\n{e}")
+            return False
+    
+    def import_from_astr(self, filename: str = None) -> bool:
+        """Importa un proyecto desde archivo .astr - VERSIÓN MEJORADA CON JERARQUÍA COMPLETA"""
+        try:
+            if not filename:
+                filename, _ = QFileDialog.getOpenFileName(
+                    self.canvas,
+                    "Cargar proyecto .astr",
+                    "",
+                    "Asteroid Files (*.astr)"
+                )
+                if not filename:
+                    return False
+
+            print(f"🔧 Cargando proyecto desde: {filename}")
+
+            # Cargar archivo
+            with open(filename, 'r', encoding='utf-8') as f:
+                scene_data = json.load(f)
+
+            print(f"📊 Proyecto contiene: {len(scene_data.get('nodes', []))} nodos, {len(scene_data.get('edges', []))} edges")
+
+            # Limpiar canvas actual
+            self.clear_canvas()
+
+            # ✅ PRIMERA PASADA: Crear todos los nodos
+            node_map = {}
+            parent_child_map = {}  # Mapeo de padres a hijos
+
+            for node_data in scene_data.get('nodes', []):
+                print(f"🔧 Procesando nodo {node_data['id']} de tipo {node_data['type']}")
+                node = self._create_node_from_data(node_data)
+                if node:
+                    node_map[node_data['id']] = node
+
+                    # ✅ Guardar información de jerarquía para segunda pasada
+                    parent_id = node_data.get('parent_id')
+                    if parent_id is not None:
+                        if parent_id not in parent_child_map:
+                            parent_child_map[parent_id] = []
+                        parent_child_map[parent_id].append(node_data['id'])
+                        print(f"✅ Nodo {node_data['id']} es hijo de nodo {parent_id}")
+
+            # ✅ SEGUNDA PASADA: Establecer jerarquía (nodos en subcanvas)
+            for parent_id, child_ids in parent_child_map.items():
+                parent_node = node_map.get(parent_id)
+                if parent_node and hasattr(parent_node, 'subcanvas'):
+                    print(f"🔧 Moviendo {len(child_ids)} nodos al subcanvas de nodo {parent_id}")
+                    for child_id in child_ids:
+                        child_node = node_map.get(child_id)
+                        if child_node:
+                            self._move_node_to_subcanvas(child_node, parent_node)
+
+            # ✅ TERCERA PASADA: Reconstruir edges (TODAS, incluyendo las de subcanvas)
+            edge_count = 0
+            edge_parent_map = {}  # ✅ Nuevo: mapeo de edges a sus padres
+
+            for edge_data in scene_data.get('edges', []):
+                edge = self._create_edge_from_data(edge_data, node_map)
+                if edge:
+                    edge_count += 1
+
+                    # ✅ Guardar información de parentezco de edges para cuarta pasada
+                    parent_id = edge_data.get('parent_id')
+                    if parent_id is not None:
+                        edge_parent_map[edge] = parent_id
+                        print(f"✅ Edge conecta {edge_data['source_id']}->{edge_data['target_id']} en subcanvas de {parent_id}")
+
+            # ✅ CUARTA PASADA: Mover edges a subcanvas si es necesario
+            for edge, parent_id in edge_parent_map.items():
+                parent_node = node_map.get(parent_id)
+                if parent_node and hasattr(parent_node, 'subcanvas'):
+                    self._move_edge_to_subcanvas(edge, parent_node)
+
+            print(f"✅ Proyecto cargado exitosamente: {filename}")
+            print(f"📊 Resumen: {len(node_map)} nodos, {edge_count} edges reconstruidos")
+
+            # Marcar como guardado (no modificado)
+            self.mark_as_saved(filename)
+
+            return True
+
+        except Exception as e:
+            print(f"❌ Error cargando proyecto: {e}")
+            import traceback
+            traceback.print_exc()
+            QMessageBox.critical(self.canvas, "Error", f"No se pudo cargar el proyecto:\n{e}")
+            return False
+
+    
+    def _move_node_to_subcanvas(self, child_node, parent_node):
+        """Mueve un nodo al subcanvas de otro nodo padre"""
+        try:
+            # Preparar subcanvas del padre
+            subcanvas = parent_node.prepare_subcanvas_for_internal_use()
+            if not subcanvas:
+                print(f"❌ No se pudo obtener subcanvas del nodo padre {parent_node}")
+                return False
+            
+            # Remover nodo hijo de la escena principal
+            if child_node.scene():
+                child_node.scene().removeItem(child_node)
+            
+            # Agregar nodo hijo al subcanvas
+            child_node.setParentItem(subcanvas)
+            child_node.subcanvas_parent = subcanvas
+            
+            # Mantener la posición relativa
+            current_pos = child_node.pos()
+            child_node.setPos(current_pos)
+            
+            # Agregar a la lista de hijos del padre
+            if not hasattr(parent_node, 'child_nodes'):
+                parent_node.child_nodes = []
+            if child_node not in parent_node.child_nodes:
+                parent_node.child_nodes.append(child_node)
+            
+            print(f"✅ Nodo movido al subcanvas de {parent_node} en posición {current_pos}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error moviendo nodo a subcanvas: {e}")
+            return False
+    
+    def export_to_image(self, filename: str = None) -> bool:
+        """Exporta el canvas como imagen PNG"""
+        try:
+            if not filename:
+                filename, _ = QFileDialog.getSaveFileName(
+                    self.canvas,
+                    "Exportar como imagen",
+                    "",
+                    "PNG Images (*.png);;JPEG Images (*.jpg *.jpeg)"
+                )
+                if not filename:
+                    return False
+            
+            # Obtener el rectángulo que contiene todos los items
+            rect = self.canvas.scene.itemsBoundingRect()
+            
+            # Crear pixmap
+            pixmap = QPixmap(rect.size().toSize())
+            pixmap.fill(Qt.GlobalColor.white)
+            
+            # Renderizar escena en el pixmap
+            painter = QPainter(pixmap)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            self.canvas.scene.render(painter, source=rect)
+            painter.end()
+            
+            # Guardar imagen
+            pixmap.save(filename)
+            
+            print(f"✅ Imagen exportada exitosamente: {filename}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error exportando imagen: {e}")
+            QMessageBox.critical(self.canvas, "Error", f"No se pudo exportar la imagen:\n{e}")
+            return False
+    
+    def clear_canvas(self):
+        """Limpia completamente el canvas"""
+        # Limpiar selecciones
+        self.selected_node = None
+        self.selected_edge = None
+        self.current_selection = None
+        
+        # Remover todos los edges
+        for edge in self.edges[:]:
+            if edge.scene():
+                edge.scene().removeItem(edge)
+        self.edges.clear()
+        
+        # Remover todos los nodos
+        for node in self.nodes[:]:
+            if node.scene():
+                node.scene().removeItem(node)
+        self.nodes.clear()
+        
+        # Limpiar selección de la escena
+        self.canvas.scene.clearSelection()
+        
+        # Marcar como no modificado (proyecto nuevo)
+        self.is_modified = False
+        self._current_file_path = None
+        
+        print("✅ Canvas limpiado")
+    
+    def _create_node_from_data(self, node_data: Dict) -> object:
+        """Crea un nodo a partir de datos serializados - VERSIÓN CORREGIDA"""
+        node_type = node_data['type']
+        pos_data = node_data['position']
+
+        print(f"🔧 Creando nodo {node_type} en posición ({pos_data['x']}, {pos_data['y']})")
+
+        # ✅ CREAR el nodo en la posición CERO primero
+        node = self.add_node(node_type, 0, 0)
+        if not node:
+            return None
+
+        # ✅ LUEGO establecer la posición real
+        node.setPos(float(pos_data['x']), float(pos_data['y']))
+
+        # ✅ ACTUALIZAR el modelo con la posición correcta y otras propiedades
+        if hasattr(node, 'model'):
+            # Usar propiedades del modelo si están disponibles
+            model_props = node_data.get('model_properties', {})
+            if model_props:
+                node.model.x = float(model_props.get('x', pos_data['x']))
+                node.model.y = float(model_props.get('y', pos_data['y']))
+                node.model.radius = float(model_props.get('radius', 50))
+                node.model.label = model_props.get('label', '')
+                node.model.color = model_props.get('color', '#3498db')
+                node.model.border_color = model_props.get('border_color', '#2980b9')
+                node.model.text_color = model_props.get('text_color', '#ffffff')
+                node.model.show_subcanvas = model_props.get('show_subcanvas', False)
+            else:
+                # Fallback a los valores básicos
+                node.model.x = float(pos_data['x'])
+                node.model.y = float(pos_data['y'])
+
+        # ✅ RESTAURAR estado del subcanvas si existe - CON VERIFICACIÓN DE SEGURIDAD
+        subcanvas_data = node_data.get('subcanvas')
+        if subcanvas_data:
+            print(f"🔧 Intentando restaurar subcanvas para nodo {node_data['id']}")
+            
+            # ✅ Asegurarnos de que el nodo tenga un subcanvas
+            if not hasattr(node, 'subcanvas') or node.subcanvas is None:
+                print(f"🔧 Creando subcanvas para nodo {node_data['id']}")
+                node.prepare_subcanvas_for_internal_use()
+            
+            # ✅ Verificar que el subcanvas se creó correctamente antes de acceder a sus propiedades
+            if node.subcanvas is not None:
+                print(f"🔧 Restaurando subcanvas para nodo {node_data['id']}: visible={subcanvas_data.get('visible', False)}, radius={subcanvas_data.get('radius', 80)}")
+
+                # ✅ Configurar el radio del subcanvas con verificación
+                if 'radius' in subcanvas_data:
+                    node.subcanvas.radius = float(subcanvas_data['radius'])
+                if 'original_radius' in subcanvas_data:
+                    node.subcanvas.original_radius = float(subcanvas_data['original_radius'])
+
+                # ✅ Configurar visibilidad con verificación
+                if subcanvas_data.get('visible', False):
+                    print(f"🔧 Haciendo visible el subcanvas del nodo {node_data['id']}")
+                    node.ensure_subcanvas_visible()
+                else:
+                    node.model.show_subcanvas = False
+                    if node.subcanvas:
+                        node.subcanvas.setVisible(False)
+
+                # ✅ Actualizar posición del handle si existe
+                if hasattr(node.subcanvas, '_update_handle_pos'):
+                    node.subcanvas._update_handle_pos()
+            else:
+                print(f"⚠️ No se pudo crear subcanvas para nodo {node_data['id']}")
+
+        # Aplicar propiedades adicionales
+        properties = node_data.get('properties', {})
+        if hasattr(node, 'update_properties'):
+            # ✅ Asegurar que las propiedades incluyan la posición actualizada
+            properties['x'] = float(pos_data['x'])
+            properties['y'] = float(pos_data['y'])
+            node.update_properties(properties)
+
+        print(f"✅ Nodo {node_type} creado en posición final: {node.pos()}")
+        return node
+
+    def _create_edge_from_data(self, edge_data: Dict, node_map: Dict):
+        """Crea una edge a partir de datos serializados - VERSIÓN MEJORADA"""
+        edge_type = edge_data['type']
+        source_id = edge_data['source_id']
+        target_id = edge_data['target_id']
+
+        source_node = node_map.get(source_id)
+        target_node = node_map.get(target_id)
+
+        if not source_node or not target_node:
+            print(f"⚠️ No se pudo crear edge: nodos fuente({source_id}) o destino({target_id}) no encontrados")
+            return None
+
+        # Crear edge
+        ArrowClass = _ARROW_TYPES.get(edge_type)
+        if not ArrowClass:
+            print(f"⚠️ Tipo de edge desconocido: {edge_type}")
+            return None
+
+        edge_item = ArrowClass(source_node, target_node)
+
+        # ✅ POR AHORA agregar a la escena principal, luego se moverá si es necesario
+        self.canvas.scene.addItem(edge_item)
+        self.edges.append(edge_item)
+
+        # Aplicar propiedades
+        properties = edge_data.get('properties', {})
+        if hasattr(edge_item, 'update_properties'):
+            edge_item.update_properties(properties)
+
+        return edge_item
+    
+    def _move_edge_to_subcanvas(self, edge, parent_node):
+        """Mueve una edge al subcanvas de otro nodo padre"""
+        try:
+            # Preparar subcanvas del padre
+            subcanvas = parent_node.prepare_subcanvas_for_internal_use()
+            if not subcanvas:
+                print(f"❌ No se pudo obtener subcanvas del nodo padre {parent_node}")
+                return False
+
+            # Remover edge de la escena principal
+            if edge.scene():
+                edge.scene().removeItem(edge)
+
+            # Agregar edge al subcanvas
+            edge.setParentItem(subcanvas)
+
+            print(f"✅ Edge movida al subcanvas de {parent_node}")
+            return True
+
+        except Exception as e:
+            print(f"❌ Error moviendo edge a subcanvas: {e}")
+            return False

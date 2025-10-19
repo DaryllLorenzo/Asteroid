@@ -93,19 +93,56 @@ class BaseTroposItem(QGraphicsObject):
         event.ignore()
         super().mouseDoubleClickEvent(event)
 
+    #def update_properties(self, properties: dict):
+    #    """Actualiza las propiedades visuales del nodo"""
+    #    for key, value in properties.items():
+    #        if key == 'radius':
+    #            # ✅ Usar set_radius para garantizar prepareGeometryChange y emisión
+    #            self.set_radius(float(value))
+    #        elif hasattr(self.model, key):
+    #            setattr(self.model, key, value)
+    #    
+    #    # Solo update() si no fue radio (porque set_radius ya hace update)
+    #    if 'radius' not in properties:
+    #        self.update()
+    #    
+    #    # Emitir señal para el panel (aunque set_radius ya emite para radius)
+    #    if 'radius' not in properties:
+    #        self.properties_changed.emit(self, properties)
+
+    # En base_tropos_item.py - agrega al final de la clase BaseTroposItem
+
+    def get_serializable_properties(self):
+        """Devuelve propiedades serializables del nodo"""
+        return {
+            'radius': getattr(self.model, 'radius', 50),
+            'label': getattr(self.model, 'label', ''),
+            'color': getattr(self.model, 'color', '#3498db'),
+            'border_color': getattr(self.model, 'border_color', '#2980b9'),
+            'text_color': getattr(self.model, 'text_color', '#ffffff'),
+            'x': self.model.x,
+            'y': self.model.y,
+            # Agrega más propiedades según necesites
+        }
+    
     def update_properties(self, properties: dict):
-        """Actualiza las propiedades visuales del nodo"""
+        """Actualiza las propiedades del nodo desde datos serializados"""
         for key, value in properties.items():
             if key == 'radius':
-                # ✅ Usar set_radius para garantizar prepareGeometryChange y emisión
+                # Usar set_radius para garantizar prepareGeometryChange y emisión
                 self.set_radius(float(value))
             elif hasattr(self.model, key):
                 setattr(self.model, key, value)
+        
+        # Actualizar posición si está en las propiedades
+        if 'x' in properties and 'y' in properties:
+            self.model.x = properties['x']
+            self.model.y = properties['y']
+            self.setPos(properties['x'], properties['y'])
         
         # Solo update() si no fue radio (porque set_radius ya hace update)
         if 'radius' not in properties:
             self.update()
         
-        # Emitir señal para el panel (aunque set_radius ya emite para radius)
-        if 'radius' not in properties:
-            self.properties_changed.emit(self, properties)
+        # Emitir señal para el panel
+        self.properties_changed.emit(self, properties)

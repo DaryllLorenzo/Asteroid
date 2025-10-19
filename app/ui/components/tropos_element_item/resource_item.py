@@ -70,3 +70,13 @@ class ResourceNodeItem(BaseTroposItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawRect(rect)
+
+    def get_serializable_properties(self):
+        """Devuelve propiedades serializables específicas de Resource"""
+        base_properties = super().get_serializable_properties()
+        base_properties['node_type'] = 'resource'
+        return base_properties
+
+    def update_properties(self, properties: dict):
+        """Actualiza propiedades específicas de Resource"""
+        super().update_properties(properties)

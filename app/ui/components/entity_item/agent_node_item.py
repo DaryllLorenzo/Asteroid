@@ -53,3 +53,14 @@ class AgentNodeItem(BaseNodeItem):
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawEllipse(self.boundingRect())
 
+    def get_serializable_properties(self):
+        """Devuelve propiedades serializables específicas de Agent"""
+        base_properties = super().get_serializable_properties()
+        base_properties['node_type'] = 'agent'
+        # Agrega propiedades específicas de Agent aquí
+        return base_properties
+
+    def update_properties(self, properties: dict):
+        """Actualiza propiedades específicas de Agent"""
+        super().update_properties(properties)
+

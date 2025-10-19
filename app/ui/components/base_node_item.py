@@ -159,20 +159,77 @@ class BaseNodeItem(QGraphicsObject):
             except Exception:
                 pass
             self.subcanvas._update_handle_pos()
+        else:
+            # ✅ Si el subcanvas ya existe, asegurarse de que esté configurado correctamente
+            if not self.subcanvas.isVisible() and getattr(self.model, "show_subcanvas", False):
+                self.subcanvas.setVisible(True)
+        
         return self.subcanvas
+
+    #def prepare_subcanvas_for_internal_use(self):
+    #    if not self.subcanvas:
+    #        initial_radius = max(250.0, self.model.radius * 3.0)
+    #        self.subcanvas = SubCanvasItem(radius=initial_radius)
+    #        self.subcanvas.setParentItem(self)
+    #        self.subcanvas.setPos(0, 0)
+    #        self.subcanvas.setVisible(False)
+    #        try:
+    #            self.subcanvas.setZValue(self.zValue() - 1)
+    #        except Exception:
+    #            pass
+    #        self.subcanvas._update_handle_pos()
+    #    return self.subcanvas
     
+    # En base_node_item.py - agrega estos métodos a la clase BaseNodeItem
+
+    def get_serializable_properties(self):
+        """Devuelve propiedades serializables del nodo"""
+        return {
+            'radius': getattr(self.model, 'radius', 50),
+            'label': getattr(self.model, 'label', ''),
+            'color': getattr(self.model, 'color', '#3498db'),
+            'border_color': getattr(self.model, 'border_color', '#2980b9'),
+            'text_color': getattr(self.model, 'text_color', '#ffffff'),
+            'x': self.model.x,
+            'y': self.model.y,
+            # Agrega más propiedades según necesites
+        }
+
     def update_properties(self, properties: dict):
+        """Actualiza las propiedades del nodo desde datos serializados"""
         for key, value in properties.items():
-            if key == 'radius':
-                self.set_radius(float(value))
-            elif hasattr(self.model, key):
+            if hasattr(self.model, key):
                 setattr(self.model, key, value)
-        
-        if 'radius' not in properties:
-            self.update()
-        
-        if 'radius' not in properties:
-            self.properties_changed.emit(self, properties)
+
+        # Actualizar radio si está en las propiedades
+        if 'radius' in properties:
+            self.prepareGeometryChange()
+            self.model.radius = properties['radius']
+
+        # Actualizar posición si está en las propiedades
+        if 'x' in properties and 'y' in properties:
+            self.model.x = properties['x']
+            self.model.y = properties['y']
+            self.setPos(properties['x'], properties['y'])
+
+        # Actualizar la visualización
+        self.update()
+
+        # Emitir señal de propiedades cambiadas
+        self.properties_changed.emit(self, properties)
+    
+    #def update_properties(self, properties: dict):
+    #    for key, value in properties.items():
+    #        if key == 'radius':
+    #            self.set_radius(float(value))
+    #        elif hasattr(self.model, key):
+    #            setattr(self.model, key, value)
+    #    
+    #    if 'radius' not in properties:
+    #        self.update()
+    #    
+    #    if 'radius' not in properties:
+    #        self.properties_changed.emit(self, properties)
 
     #def is_subcanvas_visible(self):
     #    return self._subcanvas_visible and self.subcanvas and self.subcanvas.isVisible()

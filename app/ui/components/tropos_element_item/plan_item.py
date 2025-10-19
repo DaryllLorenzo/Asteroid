@@ -89,3 +89,13 @@ class PlanNodeItem(BaseTroposItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPolygon(QPolygonF(points))
+
+    def get_serializable_properties(self):
+        """Devuelve propiedades serializables específicas de Plan"""
+        base_properties = super().get_serializable_properties()
+        base_properties['node_type'] = 'plan'
+        return base_properties
+    
+    def update_properties(self, properties: dict):
+        """Actualiza propiedades específicas de Plan"""
+        super().update_properties(properties)
