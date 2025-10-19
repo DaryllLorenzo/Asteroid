@@ -79,3 +79,4 @@ uv run main.py
 # Examples
 ![Main interface 1](images/main_interface_example1.png)
 ![Main interface 2](images/main_interface_example2.png)
+![Main interface 3](images/main_interface_example3.png)
