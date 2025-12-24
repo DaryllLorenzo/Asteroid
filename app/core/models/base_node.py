@@ -4,7 +4,6 @@
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
-
 from abc import ABC, abstractmethod
 
 class BaseNode(ABC):
@@ -12,10 +11,19 @@ class BaseNode(ABC):
         self.x = x
         self.y = y
         self.radius = radius
-        self.label = "Nodo"  # ✅ Nuevo: label personalizable
-        self.color = "#3498db"  # ✅ Nuevo: color personalizable (azul por defecto)
-        self.border_color = "#2980b9"  # ✅ Nuevo: color del borde
-        self.text_color = "#ffffff"  # ✅ Nuevo: color del texto
+        self.label = "Nodo"  # label personalizable
+        self.color = "#3498db"  # color personalizable (azul por defecto)
+        self.border_color = "#2980b9"  # color del borde
+        self.text_color = "#ffffff"  # color del texto
+        
+        # Offset del contenido (texto/icono) relativo al centro
+        self.content_offset_x = 0.0 
+        self.content_offset_y = 0.0
+
+        # Posición del nodo dentro de su behaviour canvas (subcanvas)
+        self.position_in_subcanvas_x = 0.0
+        self.position_in_subcanvas_y = 0.0
+
         self.child_nodes = []
         self.show_subcanvas = False
 

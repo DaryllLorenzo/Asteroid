@@ -1,24 +1,20 @@
-# canvas_controller.py
 # ---------------------------------------------------
 # Proyecto: Asteroid
 # Autor: Daryll Lorenzo Alfonso
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
-
 from functools import partial
 from typing import Dict, Tuple
 import math
 import json
 from pathlib import Path
-from PyQt6.QtCore import QObject, pyqtSignal, Qt
+from PyQt6.QtCore import QObject, pyqtSignal, Qt, QPointF
 from PyQt6.QtGui import QKeySequence, QShortcut, QPixmap, QPainter
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
-
 from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 from app.utils.astr_format import AstrFormat
-
 from app.ui.components.dependency_item.simple_edge_item import SimpleArrowItem
 from app.ui.components.dependency_item.dashed_edge_item import DashedArrowItem
 from app.ui.components.dependency_item.dependency_link_edge_item import DependencyLinkArrowItem
@@ -27,7 +23,6 @@ from app.ui.components.dependency_item.or_decomposition_edge_item import OrDecom
 from app.ui.components.dependency_item.and_decomposition_edge_item import AndDecompositionArrowItem
 from app.ui.components.dependency_item.contribution_edge_item import ContributionArrowItem
 from app.ui.components.dependency_item.means_end_edge_item import MeansEndArrowItem
-
 from app.ui.components.tropos_element_item.hard_goal_item import HardGoalNodeItem
 from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
 from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
@@ -53,7 +48,6 @@ _ARROW_TYPES = {
     "contribution": ContributionArrowItem,
     "means_end": MeansEndArrowItem
 }
-
 
 class CanvasController(QObject):
     node_selected = pyqtSignal(object)
@@ -187,9 +181,19 @@ class CanvasController(QObject):
 
     def update_node_properties(self, properties: dict):
         """Actualiza las propiedades del nodo seleccionado"""
-        if self.selected_node and hasattr(self.selected_node, 'update_properties'):
-            self.selected_node.update_properties(properties)
-            # Marcar como modificado
+        # Usamos current_selection que es lo que actualiza on_selection_changed
+        if self.current_selection and hasattr(self.current_selection, 'update_properties'):
+            # El modelo recibe los cambios (incluyendo content_offset_x/y)
+            self.current_selection.update_properties(properties)
+            
+            # Forzamos el redibujado para que el translate en paint() se aplique
+            self.current_selection.update() 
+            
+            # Emitir cambio para que el panel de propiedades se sincronice si es necesario
+            # Usamos el nombre de señal que ya tienes definido en tu clase: selected_node_properties_changed
+            self.selected_node_properties_changed.emit(properties)
+            
+            # Marcar proyecto como modificado
             self.mark_as_modified()
 
     # ---------------------
@@ -374,7 +378,7 @@ class CanvasController(QObject):
         self.nodes.append(mid_node)
 
         e1 = DependencyLinkArrowItem(src, mid_node)
-        e2 = DependencyLinkArrowItem(mid_node, dst)
+        e2 = DependencyLinkArrowItem(mid_node, dst) 
         self.canvas.scene.addItem(e1)
         self.canvas.scene.addItem(e2)
         self.edges.extend([e1, e2])
@@ -454,30 +458,30 @@ class CanvasController(QObject):
         NodeClass = _NODE_MAP.get(item_type)
         if NodeClass is None:
             return None
-    
+
         child = NodeClass(0, 0, radius=20)
         if child.scene() is not None and child.parentItem() is None:
             child.scene().removeItem(child)
-    
+
         child.setParentItem(subcanvas)
         child.setPos(local_x, local_y)
         child.setVisible(subcanvas.isVisible())
         child.subcanvas_parent = subcanvas
-    
+
         self.nodes.append(child)
-    
+
         if hasattr(child, "properties_changed"):
             child.properties_changed.connect(self.on_node_properties_changed)
         else:
             print(f"⚠️ Advertencia: nodo interno {item_type} no tiene properties_changed")
-    
+
         if not hasattr(parent_node_item, "child_nodes"):
             parent_node_item.child_nodes = []
         parent_node_item.child_nodes.append(child)
 
         # Marcar como modificado
         self.mark_as_modified()
-    
+
         return child
 
     def find_node_by_ui(self, ui_item):
@@ -485,7 +489,7 @@ class CanvasController(QObject):
             if n is ui_item:
                 return n
         return None
-    
+
     # ---------------------
     # Borrado de elementos
     # ---------------------
@@ -637,7 +641,7 @@ class CanvasController(QObject):
             print(f"❌ Error exportando proyecto: {e}")
             QMessageBox.critical(self.canvas, "Error", f"No se pudo exportar el proyecto:\n{e}")
             return False
-    
+
     def import_from_astr(self, filename: str = None) -> bool:
         """Importa un proyecto desde archivo .astr - VERSIÓN MEJORADA CON JERARQUÍA COMPLETA"""
         try:
@@ -726,12 +730,11 @@ class CanvasController(QObject):
             QMessageBox.critical(self.canvas, "Error", f"No se pudo cargar el proyecto:\n{e}")
             return False
 
-    
     def _move_node_to_subcanvas(self, child_node, parent_node):
         """Mueve un nodo al subcanvas de otro nodo padre"""
         try:
             # Preparar subcanvas del padre
-            subcanvas = parent_node.prepare_subcanvas_for_internal_use()
+            subcanvas = parent_node.ensure_subcanvas_visible()
             if not subcanvas:
                 print(f"❌ No se pudo obtener subcanvas del nodo padre {parent_node}")
                 return False
@@ -760,7 +763,7 @@ class CanvasController(QObject):
         except Exception as e:
             print(f"❌ Error moviendo nodo a subcanvas: {e}")
             return False
-    
+
     def export_to_image(self, filename: str = None) -> bool:
         """Exporta el canvas como imagen PNG"""
         try:
@@ -797,7 +800,7 @@ class CanvasController(QObject):
             print(f"❌ Error exportando imagen: {e}")
             QMessageBox.critical(self.canvas, "Error", f"No se pudo exportar la imagen:\n{e}")
             return False
-    
+
     def clear_canvas(self):
         """Limpia completamente el canvas"""
         # Limpiar selecciones
@@ -825,25 +828,24 @@ class CanvasController(QObject):
         self._current_file_path = None
         
         print("✅ Canvas limpiado")
-    
+
     def _create_node_from_data(self, node_data: Dict) -> object:
-        """Crea un nodo a partir de datos serializados - VERSIÓN CORREGIDA"""
+        """Crea un nodo a partir de datos serializados - VERSIÓN CON SOPORTE DE POSICIÓN EN SUBCANVAS"""
         node_type = node_data['type']
         pos_data = node_data['position']
-
+    
         print(f"🔧 Creando nodo {node_type} en posición ({pos_data['x']}, {pos_data['y']})")
-
+    
         # ✅ CREAR el nodo en la posición CERO primero
         node = self.add_node(node_type, 0, 0)
         if not node:
             return None
-
-        # ✅ LUEGO establecer la posición real
+    
+        # ✅ LUEGO establecer la posición real en el Canvas
         node.setPos(float(pos_data['x']), float(pos_data['y']))
-
+    
         # ✅ ACTUALIZAR el modelo con la posición correcta y otras propiedades
         if hasattr(node, 'model'):
-            # Usar propiedades del modelo si están disponibles
             model_props = node_data.get('model_properties', {})
             if model_props:
                 node.model.x = float(model_props.get('x', pos_data['x']))
@@ -854,55 +856,69 @@ class CanvasController(QObject):
                 node.model.border_color = model_props.get('border_color', '#2980b9')
                 node.model.text_color = model_props.get('text_color', '#ffffff')
                 node.model.show_subcanvas = model_props.get('show_subcanvas', False)
+                
+                # 🚀 NUEVO: Recuperar la posición del nodo dentro de su subcanvas
+                node.model.position_in_subcanvas_x = float(model_props.get('position_in_subcanvas_x', 0.0))
+                node.model.position_in_subcanvas_y = float(model_props.get('position_in_subcanvas_y', 0.0))
+                
+                # ✅ Mantener también los offsets de contenido interno
+                node.model.content_offset_x = float(model_props.get('content_offset_x', 0.0))
+                node.model.content_offset_y = float(model_props.get('content_offset_y', 0.0))
             else:
-                # Fallback a los valores básicos
+                # Fallback a los valores básicos si no hay model_properties
                 node.model.x = float(pos_data['x'])
                 node.model.y = float(pos_data['y'])
-
-        # ✅ RESTAURAR estado del subcanvas si existe - CON VERIFICACIÓN DE SEGURIDAD
+                node.model.position_in_subcanvas_x = 0.0
+                node.model.position_in_subcanvas_y = 0.0
+                node.model.content_offset_x = 0.0
+                node.model.content_offset_y = 0.0
+    
+        # ✅ RESTAURAR estado del subcanvas (Lógica existente mantenida)
         subcanvas_data = node_data.get('subcanvas')
         if subcanvas_data:
-            print(f"🔧 Intentando restaurar subcanvas para nodo {node_data['id']}")
-            
-            # ✅ Asegurarnos de que el nodo tenga un subcanvas
             if not hasattr(node, 'subcanvas') or node.subcanvas is None:
-                print(f"🔧 Creando subcanvas para nodo {node_data['id']}")
                 node.prepare_subcanvas_for_internal_use()
             
-            # ✅ Verificar que el subcanvas se creó correctamente antes de acceder a sus propiedades
             if node.subcanvas is not None:
-                print(f"🔧 Restaurando subcanvas para nodo {node_data['id']}: visible={subcanvas_data.get('visible', False)}, radius={subcanvas_data.get('radius', 80)}")
-
-                # ✅ Configurar el radio del subcanvas con verificación
                 if 'radius' in subcanvas_data:
                     node.subcanvas.radius = float(subcanvas_data['radius'])
                 if 'original_radius' in subcanvas_data:
                     node.subcanvas.original_radius = float(subcanvas_data['original_radius'])
-
-                # ✅ Configurar visibilidad con verificación
+    
                 if subcanvas_data.get('visible', False):
-                    print(f"🔧 Haciendo visible el subcanvas del nodo {node_data['id']}")
                     node.ensure_subcanvas_visible()
                 else:
                     node.model.show_subcanvas = False
                     if node.subcanvas:
                         node.subcanvas.setVisible(False)
-
-                # ✅ Actualizar posición del handle si existe
+    
                 if hasattr(node.subcanvas, '_update_handle_pos'):
                     node.subcanvas._update_handle_pos()
-            else:
-                print(f"⚠️ No se pudo crear subcanvas para nodo {node_data['id']}")
-
-        # Aplicar propiedades adicionales
+    
+        # ✅ APLICAR propiedades adicionales y forzar actualización visual
         properties = node_data.get('properties', {})
         if hasattr(node, 'update_properties'):
-            # ✅ Asegurar que las propiedades incluyan la posición actualizada
             properties['x'] = float(pos_data['x'])
             properties['y'] = float(pos_data['y'])
+            
+            # 🚀 Asegurarnos de que el diccionario de propiedades lleve ambos tipos de offsets
+            if hasattr(node, 'model'):
+                properties['content_offset_x'] = node.model.content_offset_x
+                properties['content_offset_y'] = node.model.content_offset_y
+                properties['position_in_subcanvas_x'] = node.model.position_in_subcanvas_x
+                properties['position_in_subcanvas_y'] = node.model.position_in_subcanvas_y
+                
             node.update_properties(properties)
-
-        print(f"✅ Nodo {node_type} creado en posición final: {node.pos()}")
+        
+        # 🚀 APLICAR posición física en subcanvas después de crear el nodo completamente
+        if hasattr(node, 'is_subcanvas_visible') and node.is_subcanvas_visible():
+            if hasattr(node, 'apply_position_in_subcanvas'):
+                node.apply_position_in_subcanvas()
+        
+        # Forzar el redibujado
+        node.update()
+    
+        print(f"✅ Nodo {node_type} creado y posicionado. Posición en subcanvas: ({node.model.position_in_subcanvas_x}, {node.model.position_in_subcanvas_y})")
         return node
 
     def _create_edge_from_data(self, edge_data: Dict, node_map: Dict):
@@ -936,12 +952,12 @@ class CanvasController(QObject):
             edge_item.update_properties(properties)
 
         return edge_item
-    
+
     def _move_edge_to_subcanvas(self, edge, parent_node):
         """Mueve una edge al subcanvas de otro nodo padre"""
         try:
             # Preparar subcanvas del padre
-            subcanvas = parent_node.prepare_subcanvas_for_internal_use()
+            subcanvas = parent_node.ensure_subcanvas_visible()
             if not subcanvas:
                 print(f"❌ No se pudo obtener subcanvas del nodo padre {parent_node}")
                 return False

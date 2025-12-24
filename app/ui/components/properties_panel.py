@@ -1,24 +1,22 @@
-# properties_panel.py
 # ---------------------------------------------------
 # Proyecto: Asteroid
 # Autor: Daryll Lorenzo Alfonso
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
-
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                             QLineEdit, QPushButton, QColorDialog, QFrame,
                             QSpinBox, QFormLayout, QGroupBox, QCheckBox, QMessageBox)
 from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QColor
-
 from app.ui.components.base_edge_item import BaseEdgeItem
+from app.ui.components.position_controll_widget import PositionControlWidget
 
 class PropertiesPanel(QWidget):
     properties_changed = pyqtSignal(dict)
     selection_mode_changed = pyqtSignal(bool)
     delete_requested = pyqtSignal()  # ✅ Señal única para eliminar
-
+    
     def __init__(self, controller=None):
         super().__init__()
         self.controller = controller
@@ -28,14 +26,14 @@ class PropertiesPanel(QWidget):
         
         if controller:
             controller.selected_node_properties_changed.connect(self.on_controller_properties_changed)
-            controller.selection_changed.connect(self.on_selection_changed)  # ✅ Usar señal unificada
+            controller.selection_changed.connect(self.on_selection_changed)  # Usar señal unificada
 
     def init_ui(self):
         layout = QVBoxLayout()
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(12)
 
-        # ✅ Grupo de propiedades de NODO
+        # Grupo de propiedades de NODO
         self.node_group = QGroupBox("Propiedades del Nodo")
         node_layout = QFormLayout()
         node_layout.setVerticalSpacing(8)
@@ -43,50 +41,72 @@ class PropertiesPanel(QWidget):
         self.label_edit = QLineEdit()
         self.label_edit.setPlaceholderText("Nombre del nodo...")
         self.label_edit.textChanged.connect(self.on_node_property_changed)
-        node_layout.addRow("Nombre:", self.label_edit)
+        node_layout.addRow("Nombre: ", self.label_edit)
         
         self.radius_spin = QSpinBox()
         self.radius_spin.setRange(10, 500)
         self.radius_spin.setSuffix(" px")
         self.radius_spin.valueChanged.connect(self.on_node_property_changed)
-        node_layout.addRow("Radio:", self.radius_spin)
+        node_layout.addRow("Radio: ", self.radius_spin)
         
         self.node_group.setLayout(node_layout)
         layout.addWidget(self.node_group)
 
-        # ✅ Grupo de colores de NODO
+        # Grupo de colores de NODO
         self.colors_group = QGroupBox("Colores del Nodo")
         colors_layout = QFormLayout()
         colors_layout.setVerticalSpacing(8)
         
         self.color_btn = QPushButton("▆▆▆")
         self.color_btn.clicked.connect(lambda: self.choose_color('color'))
-        colors_layout.addRow("Relleno:", self.color_btn)
+        colors_layout.addRow("Relleno: ", self.color_btn)
         
         self.border_color_btn = QPushButton("▆▆▆")
         self.border_color_btn.clicked.connect(lambda: self.choose_color('border_color'))
-        colors_layout.addRow("Borde:", self.border_color_btn)
+        colors_layout.addRow("Borde: ", self.border_color_btn)
         
         self.text_color_btn = QPushButton("▆▆▆")
         self.text_color_btn.clicked.connect(lambda: self.choose_color('text_color'))
-        colors_layout.addRow("Texto:", self.text_color_btn)
+        colors_layout.addRow("Texto: ", self.text_color_btn)
         
         self.colors_group.setLayout(colors_layout)
         layout.addWidget(self.colors_group)
 
-        # ✅ Grupo de información de EDGE (solo información)
+        # Grupo de posición en subcanvas (Behaviour Canvas)
+        self.pos_group = QGroupBox("Posición en Behaviour Canvas")
+        pos_layout = QVBoxLayout()
+        
+        self.pos_control = PositionControlWidget()
+        self.pos_control.position_changed.connect(self.on_position_in_subcanvas_changed)
+        
+        # Centrar el widget en el layout
+        pos_container = QHBoxLayout()
+        pos_container.addStretch()
+        pos_container.addWidget(self.pos_control)
+        pos_container.addStretch()
+        
+        pos_layout.addLayout(pos_container)
+        
+        self.pos_reset_btn = QPushButton("Centrar")
+        self.pos_reset_btn.clicked.connect(self.reset_position_in_subcanvas)
+        pos_layout.addWidget(self.pos_reset_btn)
+        
+        self.pos_group.setLayout(pos_layout)
+        layout.addWidget(self.pos_group)
+
+        # Grupo de información de EDGE (solo información)
         self.edge_group = QGroupBox("Flecha Seleccionada")
         edge_layout = QVBoxLayout()
         
         self.edge_info_label = QLabel("Flecha seleccionada")
         self.edge_info_label.setWordWrap(True)
-        self.edge_info_label.setStyleSheet("color: #666; padding: 5px;")
+        self.edge_info_label.setStyleSheet("color: #666; padding: 5px; ")
         edge_layout.addWidget(self.edge_info_label)
         
         self.edge_group.setLayout(edge_layout)
         layout.addWidget(self.edge_group)
 
-        # ✅ Grupo de acciones - BOTÓN ÚNICO DELETE
+        # Grupo de acciones - BOTÓN ÚNICO DELETE
         self.actions_group = QGroupBox("Acciones")
         actions_layout = QVBoxLayout()
         
@@ -104,7 +124,7 @@ class PropertiesPanel(QWidget):
                 background-color: #cc0000;
             }
             QPushButton:disabled {
-                background-color: #cccccc;
+                background-color: #cccccc; 
                 color: #666666;
             }
         """)
@@ -114,11 +134,11 @@ class PropertiesPanel(QWidget):
         self.actions_group.setLayout(actions_layout)
         layout.addWidget(self.actions_group)
 
-        # ✅ Mensaje cuando no hay selección
+        # Mensaje cuando no hay selección
         self.no_selection_label = QLabel("🔍 Selecciona un nodo o flecha")
         self.no_selection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.no_selection_label.setWordWrap(True)
-        self.no_selection_label.setStyleSheet("color: #888; font-style: italic; padding: 20px;")
+        self.no_selection_label.setStyleSheet("color: #888; font-style: italic; padding: 20px; ")
         layout.addWidget(self.no_selection_label)
 
         layout.addStretch()
@@ -148,10 +168,46 @@ class PropertiesPanel(QWidget):
             self.label_edit.setText(node.model.label)
             self.radius_spin.setValue(int(node.model.radius))
             self.update_color_buttons()
+
+            # Actualizar el widget de posición en subcanvas con los valores del nodo
+            if hasattr(node.model, 'position_in_subcanvas_x') and hasattr(node.model, 'position_in_subcanvas_y'):
+                pos_x = getattr(node.model, 'position_in_subcanvas_x', 0.0)
+                pos_y = getattr(node.model, 'position_in_subcanvas_y', 0.0)
+                self.pos_control.set_position(pos_x, pos_y)
         else:
             self.label_edit.clear()
-            
+
         self.update_visibility()
+
+    def update_visibility(self):
+        """Actualiza qué elementos son visibles según el estado"""
+        has_selection = self.current_selection is not None
+        is_node = has_selection and not isinstance(self.current_selection, BaseEdgeItem)
+        is_edge = has_selection and isinstance(self.current_selection, BaseEdgeItem)
+
+        # Determinar si es un nodo tipo Actor o Agent (behaviour units)
+        is_behaviour_node = False
+        has_subcanvas = False
+        
+        if is_node and hasattr(self.current_selection, 'model'):
+            # Verificamos por el tipo de clase del Item
+            type_name = self.current_selection.__class__.__name__
+            if type_name in ["ActorNodeItem", "AgentNodeItem"]:
+                is_behaviour_node = True
+            
+            # Verificar si tiene subcanvas visible
+            has_subcanvas = getattr(self.current_selection.model, 'show_subcanvas', False) and (
+                hasattr(self.current_selection, 'is_subcanvas_visible') and 
+                self.current_selection.is_subcanvas_visible()
+            )
+
+        self.node_group.setVisible(is_node)
+        self.colors_group.setVisible(is_node)
+        # Solo mostrar el control de posición si es un nodo de comportamiento Y tiene subcanvas visible
+        self.pos_group.setVisible(is_behaviour_node and has_subcanvas)
+        self.edge_group.setVisible(is_edge)
+        self.actions_group.setVisible(has_selection)
+        self.no_selection_label.setVisible(not has_selection)
 
     def choose_color(self, color_type):
         if not self.current_selection or not hasattr(self.current_selection, 'model'):
@@ -170,7 +226,7 @@ class PropertiesPanel(QWidget):
             else:
                 return
                 
-            btn.setStyleSheet(f"background-color: {color.name()}; color: white; border: 1px solid #ccc;")
+            btn.setStyleSheet(f"background-color: {color.name()}; color: white; border: 1px solid #ccc; ")
             
             self.properties_changed.emit({color_type: color.name()})
 
@@ -207,6 +263,13 @@ class PropertiesPanel(QWidget):
         color_props = ['color', 'border_color', 'text_color']
         if any(prop in properties for prop in color_props):
             self.update_color_buttons()
+        
+        # Manejar cambios en la posición en subcanvas
+        if 'position_in_subcanvas_x' in properties or 'position_in_subcanvas_y' in properties:
+            if hasattr(self.current_selection, 'model'):
+                pos_x = getattr(self.current_selection.model, 'position_in_subcanvas_x', 0.0)
+                pos_y = getattr(self.current_selection.model, 'position_in_subcanvas_y', 0.0)
+                self.pos_control.set_position(pos_x, pos_y)
 
     def on_delete_clicked(self):
         """Maneja el clic en el botón de eliminar"""
@@ -234,18 +297,6 @@ class PropertiesPanel(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             self.delete_requested.emit()
 
-    def update_visibility(self):
-        """Actualiza qué elementos son visibles según el estado"""
-        has_selection = self.current_selection is not None
-        is_node = has_selection and not isinstance(self.current_selection, BaseEdgeItem)
-        is_edge = has_selection and isinstance(self.current_selection, BaseEdgeItem)
-        
-        self.node_group.setVisible(is_node)
-        self.colors_group.setVisible(is_node)
-        self.edge_group.setVisible(is_edge)
-        self.actions_group.setVisible(has_selection)
-        self.no_selection_label.setVisible(not has_selection)
-
     def update_color_buttons(self):
         """Actualiza la apariencia de los botones de color"""
         if not self.current_selection or not hasattr(self.current_selection, 'model'):
@@ -259,4 +310,29 @@ class PropertiesPanel(QWidget):
         
         for color_type, btn in color_mapping.items():
             color_value = getattr(self.current_selection.model, color_type, "#000000")
-            btn.setStyleSheet(f"background-color: {color_value}; color: white; border: 1px solid #ccc;")
+            btn.setStyleSheet(f"background-color: {color_value}; color: white; border: 1px solid #ccc; ")
+
+    def on_position_in_subcanvas_changed(self, x, y):
+        """Callback cuando movemos la bolita del widget de posición en subcanvas"""
+        if not self.current_selection or not hasattr(self.current_selection, 'model'):
+            return
+
+        # Actualizar el modelo
+        self.current_selection.model.position_in_subcanvas_x = x
+        self.current_selection.model.position_in_subcanvas_y = y
+
+        # Posicionar físicamente dentro del subcanvas
+        if hasattr(self.current_selection, 'position_within_subcanvas'):
+            self.current_selection.position_within_subcanvas(x, y)
+
+        # Emitir cambios para serialización
+        properties = {
+            'position_in_subcanvas_x': x,
+            'position_in_subcanvas_y': y 
+        }
+        self.properties_changed.emit(properties)
+
+    def reset_position_in_subcanvas(self):
+        """Resetea la posición al centro (0,0)"""
+        self.pos_control.set_position(0, 0)
+        self.on_position_in_subcanvas_changed(0, 0)
