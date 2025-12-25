@@ -1,5 +1,7 @@
 # 🌌 Asteroid — Interactive Diagramming I* Tropos Desktop App
 
+![](images/AsteroidLogo.png)
+
 **Asteroid** is a desktop application built with **Python** and **PyQt6** to create interactive, model-driven diagrams — ideal for visualizing Tropos-style actor-agent relationships, dependencies, and resources.  
 It follows a clean **MVC-inspired architecture**, strictly separating **core models**, **UI components**, and **controllers** for maximum modularity and maintainability.
 
