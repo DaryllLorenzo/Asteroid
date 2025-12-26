@@ -1,4 +1,3 @@
-# main_window.py
 # ---------------------------------------------------
 # Proyecto: Asteroid
 # Autor: Daryll Lorenzo Alfonso
@@ -17,6 +16,7 @@ from app.ui.canvas import Canvas
 from app.ui.sidebar import Sidebar
 from app.ui.components.properties_panel import PropertiesPanel
 from app.controllers.canvas_controller import CanvasController
+from app.ui.help.help_modal import HelpModal
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -184,6 +184,32 @@ class MainWindow(QMainWindow):
         export_image_action = file_menu.addAction('&Exportar como imagen...')
         export_image_action.setShortcut('Ctrl+E')
         export_image_action.triggered.connect(self.export_image)
+
+        # ---------------------------
+        # Menú Ayuda
+        # ---------------------------
+        help_menu = menubar.addMenu('&Ayuda')
+        
+        # Elementos
+        elements_action = help_menu.addAction('&Elementos')
+        elements_action.triggered.connect(self.show_elements_help)
+        
+        # Ejemplos
+        examples_action = help_menu.addAction('&Ejemplos')
+        examples_action.triggered.connect(self.show_examples_help)
+
+        # Ayuda rápida
+        quick_help_action = help_menu.addAction('&Ayuda rápida')
+        quick_help_action.setShortcut('F1')
+        quick_help_action.triggered.connect(self.show_quick_help)
+        
+        # Separador
+        help_menu.addSeparator()
+
+        # Acerca de
+        about_action = help_menu.addAction('&Acerca de Asteroid')
+        about_action.triggered.connect(self.show_about_help)
+    
     
     def load_project(self):
         """Carga un proyecto .astr"""
@@ -239,3 +265,39 @@ class MainWindow(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
+    # ---------------------------
+    # Métodos para mostrar ayuda
+    # ---------------------------
+
+    def get_help_file_path(self, filename):
+        """Obtiene la ruta completa al archivo de ayuda"""
+        current_dir = Path(__file__).parent
+        help_dir = current_dir / "help" / "content"
+        return help_dir / filename
+
+    def show_elements_help(self):
+        """Muestra la ayuda sobre elementos"""
+        md_file = self.get_help_file_path("elements.md")
+        dialog = HelpModal("Elementos de Asteroid", md_file, self)
+        dialog.exec()
+
+    def show_examples_help(self):
+        """Muestra la ayuda con ejemplos"""
+        md_file = self.get_help_file_path("examples.md")
+        dialog = HelpModal("Ejemplos de Uso", md_file, self)
+        dialog.exec()
+
+    def show_about_help(self):
+        """Muestra información sobre Asteroid"""
+        md_file = self.get_help_file_path("about.md")
+        dialog = HelpModal("Acerca de Asteroid", md_file, self)
+        dialog.exec()
+
+    def show_quick_help(self):
+        """Muestra ayuda rápida con atajos de teclado"""
+
+        # Puedes crear contenido temporal para la ayuda rápida
+        md_file = self.get_help_file_path("quick_help.md")
+        dialog = HelpModal("Ayuda Rápida - Atajos de Teclado", md_file, self)
+        dialog.exec()
