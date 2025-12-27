@@ -18,25 +18,60 @@ class SoftGoalNodeItem(BaseTroposItem):
         self.path = self._create_cloud_path()
 
     def _create_cloud_path(self):
+        path = QPainterPath()
         r = float(self.model.radius)
-        cloud_parts = [
-            (-r*1.4, 0, r*0.9),
-            (-r*0.9, -r*0.4, r*0.9),
-            (-r*0.5, 0, r*0.8),
-            (0, -r*0.5, r*1.0),
-            (r*0.5, 0, r*0.8),
-            (r*0.9, -r*0.4, r*0.9),
-            (r*1.4, 0, r*0.9),
-            (-r*0.7, r*0.3, r*0.6),
-            (r*0.7, r*0.3, r*0.6),
-            (0, r*0.2, r*0.7),
-        ]
-        p = QPainterPath()
-        for dx, dy, pr in cloud_parts:
-            ellipse = QPainterPath()
-            ellipse.addEllipse(dx - pr, dy - pr, pr*2, pr*2)
-            p = p.united(ellipse) if not p.isEmpty() else ellipse
-        return p
+    
+        w = r * 2.8 
+        h = r * 0.95
+    
+        # Inicio (Punto medio izquierdo)
+        path.moveTo(-w * 0.85, 0)
+    
+        # ───── SUPERIOR IZQUIERDO ─────
+        path.cubicTo(
+            -w * 1.05, -h * 0.8,
+            -w * 0.75, -h * 1.3,
+            -w * 0.35, -h * 0.85
+        )
+    
+        # ───── SUPERIOR CENTRAL ─────
+        path.cubicTo(
+            -w * 0.15, -h * 1.25,
+             w * 0.15, -h * 1.25,
+             w * 0.35, -h * 0.85
+        )
+    
+        # ───── SUPERIOR DERECHO ─────
+        path.cubicTo(
+             w * 0.75, -h * 1.3,
+             w * 1.05, -h * 0.8,
+             w * 0.85, 0          # Terminamos en el centro derecho
+        )
+    
+        # ───── INFERIOR DERECHO (Espejo del superior derecho) ─────
+        path.cubicTo(
+             w * 1.05,  h * 0.8,
+             w * 0.75,  h * 1.3,
+             w * 0.35,  h * 0.85
+        )
+    
+        # ───── INFERIOR CENTRAL (Espejo del superior central) ─────
+        path.cubicTo(
+             w * 0.15,  h * 1.25,
+            -w * 0.15,  h * 1.25,
+            -w * 0.35,  h * 0.85
+        )
+    
+        # ───── INFERIOR IZQUIERDO (Espejo del superior izquierdo) ─────
+        path.cubicTo(
+            -w * 0.75,  h * 1.3,
+            -w * 1.05,  h * 0.8,
+            -w * 0.85,  0         # Regresamos al punto de inicio
+        )
+    
+        path.closeSubpath()
+        return path
+
 
     def boundingRect(self):
         if not hasattr(self, "path") or self.path.isEmpty():
