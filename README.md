@@ -87,9 +87,9 @@ uv run main.py
 ## 📋 TODO & Roadmap
 
 - [x] **Actor/agent node movement within subcanvas** — Allow reorganization of child nodes internally *(completed Dec 24)*
-- [ ] **Size property for component names** — Configurable text size for different components
-- [ ] **Multi-line text labels** — Support for writing text in multiple lines within node labels
-- [ ] **Review of softgoal visual component** — check for a better form of softgoal ui component 
+- [x] **Size property for component names** — Configurable text size for different components
+- [x] **Multi-line text labels** — Support for writing text in multiple lines within node labels
+- [x] **Review of softgoal visual component** — check for a better form of softgoal ui component 
 - [ ] **Cross-platform packaging** — Research options for:
   - `.deb`/APT package (golden dream for Linux)
   - Windows installer (NSIS/InnoSetup)
@@ -98,7 +98,7 @@ uv run main.py
 - [ ] **Visual themes** — Customizable light/dark theme system
 - [ ] **Model validation** — Diagram consistency verification according to Tropos methodology
 - [ ] **Undo/redo history** — Complete undo/redo system for all actions
-- [ ] **Keyboard shortcuts** — Comprehensive shortcut system for common operations
+- [x] **Keyboard shortcuts** — Comprehensive shortcut system for common operations
 - [ ] **Diagram templates** — Pre-built templates for common Tropos patterns
 
 ---
