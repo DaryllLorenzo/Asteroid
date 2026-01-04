@@ -7,8 +7,8 @@
 
 from PyQt6.QtWidgets import QGraphicsObject
 from PyQt6.QtCore import QRectF, pyqtSignal, Qt, QPointF
+from PyQt6.QtGui import QFont, QColor
 from app.ui.components.subcanvas_item import SubCanvasItem
-import math
 
 
 class BaseNodeItem(QGraphicsObject):
@@ -25,13 +25,11 @@ class BaseNodeItem(QGraphicsObject):
         self._resizing = False
         self.subcanvas = None
         self._subcanvas_visible = False
-        self.setZValue(10)  # para superponer sobre flechas
+        self.setZValue(10)
         
-        # Inicializar posición en subcanvas si no existe
-        if not hasattr(self.model, 'position_in_subcanvas_x'):
-            self.model.position_in_subcanvas_x = 0.0
-        if not hasattr(self.model, 'position_in_subcanvas_y'):
-            self.model.position_in_subcanvas_y = 0.0
+        if not hasattr(self.model, 'font_size'): self.model.font_size = 10
+        if not hasattr(self.model, 'text_width'): self.model.text_width = 150
+        if not hasattr(self.model, 'text_align'): self.model.text_align = 'center'
 
     def boundingRect(self) -> QRectF:
         r = getattr(self.model, "radius", 50)
@@ -94,14 +92,11 @@ class BaseNodeItem(QGraphicsObject):
             self.properties_changed.emit(self, {"radius": new_r})
 
     def mouseDoubleClickEvent(self, event):
-        """Maneja el doble click para mostrar/ocultar subcanvas."""
-        # Solo procesar si el clic es directamente en este nodo
         self._toggle_subcanvas()
         self.nodeDoubleClicked.emit(self.model)
         event.accept()
 
     def _toggle_subcanvas(self):
-        """Alterna la visibilidad del subcanvas SIN mover el nodo"""
         if hasattr(self.model, "toggle_subcanvas"):
             self.model.toggle_subcanvas()
         else:
@@ -114,13 +109,11 @@ class BaseNodeItem(QGraphicsObject):
                 subcanvas_radius = max(120.0, self.model.radius * 2.0)
                 self.subcanvas = SubCanvasItem(radius=subcanvas_radius)
                 self.subcanvas.setParentItem(self)
-                # Solo establecer posición relativa al nodo
                 self.subcanvas.setPos(0.0, 0.0)
                 try:
                     self.subcanvas.setZValue(self.zValue() - 1)
                 except Exception:
                     pass
-                # ✅ Inicializar posición original del subcanvas
                 self._subcanvas_original_pos = QPointF(0, 0)
             else:
                 self.subcanvas.setVisible(True)
@@ -132,7 +125,6 @@ class BaseNodeItem(QGraphicsObject):
             self.subcanvas_toggled.emit(self, self.subcanvas)
             self._subcanvas_visible = True
             
-            # ✅ Aplicar posición en subcanvas si existe (solo mueve el subcanvas)
             if hasattr(self.model, 'position_in_subcanvas_x') and hasattr(self.model, 'position_in_subcanvas_y'):
                 if abs(self.model.position_in_subcanvas_x) > 0.001 or abs(self.model.position_in_subcanvas_y) > 0.001:
                     self.apply_position_in_subcanvas()
@@ -146,7 +138,6 @@ class BaseNodeItem(QGraphicsObject):
         self.update()
 
     def ensure_subcanvas_visible(self):
-        """Asegura que el subcanvas esté visible SIN mover el nodo"""
         if not getattr(self.model, "show_subcanvas", False):
             self.model.show_subcanvas = True
 
@@ -160,7 +151,6 @@ class BaseNodeItem(QGraphicsObject):
                 self.subcanvas.setZValue(self.zValue() - 1)
             except Exception:
                 pass
-            # ✅ Inicializar posición original del subcanvas
             self._subcanvas_original_pos = QPointF(0, 0)
         else:
             self.subcanvas.setVisible(True)
@@ -172,7 +162,6 @@ class BaseNodeItem(QGraphicsObject):
         self.subcanvas_toggled.emit(self, self.subcanvas)
         self._subcanvas_visible = True
         
-        # ✅ Aplicar posición en subcanvas si existe
         if hasattr(self.model, 'position_in_subcanvas_x') and hasattr(self.model, 'position_in_subcanvas_y'):
             if abs(self.model.position_in_subcanvas_x) > 0.001 or abs(self.model.position_in_subcanvas_y) > 0.001:
                 self.apply_position_in_subcanvas()
@@ -191,10 +180,8 @@ class BaseNodeItem(QGraphicsObject):
             except Exception:
                 pass
             self.subcanvas._update_handle_pos()
-            # ✅ Inicializar posición original del subcanvas
             self._subcanvas_original_pos = QPointF(0, 0)
         else:
-            # Si el subcanvas ya existe, asegurarse de que esté configurado correctamente
             if not self.subcanvas.isVisible() and getattr(self.model, "show_subcanvas", False):
                 self.subcanvas.setVisible(True)
                 try:
@@ -205,60 +192,69 @@ class BaseNodeItem(QGraphicsObject):
         return self.subcanvas
 
     def apply_position_in_subcanvas(self):
-        """Aplica la posición física del nodo dentro de su subcanvas manteniendo el subcanvas visualmente fijo"""
         if not hasattr(self.model, 'position_in_subcanvas_x') or not hasattr(self.model, 'position_in_subcanvas_y'):
             return
 
-        # Solo aplicar si el subcanvas está visible
         if self.is_subcanvas_visible() and self.subcanvas:
-            # 1. Calcular desplazamiento en píxeles
             offset_x = self.model.position_in_subcanvas_x * self.subcanvas.radius
             offset_y = self.model.position_in_subcanvas_y * self.subcanvas.radius
             
-            # 2. Asegurar que tenemos posición original del subcanvas
             if not hasattr(self, '_subcanvas_original_pos'):
                 self._subcanvas_original_pos = QPointF(0, 0)
 
-            # 3. MOVER el subcanvas en la dirección OPUESTA para mantenerlo visualmente fijo
-            # La posición visual del subcanvas debe ser: posición_original - offset
             new_subcanvas_pos = self._subcanvas_original_pos - QPointF(offset_x, offset_y)
             self.subcanvas.setPos(new_subcanvas_pos)
-
-            # 4. Asegurar el correcto Z-order: nodo por encima del subcanvas
             self.setZValue(self.subcanvas.zValue() + 1)
-            
             self.update()
 
     def position_within_subcanvas(self, x_norm, y_norm):
-        """Posiciona el nodo dentro de su subcanvas manteniendo el subcanvas visualmente fijo"""
         if not self.is_subcanvas_visible() or not self.subcanvas:
             return
         
-        # Aplicar posición al modelo
         self.model.position_in_subcanvas_x = x_norm
         self.model.position_in_subcanvas_y = y_norm
         
-        # Aplicar posición física (solo mueve el subcanvas, NO el nodo)
         self.apply_position_in_subcanvas()
         
-        # Emitir cambios para serialización
         self.properties_changed.emit(self, {
             'position_in_subcanvas_x': x_norm,
             'position_in_subcanvas_y': y_norm
         })
 
+    def draw_multiline_text(self, painter, text_color_hex):
+        label = getattr(self.model, "label", "")
+        if not label: return
+
+        text_width = getattr(self.model, "text_width", 150)
+        font_size = getattr(self.model, "font_size", 10)
+        align_str = getattr(self.model, "text_align", "center")
+        
+        align_flag = Qt.AlignmentFlag.AlignCenter
+        if align_str == "left": align_flag = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        elif align_str == "right": align_flag = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        
+        flags = Qt.TextFlag.TextWordWrap | align_flag
+        painter.setPen(QColor(text_color_hex))
+        painter.setFont(QFont("Arial", int(font_size)))
+
+        offset_x = getattr(self.model, 'content_offset_x', 0)
+        offset_y = getattr(self.model, 'content_offset_y', 0)
+        rect_height = 500 
+        text_rect = QRectF(-text_width / 2 + offset_x, -rect_height / 2 + offset_y, text_width, rect_height)
+        painter.drawText(text_rect, flags, label)
+
     def get_serializable_properties(self):
-        """Devuelve propiedades serializables del nodo"""
         return {
             'radius': getattr(self.model, 'radius', 50),
             'label': getattr(self.model, 'label', ''),
             'color': getattr(self.model, 'color', '#3498db'),
             'border_color': getattr(self.model, 'border_color', '#2980b9'),
             'text_color': getattr(self.model, 'text_color', '#ffffff'),
-            'x': self.model.x,
-            'y': self.model.y,
-            'content_offset_x': getattr(self.model, 'content_offset_x', 0.0),
-            'content_offset_y': getattr(self.model, 'content_offset_y', 0.0),
+            'font_size': getattr(self.model, 'font_size', 10),
+            'text_width': getattr(self.model, 'text_width', 150),
+            'text_align': getattr(self.model, 'text_align', 'center'),
+            'x': self.pos().x(),
+            'y': self.pos().y(),
             'position_in_subcanvas_x': getattr(self.model, 'position_in_subcanvas_x', 0.0),
             'position_in_subcanvas_y': getattr(self.model, 'position_in_subcanvas_y', 0.0),
         }
@@ -269,32 +265,24 @@ class BaseNodeItem(QGraphicsObject):
             if hasattr(self.model, key):
                 setattr(self.model, key, value)
 
-        # Actualizar radio si está en las propiedades
         if 'radius' in properties:
             self.prepareGeometryChange()
             self.model.radius = properties['radius']
 
-        # Actualizar posición si está en las propiedades
         if 'x' in properties and 'y' in properties:
             self.model.x = properties['x']
             self.model.y = properties['y']
             self.setPos(properties['x'], properties['y'])
 
-        # Aplicar posición dentro del subcanvas si cambió
         if ('position_in_subcanvas_x' in properties or 
             'position_in_subcanvas_y' in properties):
-            # ✅ Solo aplicar si el subcanvas está visible
             if self.is_subcanvas_visible():
                 self.apply_position_in_subcanvas()
 
-        # Actualizar la visualización
         self.update()
-
-        # Emitir señal de propiedades cambiadas
         self.properties_changed.emit(self, properties)
 
     def is_subcanvas_visible(self):
-        """Verifica si el subcanvas está visible"""
         return (
             self.subcanvas is not None 
             and self.subcanvas.isVisible() 

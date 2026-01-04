@@ -20,58 +20,18 @@ class SoftGoalNodeItem(BaseTroposItem):
     def _create_cloud_path(self):
         path = QPainterPath()
         r = float(self.model.radius)
-    
         w = r * 2.8 
         h = r * 0.95
-    
-        # Inicio (Punto medio izquierdo)
+        
         path.moveTo(-w * 0.85, 0)
-    
-        # ───── SUPERIOR IZQUIERDO ─────
-        path.cubicTo(
-            -w * 1.05, -h * 0.8,
-            -w * 0.75, -h * 1.3,
-            -w * 0.35, -h * 0.85
-        )
-    
-        # ───── SUPERIOR CENTRAL ─────
-        path.cubicTo(
-            -w * 0.15, -h * 1.25,
-             w * 0.15, -h * 1.25,
-             w * 0.35, -h * 0.85
-        )
-    
-        # ───── SUPERIOR DERECHO ─────
-        path.cubicTo(
-             w * 0.75, -h * 1.3,
-             w * 1.05, -h * 0.8,
-             w * 0.85, 0          # Terminamos en el centro derecho
-        )
-    
-        # ───── INFERIOR DERECHO (Espejo del superior derecho) ─────
-        path.cubicTo(
-             w * 1.05,  h * 0.8,
-             w * 0.75,  h * 1.3,
-             w * 0.35,  h * 0.85
-        )
-    
-        # ───── INFERIOR CENTRAL (Espejo del superior central) ─────
-        path.cubicTo(
-             w * 0.15,  h * 1.25,
-            -w * 0.15,  h * 1.25,
-            -w * 0.35,  h * 0.85
-        )
-    
-        # ───── INFERIOR IZQUIERDO (Espejo del superior izquierdo) ─────
-        path.cubicTo(
-            -w * 0.75,  h * 1.3,
-            -w * 1.05,  h * 0.8,
-            -w * 0.85,  0         # Regresamos al punto de inicio
-        )
-    
+        path.cubicTo(-w * 1.05, -h * 0.8, -w * 0.75, -h * 1.3, -w * 0.35, -h * 0.85)
+        path.cubicTo(-w * 0.15, -h * 1.25, w * 0.15, -h * 1.25, w * 0.35, -h * 0.85)
+        path.cubicTo(w * 0.75, -h * 1.3, w * 1.05, -h * 0.8, w * 0.85, 0)
+        path.cubicTo(w * 1.05,  h * 0.8, w * 0.75,  h * 1.3, w * 0.35,  h * 0.85)
+        path.cubicTo(w * 0.15,  h * 1.25, -w * 0.15,  h * 1.25, -w * 0.35,  h * 0.85)
+        path.cubicTo(-w * 0.75,  h * 1.3, -w * 1.05,  h * 0.8, -w * 0.85,  0)
         path.closeSubpath()
         return path
-
 
     def boundingRect(self):
         if not hasattr(self, "path") or self.path.isEmpty():
@@ -103,20 +63,16 @@ class SoftGoalNodeItem(BaseTroposItem):
         return super()._get_distance_to_border(pos)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
-        """Nuevo radio basado en distancia al centro."""
         return max((pos.x()**2 + pos.y()**2) ** 0.5, 15.0)
 
     def set_radius(self, new_r: float):
-        # Llamar al método de la clase base para actualizar el radio y preparar el cambio de geometría
         super().set_radius(new_r)
-        # Regenerar el path con el nuevo radio
         self.path = self._create_cloud_path()
 
     def paint(self, painter, option, widget=None):
-        # ✅ USAR COLORES PERSONALIZADOS del modelo, pero mantener el color beige por defecto si no están personalizados
-        default_color = QColor(220, 220, 180)  # Tu beige original
-        default_border = QColor(0, 0, 0)       # Borde negro original
-        default_text = QColor(0, 0, 0)         # Texto negro (porque el fondo es claro)
+        default_color = QColor(220, 220, 180)
+        default_border = QColor(0, 0, 0)
+        default_text = QColor(0, 0, 0)
         
         fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
         border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
@@ -127,29 +83,19 @@ class SoftGoalNodeItem(BaseTroposItem):
         painter.setPen(QPen(border_color, 2))
         painter.drawPath(self.path)
 
-        # Dibujar texto
-        if hasattr(self.model, 'label') and self.model.label:
-            painter.setPen(QPen(text_color))
-            font = QFont()
-            font.setPointSize(9)
-            font.setBold(True)
-            painter.setFont(font)
-            # Usar el boundingRect del path para centrar el texto
-            text_rect = self.path.boundingRect()
-            painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, self.model.label)
+        # DIBUJAR TEXTO MULTILÍNEA
+        # El texto se dibujará centrado sobre la nube
+        self.draw_multiline_text(painter, text_color)
 
-        # Indicador de selección
         if self.isSelected():
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPath(self.path)
 
     def get_serializable_properties(self):
-        """Devuelve propiedades serializables específicas de SoftGoal"""
         base_properties = super().get_serializable_properties()
         base_properties['node_type'] = 'soft_goal'
         return base_properties
 
     def update_properties(self, properties: dict):
-        """Actualiza propiedades específicas de SoftGoal"""
         super().update_properties(properties)
