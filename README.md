@@ -23,32 +23,30 @@ It follows a clean **MVC-inspired architecture**, strictly separating **core mod
 ---
 
 ## 🏗️ Project Structure
-app/
 
-├── core/
+```bash
 
-│   └── models/
+.
+├── app
+│   ├── controllers                 # Controllers (CanvasController)
+│   ├── core
+│   │   └── models
+│   │       ├── dependency          # Dependency, why, AND, OR, contribution, mean_ends Links 
+│   │       ├── entity              # Actor, Agent 
+│   │       └── tropos_element      # HardGoal, Softgoal, Plan, Resource 
+│   ├── ui
+│   │   ├── components
+│   │   │   ├── dependency_item     # Dependency, why, AND, OR, contribution, mean_ends Links (UI Component)
+│   │   │   ├── entity_item         # Actor, Agent (UI Component)
+│   │   │   └── tropos_element_item # HardGoal, Softgoal, Plan, Resource (UI Component)
+│   │   └── help
+│   │       └── content             # Help and information about the app
+│   └── utils                       # Utilities (.astr)
+└── images
+    ├── elements_help
+    └── examples_help
 
-│       ├── entity/           # Actor, Agent, Entity (base 
-class)
-
-│       ├── artifact/          # Goal, Softgoal, Task, Resource, Belief
-
-│       └── dependency/       # Dependency, TaskDependency, ResourceDependency, etc.
-
-├── ui/
-
-│   ├── components/           # QGraphicsItems: ActorNodeItem, EdgeItem, etc.
-
-│   ├── controllers/          # CanvasController
-│   ├── canvas.py             # Main QGraphicsView + scene
-
-│   ├── sidebar.py            # Draggable node palette
-
-│   └── main_window.py        # QMainWindow with menu, toolbar, status bar
-
-└── main.py                   # Entry point: initializes app and window
-
+```
 
 ---
 
@@ -100,6 +98,7 @@ uv run main.py
 - [ ] **Undo/redo history** — Complete undo/redo system for all actions
 - [x] **Keyboard shortcuts** — Comprehensive shortcut system for common operations
 - [ ] **Diagram templates** — Pre-built templates for common Tropos patterns
+- [ ] **Flexible link shape** — The user should be able to drag specific points of a link to change its shape to be more flexible and not just pure straight
 
 ---
 
