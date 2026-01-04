@@ -12,7 +12,7 @@ class AstrFormat:
     def serialize_scene(nodes: List, edges: List) -> Dict[str, Any]:
         """Serializa la escena completa a formato JSON"""
         scene_data = {
-            "version": "1.3", 
+            "version": "1.4",
             "metadata": {
                 "created_by": "Asteroid",
                 "node_count": len(nodes),
@@ -22,10 +22,9 @@ class AstrFormat:
             "edges": []
         }
         
-        # Crear mapeo de IDs para referencia
         node_id_map = {}
         
-        # Serializar nodos y crear mapeo
+        # Serializar nodos
         for idx, node in enumerate(nodes):
             node_data = AstrFormat._serialize_node(node, idx)
             node_id_map[node] = idx
@@ -37,21 +36,17 @@ class AstrFormat:
                 parent_node = node.subcanvas_parent.parentItem()
                 if parent_node in node_id_map:
                     scene_data["nodes"][node_id]["parent_id"] = node_id_map[parent_node]
-                    print(f"Nodo {node_id} está en subcanvas de nodo {node_id_map[parent_node]}")
         
         # Actualizar parent_id para edges en subcanvas
         for edge in edges:
             edge_data = AstrFormat._serialize_edge(edge, node_id_map)
             if edge_data:
-                # Si el edge está en un subcanvas, guardar esa información
                 if hasattr(edge, 'parentItem') and edge.parentItem():
                     parent_item = edge.parentItem()
-                    # Verificar si el padre es un subcanvas
-                    if hasattr(parent_item, 'subnode_dropped'):  # Es un subcanvas
+                    if hasattr(parent_item, 'subnode_dropped'): 
                         parent_node = parent_item.parentItem()
                         if parent_node in node_id_map:
                             edge_data["parent_id"] = node_id_map[parent_node]
-                            print(f"Edge está en subcanvas de nodo {node_id_map[parent_node]}")
                 
                 scene_data["edges"].append(edge_data)
             
@@ -59,7 +54,7 @@ class AstrFormat:
 
     @staticmethod
     def _serialize_node(node, node_id: int) -> Dict[str, Any]:
-        """Serializa un nodo individual - VERSIÓN CON POSICIÓN EN SUBCANVAS"""
+        """Serializa un nodo individual"""
         pos = node.pos()
         node_data = {
             "id": node_id,
@@ -72,16 +67,20 @@ class AstrFormat:
             "parent_id": None
         }
         
-        # Obtener propiedades específicas del nodo
+        # Obtener propiedades serializables (incluye los nuevos text_width y align)
         try:
             if hasattr(node, 'get_serializable_properties') and callable(getattr(node, 'get_serializable_properties')):
                 node_data["properties"] = node.get_serializable_properties()
             else:
+                # Fallback básico
                 node_data["properties"] = {
                     'radius': getattr(node.model, 'radius', 40),
                     'label': getattr(node.model, 'label', ''),
+                    'text_width': getattr(node.model, 'text_width', 150),
+                    'text_align': getattr(node.model, 'text_align', 'center'),
                 }
         except Exception as e:
+            print(f"Error serializando propiedades: {e}")
             node_data["properties"] = {}
             
         # Información del subcanvas
@@ -92,7 +91,7 @@ class AstrFormat:
                 "original_radius": float(getattr(node.subcanvas, 'original_radius', node.subcanvas.radius))
             }
         
-        # Información del modelo ACTUALIZADA con posición en subcanvas
+        # Información del modelo completa
         if hasattr(node, 'model'):
             node_data["model_properties"] = {
                 "show_subcanvas": getattr(node.model, 'show_subcanvas', False),
@@ -104,9 +103,14 @@ class AstrFormat:
                 "border_color": getattr(node.model, 'border_color', '#2980b9'),
                 "text_color": getattr(node.model, 'text_color', '#ffffff'),
                 
-                # Guardar la posición del nodo dentro de su behaviour canvas (subcanvas)
+                # Posición en subcanvas
                 "position_in_subcanvas_x": float(getattr(node.model, 'position_in_subcanvas_x', 0.0)),
-                "position_in_subcanvas_y": float(getattr(node.model, 'position_in_subcanvas_y', 0.0))
+                "position_in_subcanvas_y": float(getattr(node.model, 'position_in_subcanvas_y', 0.0)),
+                "content_offset_x": float(getattr(node.model, 'content_offset_x', 0.0)),
+                "content_offset_y": float(getattr(node.model, 'content_offset_y', 0.0)),
+                
+                "text_width": float(getattr(node.model, 'text_width', 150)),
+                "text_align": getattr(node.model, 'text_align', 'center')
             }
             
         return node_data
@@ -114,9 +118,7 @@ class AstrFormat:
     @staticmethod
     def _serialize_edge(edge, node_id_map: Dict) -> Dict[str, Any]:
         """Serializa una edge individual"""
-        # Verificar que los nodos fuente y destino existen en el mapeo
         if edge.source_node not in node_id_map or edge.dest_node not in node_id_map:
-            print(f"Edge no serializada: nodos fuente/destino no encontrados en mapeo")
             return None
             
         edge_data = {
@@ -124,14 +126,14 @@ class AstrFormat:
             "source_id": node_id_map.get(edge.source_node, -1),
             "target_id": node_id_map.get(edge.dest_node, -1),
             "properties": {},
-            "parent_id": None  # ID del nodo padre si el edge está en un subcanvas
+            "parent_id": None
         }
         
         try:
             if hasattr(edge, 'get_serializable_properties') and callable(getattr(edge, 'get_serializable_properties')):
                 edge_data["properties"] = edge.get_serializable_properties()
         except Exception as e:
-            print(f" Error serializando propiedades del edge: {e}")
+            pass
             
         return edge_data
 
@@ -146,9 +148,7 @@ class AstrFormat:
             'PlanNodeItem': 'plan',
             'ResourceNodeItem': 'resource'
         }
-        
-        class_name = node.__class__.__name__
-        return node_type_map.get(class_name, 'unknown')
+        return node_type_map.get(node.__class__.__name__, 'unknown')
 
     @staticmethod
     def _get_edge_type(edge) -> str:
@@ -163,6 +163,4 @@ class AstrFormat:
             'ContributionArrowItem': 'contribution',
             'MeansEndArrowItem': 'means_end'
         }
-        
-        class_name = edge.__class__.__name__
-        return edge_type_map.get(class_name, 'unknown')
+        return edge_type_map.get(edge.__class__.__name__, 'unknown')
