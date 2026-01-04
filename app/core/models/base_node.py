@@ -11,16 +11,17 @@ class BaseNode(ABC):
         self.x = x
         self.y = y
         self.radius = radius
-        self.label = "Nodo"  # label personalizable
-        self.color = "#3498db"  # color personalizable (azul por defecto)
-        self.border_color = "#2980b9"  # color del borde
-        self.text_color = "#ffffff"  # color del texto
+        self.label = "Nodo"
+        self.color = "#3498db"
+        self.border_color = "#2980b9"
+        self.text_color = "#ffffff"
         
-        # Offset del contenido (texto/icono) relativo al centro
+        self.text_align = "center"  
+        self.text_width = 150
+        self.font_size = 10 
+
         self.content_offset_x = 0.0 
         self.content_offset_y = 0.0
-
-        # Posición del nodo dentro de su behaviour canvas (subcanvas)
         self.position_in_subcanvas_x = 0.0
         self.position_in_subcanvas_y = 0.0
 
@@ -28,11 +29,9 @@ class BaseNode(ABC):
         self.show_subcanvas = False
 
     def toggle_subcanvas(self):
-        """Alterna la visibilidad del subcanvas."""
         self.show_subcanvas = not self.show_subcanvas
         return self.show_subcanvas
     
     @abstractmethod
     def node_type(self) -> str:
-        """Cada subclase debe definir qué tipo de nodo es (actor, agent, etc.)."""
         pass
