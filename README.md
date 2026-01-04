@@ -28,23 +28,88 @@ It follows a clean **MVC-inspired architecture**, strictly separating **core mod
 
 .
 ├── app
-│   ├── controllers                 # Controllers (CanvasController)
-│   ├── core
-│   │   └── models
-│   │       ├── dependency          # Dependency, why, AND, OR, contribution, mean_ends Links 
-│   │       ├── entity              # Actor, Agent 
-│   │       └── tropos_element      # HardGoal, Softgoal, Plan, Resource 
-│   ├── ui
-│   │   ├── components
-│   │   │   ├── dependency_item     # Dependency, why, AND, OR, contribution, mean_ends Links (UI Component)
-│   │   │   ├── entity_item         # Actor, Agent (UI Component)
-│   │   │   └── tropos_element_item # HardGoal, Softgoal, Plan, Resource (UI Component)
-│   │   └── help
-│   │       └── content             # Help and information about the app
-│   └── utils                       # Utilities (.astr)
-└── images
-    ├── elements_help
-    └── examples_help
+│   ├── controllers
+│   │   ├── canvas_controller.py      # Logic for managing canvas interactions and state
+│   │   └── __init__.py
+│   ├── core                          # Core business logic and data structures
+│   │   ├── __init__.py
+│   │   └── models                    # Backend data models for graph elements
+│   │       ├── base_edge.py          # Abstract base class for all connections
+│   │       ├── base_node.py          # Abstract base class for all nodes
+│   │       ├── dependency            # Model definitions for Tropos/i* links
+│   │       │   ├── and_decomposition_edge.py
+│   │       │   ├── contribution_edge.py
+│   │       │   ├── dashed_edge.py
+│   │       │   ├── dependency_link_edge.py
+│   │       │   ├── __init__.py
+│   │       │   ├── means_end_edge.py
+│   │       │   ├── or_decomposition_edge.py
+│   │       │   ├── simple_edge.py
+│   │       │   └── why_link_edge.py
+│   │       ├── entity                # Model definitions for high-level entities
+│   │       │   ├── actor.py
+│   │       │   ├── agent.py
+│   │       │   └── __init__.py
+│   │       ├── __init__.py
+│   │       └── tropos_element        # Model definitions for internal goals/tasks
+│   │           ├── hard_goal.py
+│   │           ├── __init__.py
+│   │           ├── plan.py
+│   │           ├── resource.py
+│   │           └── soft_goal.py
+│   ├── __init__.py
+│   ├── ui                            # User Interface components (PyQt6)
+│   │   ├── canvas.py                 # Main drawing area implementation
+│   │   ├── components                # Reusable visual graphic items
+│   │   │   ├── base_edge_item.py     # Base visual class for links
+│   │   │   ├── base_node_item.py     # Base visual class for entity nodes
+│   │   │   ├── base_tropos_item.py   # Shared logic for Tropos-specific shapes
+│   │   │   ├── dependency_item       # Visual items for dependency links
+│   │   │   │   ├── and_decomposition_edge_item.py
+│   │   │   │   ├── contribution_edge_item.py
+│   │   │   │   ├── dashed_edge_item.py
+│   │   │   │   ├── dependency_link_edge_item.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── means_end_edge_item.py
+│   │   │   │   ├── or_decomposition_edge_item.py
+│   │   │   │   ├── simple_edge_item.py
+│   │   │   │   └── why_link_edge_item.py
+│   │   │   ├── entity_item           # Visual items for Actors and Agents
+│   │   │   │   ├── actor_node_item.py
+│   │   │   │   ├── agent_node_item.py
+│   │   │   │   └── __init__.py
+│   │   │   ├── __init__.py
+│   │   │   ├── position_controll_widget.py # Widget to adjust subcanvas offsets
+│   │   │   ├── properties_panel.py   # Side panel for editing element attributes
+│   │   │   ├── subcanvas_item.py     # Logic for nested canvas (Actor internal view)
+│   │   │   └── tropos_element_item   # Visual items for goals, plans, and resources
+│   │   │       ├── hard_goal_item.py
+│   │   │       ├── plan_item.py
+│   │   │       ├── resource_item.py
+│   │   │       └── soft_goal_item.py
+│   │   ├── help                      # Documentation and help system
+│   │   │   ├── content               # Markdown help files
+│   │   │   │   ├── about.md
+│   │   │   │   ├── elements.md
+│   │   │   │   ├── examples.md
+│   │   │   │   └── quick_help.md
+│   │   │   ├── help_modal.py         # Modal window for documentation
+│   │   │   └── markdown_viewer.py    # Renderer for markdown help files
+│   │   ├── __init__.py
+│   │   ├── main_window.py            # Main application window assembly
+│   │   └── sidebar.py                # Toolbar for selecting elements to draw
+│   └── utils
+│       └── astr_format.py            # Utilities for data serialization/formatting
+├── images                            # Static assets and icons
+│   ├── AsteroidLogo.png
+│   ├── elements_help                 # Documentation icons for elements
+│   ├── examples_help                 # Visual guides for help system
+│   └── main_interface_examples.png   # Interface screenshots
+├── LICENSE
+├── main.py                           # Application entry point
+├── pyproject.toml                    # Project metadata and dependencies
+├── README.md                         # Project documentation
+└── uv.lock                           # Locked dependency versions
 
 ```
 
