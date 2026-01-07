@@ -1,4 +1,4 @@
-name: Build .deb Package and Publish APT Repository
+name: Build .deb Package (Artifact Only)
 
 on:
   push:
@@ -69,49 +69,8 @@ jobs:
               -C pkg \
               .
 
-      - name: Set up APT repository structure
-        run: |
-          mkdir -p gh-pages/debian/pool/main/a/asteroid
-          mkdir -p gh-pages/debian/dists/stable/main/binary-amd64
-
-          cp asteroid_0.1.0_amd64.deb gh-pages/debian/pool/main/a/asteroid/
-
-          pushd gh-pages/debian
-          dpkg-scanpackages --multiversion pool/main > dists/stable/main/binary-amd64/Packages
-          gzip -c dists/stable/main/binary-amd64/Packages > dists/stable/main/binary-amd64/Packages.gz
-
-          printf '%s\n' \
-            "Origin: Asteroid" \
-            "Label: Asteroid APT Repository" \
-            "Suite: stable" \
-            "Codename: stable" \
-            "Architectures: amd64" \
-            "Components: main" \
-            "Description: Custom APT repo for Asteroid" \
-            "Date: $(date -Ru)" \
-            > dists/stable/Release
-          popd
-
-      - name: Create minimal index.html
-        run: |
-          cat > gh-pages/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html>
-          <head><title>Asteroid APT Repository</title></head>
-          <body>
-          <h1>Asteroid APT Repository</h1>
-          <p>Add to your system:</p>
-          <pre>
-          echo "deb [trusted=yes] https://darylllorenzo.github.io/asteroid/debian stable main" | sudo tee /etc/apt/sources.list.d/asteroid.list
-          sudo apt update && sudo apt install asteroid
-          </pre>
-          </body>
-          </html>
-          EOF
-
-      - name: Deploy APT repo to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload .deb as artifact
+        uses: actions/upload-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./gh-pages
-          keep_files: false
+          name: asteroid-deb-${{ github.sha }}
+          path: asteroid_0.1.0_amd64.deb
