@@ -105,7 +105,6 @@ jobs:
           echo "deb [trusted=yes] https://darylllorenzo.github.io/asteroid/debian stable main" | sudo tee /etc/apt/sources.list.d/asteroid.list
           sudo apt update && sudo apt install asteroid
           </pre>
-          <p><a href="debian/">Browse packages</a></p>
           </body>
           </html>
           EOF
