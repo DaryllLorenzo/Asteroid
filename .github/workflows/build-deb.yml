@@ -32,9 +32,27 @@ jobs:
         run: |
           mkdir -p pkg/opt/asteroid
           mkdir -p pkg/usr/bin
+          mkdir -p pkg/usr/share/applications
+          mkdir -p pkg/usr/share/icons/hicolor/256x256/apps
+
           cp -r app images main.py pyproject.toml uv.lock pkg/opt/asteroid/
+          cp images/AsteroidLogo.png pkg/usr/share/icons/hicolor/256x256/apps/asteroid.png
+
           printf '%s\n' '#!/bin/sh' 'cd /opt/asteroid' 'exec python3 main.py "$@"' > pkg/usr/bin/asteroid
           chmod +x pkg/usr/bin/asteroid
+
+          printf '%s\n' \
+            '[Desktop Entry]' \
+            'Name=Asteroid' \
+            'Comment=Tropos/i* Modeling Tool' \
+            'Exec=asteroid' \
+            'Icon=asteroid' \
+            'Terminal=false' \
+            'Type=Application' \
+            'Categories=Graphics;Education;' \
+            'StartupWMClass=asteroid' \
+            > pkg/usr/share/applications/asteroid.desktop
+          chmod +x pkg/usr/share/applications/asteroid.desktop
 
       - name: Build .deb package
         run: |
@@ -61,7 +79,36 @@ jobs:
           pushd gh-pages/debian
           dpkg-scanpackages --multiversion pool/main > dists/stable/main/binary-amd64/Packages
           gzip -c dists/stable/main/binary-amd64/Packages > dists/stable/main/binary-amd64/Packages.gz
+
+          printf '%s\n' \
+            "Origin: Asteroid" \
+            "Label: Asteroid APT Repository" \
+            "Suite: stable" \
+            "Codename: stable" \
+            "Architectures: amd64" \
+            "Components: main" \
+            "Description: Custom APT repo for Asteroid" \
+            "Date: $(date -Ru)" \
+            > dists/stable/Release
           popd
+
+      - name: Create minimal index.html
+        run: |
+          cat > gh-pages/index.html <<'EOF'
+<!DOCTYPE html>
+<html>
+<head><title>Asteroid APT Repository</title></head>
+<body>
+<h1>Asteroid APT Repository</h1>
+<p>Add to your system:</p>
+<pre>
+echo "deb [trusted=yes] https://darylllorenzo.github.io/asteroid/debian stable main" | sudo tee /etc/apt/sources.list.d/asteroid.list
+sudo apt update && sudo apt install asteroid
+</pre>
+<p><a href="debian/">Browse packages</a></p>
+</body>
+</html>
+EOF
 
       - name: Deploy APT repo to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
