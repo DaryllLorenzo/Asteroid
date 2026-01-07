@@ -1,0 +1,82 @@
+name: Build .deb Package and Publish APT Repository
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install application dependencies
+        run: uv sync --frozen
+
+      - name: Install fpm and system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby-dev gcc make rpm
+          sudo gem install fpm
+
+      - name: Prepare directory structure for .deb
+        run: |
+          mkdir -p pkg/opt/asteroid
+          mkdir -p pkg/usr/bin
+
+          # Copy all source code and assets
+          cp -r app images main.py pyproject.toml uv.lock pkg/opt/asteroid/
+
+          # Create launcher script
+          cat > pkg/usr/bin/asteroid << 'EOF'
+          
+#!/bin/sh
+cd /opt/asteroid
+exec python3 main.py "$@"
+EOF
+          chmod +x pkg/usr/bin/asteroid
+
+      - name: Build .deb package
+        run: |
+          fpm -s dir -t deb \
+              -n asteroid \
+              -v 0.1.0 \
+              --description "Asteroid: A Tropos/i* modeling tool built with PyQt6" \
+              --maintainer "you@example.com" \
+              --url "https://github.com/tuusuario/asteroid" \
+              --license "MIT" \
+              --depends python3 \
+              --depends python3-pyqt6 \
+              --architecture amd64 \
+              -C pkg \
+              .
+
+      - name: Set up APT repository structure
+        run: |
+          mkdir -p gh-pages/debian/pool/main/a/asteroid
+          mkdir -p gh-pages/debian/dists/stable/main/binary-amd64
+
+          cp asteroid_0.1.0_amd64.deb gh-pages/debian/pool/main/a/asteroid/
+
+          pushd gh-pages/debian
+          dpkg-scanpackages --multiversion pool/main > dists/stable/main/binary-amd64/Packages
+          gzip -c dists/stable/main/binary-amd64/Packages > dists/stable/main/binary-amd64/Packages.gz
+          popd
+
+      - name: Deploy APT repo to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages
+          keep_files: false
+          # Optional: force orphan to avoid history
+          # full_commit_message: "Deploy APT repo for asteroid"
