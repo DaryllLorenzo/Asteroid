@@ -94,21 +94,21 @@ jobs:
 
       - name: Create minimal index.html
         run: |
-          cat > gh-pages/index.html <<'EOF'
-<!DOCTYPE html>
-<html>
-<head><title>Asteroid APT Repository</title></head>
-<body>
-<h1>Asteroid APT Repository</h1>
-<p>Add to your system:</p>
-<pre>
-echo "deb [trusted=yes] https://darylllorenzo.github.io/asteroid/debian stable main" | sudo tee /etc/apt/sources.list.d/asteroid.list
-sudo apt update && sudo apt install asteroid
-</pre>
-<p><a href="debian/">Browse packages</a></p>
-</body>
-</html>
-EOF
+          cat > gh-pages/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head><title>Asteroid APT Repository</title></head>
+          <body>
+          <h1>Asteroid APT Repository</h1>
+          <p>Add to your system:</p>
+          <pre>
+          echo "deb [trusted=yes] https://darylllorenzo.github.io/asteroid/debian stable main" | sudo tee /etc/apt/sources.list.d/asteroid.list
+          sudo apt update && sudo apt install asteroid
+          </pre>
+          <p><a href="debian/">Browse packages</a></p>
+          </body>
+          </html>
+          EOF
 
       - name: Deploy APT repo to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
