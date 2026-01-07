@@ -42,7 +42,7 @@ jobs:
               -n asteroid \
               -v 0.1.0 \
               --description "Asteroid: A Tropos/i* modeling tool built with PyQt6" \
-              --maintainer "you@example.com" \
+              --maintainer "daryllla77@gmail.com" \
               --url "https://github.com/DaryllLorenzo/asteroid" \
               --license "MIT" \
               --depends python3 \
