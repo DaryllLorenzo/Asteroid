@@ -25,20 +25,15 @@ jobs:
       - name: Install fpm and system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ruby-dev gcc make rpm
+          sudo apt-get install -y ruby-dev gcc make rpm dpkg-dev
           sudo gem install fpm
 
       - name: Prepare directory structure for .deb
         run: |
           mkdir -p pkg/opt/asteroid
           mkdir -p pkg/usr/bin
-
-          # Copy all source code and assets
           cp -r app images main.py pyproject.toml uv.lock pkg/opt/asteroid/
-
-          # Create launcher script
           cat > pkg/usr/bin/asteroid << 'EOF'
-          
 #!/bin/sh
 cd /opt/asteroid
 exec python3 main.py "$@"
@@ -52,7 +47,7 @@ EOF
               -v 0.1.0 \
               --description "Asteroid: A Tropos/i* modeling tool built with PyQt6" \
               --maintainer "you@example.com" \
-              --url "https://github.com/tuusuario/asteroid" \
+              --url "https://github.com/DaryllLorenzo/asteroid" \
               --license "MIT" \
               --depends python3 \
               --depends python3-pyqt6 \
@@ -78,5 +73,3 @@ EOF
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./gh-pages
           keep_files: false
-          # Optional: force orphan to avoid history
-          # full_commit_message: "Deploy APT repo for asteroid"
