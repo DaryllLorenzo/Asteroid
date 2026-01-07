@@ -33,11 +33,7 @@ jobs:
           mkdir -p pkg/opt/asteroid
           mkdir -p pkg/usr/bin
           cp -r app images main.py pyproject.toml uv.lock pkg/opt/asteroid/
-          cat > pkg/usr/bin/asteroid << 'EOF'
-#!/bin/sh
-cd /opt/asteroid
-exec python3 main.py "$@"
-EOF
+          printf '%s\n' '#!/bin/sh' 'cd /opt/asteroid' 'exec python3 main.py "$@"' > pkg/usr/bin/asteroid
           chmod +x pkg/usr/bin/asteroid
 
       - name: Build .deb package
