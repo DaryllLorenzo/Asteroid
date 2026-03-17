@@ -6,7 +6,7 @@
 # ---------------------------------------------------
 
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QPushButton, 
+    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QPushButton,
     QSplitter, QScrollArea, QGroupBox, QMessageBox, QMenuBar, QMenu
 )
 from PyQt6.QtCore import pyqtSlot, Qt
@@ -17,6 +17,8 @@ from app.ui.sidebar import Sidebar
 from app.ui.components.properties_panel import PropertiesPanel
 from app.controllers.canvas_controller import CanvasController
 from app.ui.help.help_modal import HelpModal
+from app.ui.pdf_export_dialog import PDFExportDialog
+from app.utils.pdf_export import PDFGenerator
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -185,6 +187,14 @@ class MainWindow(QMainWindow):
         export_image_action.setShortcut('Ctrl+E')
         export_image_action.triggered.connect(self.export_image)
 
+        # Separador
+        file_menu.addSeparator()
+
+        # Acción para exportar PDF
+        export_pdf_action = file_menu.addAction('&Exportar a PDF...')
+        export_pdf_action.setShortcut('Ctrl+P')
+        export_pdf_action.triggered.connect(self.export_pdf)
+
         # ---------------------------
         # Menú Ayuda
         # ---------------------------
@@ -228,6 +238,18 @@ class MainWindow(QMainWindow):
     def export_image(self):
         """Exporta el canvas como imagen"""
         self.canvas_controller.export_to_image()
+
+    def export_pdf(self):
+        """Exporta el diagrama a PDF con opciones de contenido"""
+        # Mostrar diálogo de opciones
+        dialog = PDFExportDialog(self)
+        if dialog.exec() != 1:  # QDialog.Accepted
+            return
+        
+        # Generar PDF
+        with_info = dialog.should_export_with_info()
+        pdf_generator = PDFGenerator(self.canvas_controller)
+        pdf_generator.export_to_pdf(with_additional_info=with_info)
     
     def new_project(self):
         """Crea un nuevo proyecto"""

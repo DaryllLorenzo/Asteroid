@@ -15,6 +15,9 @@ It follows a clean **MVC-inspired architecture**, strictly separating **core mod
   - Drag & drop nodes from a sidebar (Actor, Agent, Goal, Resource, etc.)
   - Support for **simple and dashed arrows** (dependencies)
   - Zoom in/out, pan, and reset view
+- **PDF Export** with two modes:
+  - Diagram image only
+  - Diagram + detailed element information (classification and relationships)
 - **Logical models decoupled** from graphical representation (e.g., `Actor` ≠ `ActorNodeItem`)
 - **Controller layer** managing interactions between UI and domain logic
 - **Extensible design**: Easily add new node types, edge styles, or behaviors
