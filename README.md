@@ -137,9 +137,7 @@ It follows a clean **MVC-inspired architecture**, strictly separating **core mod
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Step 2...
-
-### Step 3: Run project
+### Step 2: Run project
 ```bash
 uv run main.py
 ```
@@ -156,11 +154,10 @@ uv run main.py
 - [x] **Size property for component names** — Configurable text size for different components
 - [x] **Multi-line text labels** — Support for writing text in multiple lines within node labels
 - [x] **Review of softgoal visual component** — check for a better form of softgoal ui component 
-- [ ] **Cross-platform packaging** — Research options for:
-  - `.deb`/APT package (golden dream for Linux)
-  - Windows installer (NSIS/InnoSetup)
+- [x] **Cross-platform packaging**:
+  - `.deb`/APT package
+  - Windows executable
   - macOS app bundle
-  - PyInstaller/Cx_Freeze as intermediate solution
 - [ ] **Visual themes** — Customizable light/dark theme system
 - [ ] **Model validation** — Diagram consistency verification according to Tropos methodology
 - [ ] **Undo/redo history** — Complete undo/redo system for all actions
