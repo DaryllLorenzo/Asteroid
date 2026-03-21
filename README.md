@@ -5,10 +5,6 @@
 **Asteroid** is a desktop application built with **Python** and **PyQt6** to create interactive, model-driven diagrams — ideal for visualizing Tropos-style actor-agent relationships, dependencies, and resources.  
 It follows a clean **MVC-inspired architecture**, strictly separating **core models**, **UI components**, and **controllers** for maximum modularity and maintainability.
 
-> 💡 Built with **`uv`** as the *exclusive* Python package manager — no `pip`, no `venv` manual setup. Just `uv`.
-
----
-
 ## 🚀 Features
 
 - **Interactive QGraphicsView canvas** with:
@@ -100,9 +96,11 @@ It follows a clean **MVC-inspired architecture**, strictly separating **core mod
 │   │   │   └── markdown_viewer.py    # Renderer for markdown help files
 │   │   ├── __init__.py
 │   │   ├── main_window.py            # Main application window assembly
+│   │   ├── pdf_export_dialog.py      # Dialog for PDF export options
 │   │   └── sidebar.py                # Toolbar for selecting elements to draw
 │   └── utils
-│       └── astr_format.py            # Utilities for data serialization/formatting
+│       ├── astr_format.py            # Utilities for data serialization/formatting
+│       └── pdf_export.py             # PDF generation and export utilities
 ├── images                            # Static assets and icons
 │   ├── AsteroidLogo.png
 │   ├── elements_help                 # Documentation icons for elements
@@ -120,16 +118,18 @@ It follows a clean **MVC-inspired architecture**, strictly separating **core mod
 
 ## ⚙️ Requirements
 
-- ✅ **Python 3.12.3+**
-- ✅ **[uv](https://github.com/astral-sh/uv)** — *the only package manager used*
-- ✅ **PyQt6**
+### Python version
 
-> 🛑 **No `pip`, no `requirements.txt` installation via pip.**  
-> This project uses **`uv`** exclusively to manage virtual environments and dependencies — ensuring fast, deterministic, and reproducible setups across all platforms.
+- **Python 3.12.3+**
 
----
+### Libraries
 
-## 📦 Installation & Setup (Using `uv`)
+- **PyQt6**
+- **numpy**
+- **reportlab**
+- **markdown**
+
+## 📦 Installation & Setup Option1: Using `uv`
 
 ### Step 1: Install `uv` (if not already installed)
 
@@ -141,6 +141,30 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```bash
 uv run main.py
 ```
+
+## Option 2: Using `pip` & `venv`
+
+```bash
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
+
+# Install dependencies
+pip install markdown numpy pyqt6 reportlab
+
+# Run the application
+python main.py
+```
+
+or installing from `pyproject.toml`:
+
+```bash
+pip install -e .
+```
+
+> 💡 **Tip:** Option 1 with `uv` is faster and ensures reproducible dependencies. 
+> Use Option 2 if you prefer traditional Python tooling.
 
 # Examples
 ![Main interface 1](images/main_interface_example1.png)
