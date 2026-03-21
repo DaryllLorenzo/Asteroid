@@ -1,0 +1,43 @@
+name: Build macOS App Bundle
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Install PyInstaller
+        run: uv pip install pyinstaller
+
+      - name: Build macOS app bundle
+        run: |
+          .venv/bin/pyinstaller --onefile --windowed \
+            --name asteroid \
+            --add-data "images:images" \
+            --collect-all app \
+            main.py
+
+      - name: Zip the .app bundle
+        run: zip -r asteroid-macos.zip dist/asteroid.app
+
+      - name: Upload macOS app as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: asteroid-macos-${{ github.sha }}
+          path: asteroid-macos.zip
