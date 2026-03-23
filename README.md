@@ -1,151 +1,109 @@
-# 🌌 Asteroid — Interactive Diagramming I* Tropos Desktop App
+# 🌌 Asteroid — Interactive Diagramming Tool for Tropos and i* Methodologies
 
-![](images/AsteroidLogo.png)
+<p align="center">
+  <img src="images/AsteroidLogo.png" alt="Asteroid Logo" width="400">
+</p>
 
-**Asteroid** is a desktop application built with **Python** and **PyQt6** to create interactive, model-driven diagrams — ideal for visualizing Tropos-style actor-agent relationships, dependencies, and resources.  
-It follows a clean **MVC-inspired architecture**, strictly separating **core models**, **UI components**, and **controllers** for maximum modularity and maintainability.
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![PyQt6](https://img.shields.io/badge/PyQt6-6.8.0-blue)](https://www.riverbankcomputing.com/software/pyqt/)
+[![GitHub stars](https://img.shields.io/github/stars/DaryllLorenzo/asteroid)](https://github.com/DaryllLorenzo/asteroid/stargazers)
+[![GitHub release](https://img.shields.io/github/v/release/DaryllLorenzo/asteroid?include_prereleases)](https://github.com/DaryllLorenzo/asteroid/releases/latest)
+
+**Asteroid** is a desktop application for creating interactive, model-driven diagrams, specifically designed for visualizing **Tropos** and **i*** (i-star) methodologies. It supports actor-agent relationships, dependencies, goals, resources, and more.
+
+Built with **Python** and **PyQt6**, it follows a clean **MVC-inspired architecture** that strictly separates core models, UI components, and controllers for maximum modularity and maintainability.
+
+🌐 **[Visit the official website](https://darylllorenzo.github.io/asteroid-landing/)** | 📥 **[Download latest release](https://github.com/DaryllLorenzo/asteroid/releases)**
+
+---
 
 ## 🚀 Features
 
+### Core Diagramming
 - **Interactive QGraphicsView canvas** with:
-  - Drag & drop nodes from a sidebar (Actor, Agent, Goal, Resource, etc.)
-  - Support for **simple and dashed arrows** (dependencies)
+  - Drag & drop nodes from a sidebar (Actor, Agent, Goal, Resource, Softgoal, Plan)
+  - Support for **simple and dashed arrows** (dependencies, contributions, means-end)
   - Zoom in/out, pan, and reset view
+
+### Export & Documentation
 - **PDF Export** with two modes:
   - Diagram image only
   - Diagram + detailed element information (classification and relationships)
-- **Logical models decoupled** from graphical representation (e.g., `Actor` ≠ `ActorNodeItem`)
+- **Built-in help system** with Markdown documentation
+
+### Architecture
+- **Logical models decoupled** from graphical representation (`Actor` ≠ `ActorNodeItem`)
 - **Controller layer** managing interactions between UI and domain logic
 - **Extensible design**: Easily add new node types, edge styles, or behaviors
 - **Built for collaboration**: Clear separation enables team development and testing
+
+### Cross-Platform
+- Windows 10/11 executable
+- Linux (.deb package for Debian/Ubuntu)
+- macOS app bundle
 
 ---
 
 ## 🏗️ Project Structure
 
-```bash
-
-.
-├── app
-│   ├── controllers
-│   │   ├── canvas_controller.py      # Logic for managing canvas interactions and state
-│   │   └── __init__.py
-│   ├── core                          # Core business logic and data structures
-│   │   ├── __init__.py
-│   │   └── models                    # Backend data models for graph elements
-│   │       ├── base_edge.py          # Abstract base class for all connections
-│   │       ├── base_node.py          # Abstract base class for all nodes
-│   │       ├── dependency            # Model definitions for Tropos/i* links
-│   │       │   ├── and_decomposition_edge.py
-│   │       │   ├── contribution_edge.py
-│   │       │   ├── dashed_edge.py
-│   │       │   ├── dependency_link_edge.py
-│   │       │   ├── __init__.py
-│   │       │   ├── means_end_edge.py
-│   │       │   ├── or_decomposition_edge.py
-│   │       │   ├── simple_edge.py
-│   │       │   └── why_link_edge.py
-│   │       ├── entity                # Model definitions for high-level entities
-│   │       │   ├── actor.py
-│   │       │   ├── agent.py
-│   │       │   └── __init__.py
-│   │       ├── __init__.py
-│   │       └── tropos_element        # Model definitions for internal goals/tasks
-│   │           ├── hard_goal.py
-│   │           ├── __init__.py
-│   │           ├── plan.py
-│   │           ├── resource.py
-│   │           └── soft_goal.py
-│   ├── __init__.py
-│   ├── ui                            # User Interface components (PyQt6)
-│   │   ├── canvas.py                 # Main drawing area implementation
-│   │   ├── components                # Reusable visual graphic items
-│   │   │   ├── base_edge_item.py     # Base visual class for links
-│   │   │   ├── base_node_item.py     # Base visual class for entity nodes
-│   │   │   ├── base_tropos_item.py   # Shared logic for Tropos-specific shapes
-│   │   │   ├── dependency_item       # Visual items for dependency links
-│   │   │   │   ├── and_decomposition_edge_item.py
-│   │   │   │   ├── contribution_edge_item.py
-│   │   │   │   ├── dashed_edge_item.py
-│   │   │   │   ├── dependency_link_edge_item.py
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── means_end_edge_item.py
-│   │   │   │   ├── or_decomposition_edge_item.py
-│   │   │   │   ├── simple_edge_item.py
-│   │   │   │   └── why_link_edge_item.py
-│   │   │   ├── entity_item           # Visual items for Actors and Agents
-│   │   │   │   ├── actor_node_item.py
-│   │   │   │   ├── agent_node_item.py
-│   │   │   │   └── __init__.py
-│   │   │   ├── __init__.py
-│   │   │   ├── position_controll_widget.py # Widget to adjust subcanvas offsets
-│   │   │   ├── properties_panel.py   # Side panel for editing element attributes
-│   │   │   ├── subcanvas_item.py     # Logic for nested canvas (Actor internal view)
-│   │   │   └── tropos_element_item   # Visual items for goals, plans, and resources
-│   │   │       ├── hard_goal_item.py
-│   │   │       ├── plan_item.py
-│   │   │       ├── resource_item.py
-│   │   │       └── soft_goal_item.py
-│   │   ├── help                      # Documentation and help system
-│   │   │   ├── content               # Markdown help files
-│   │   │   │   ├── about.md
-│   │   │   │   ├── elements.md
-│   │   │   │   ├── examples.md
-│   │   │   │   └── quick_help.md
-│   │   │   ├── help_modal.py         # Modal window for documentation
-│   │   │   └── markdown_viewer.py    # Renderer for markdown help files
-│   │   ├── __init__.py
-│   │   ├── main_window.py            # Main application window assembly
-│   │   ├── pdf_export_dialog.py      # Dialog for PDF export options
-│   │   └── sidebar.py                # Toolbar for selecting elements to draw
-│   └── utils
-│       ├── astr_format.py            # Utilities for data serialization/formatting
-│       └── pdf_export.py             # PDF generation and export utilities
-├── images                            # Static assets and icons
-│   ├── AsteroidLogo.png
-│   ├── elements_help                 # Documentation icons for elements
-│   ├── examples_help                 # Visual guides for help system
-│   └── main_interface_examples.png   # Interface screenshots
-├── LICENSE
-├── main.py                           # Application entry point
-├── pyproject.toml                    # Project metadata and dependencies
-├── README.md                         # Project documentation
-└── uv.lock                           # Locked dependency versions
-
+```
+asteroid/
+├── app/
+│   ├── controllers/          # Canvas logic and state management
+│   ├── core/                 # Business logic and data models
+│   │   ├── models/           # Tropos/i* element definitions
+│   │   │   ├── entity/       # Actor, Agent
+│   │   │   ├── tropos_element/ # Goal, Softgoal, Plan, Resource
+│   │   │   └── dependency/   # Edge types (contribution, means-end, etc.)
+│   ├── ui/                   # PyQt6 interface components
+│   │   ├── canvas.py         # Main drawing area
+│   │   ├── sidebar.py        # Element toolbar
+│   │   ├── components/       # Visual items for nodes and edges
+│   │   └── help/             # Markdown documentation system
+│   └── utils/                # PDF export and serialization
+├── images/                   # Static assets and screenshots
+├── main.py                   # Application entry point
+├── pyproject.toml            # Project dependencies
+└── README.md
 ```
 
 ---
 
 ## ⚙️ Requirements
 
-### Python version
+| Requirement | Version |
+|-------------|---------|
+| Python | 3.12.3+ |
+| PyQt6 | 6.8.0+ |
+| numpy | 2.0.0+ |
+| reportlab | 4.2.0+ |
+| markdown | 3.7+ |
 
-- **Python 3.12.3+**
+---
 
-### Libraries
+## 📦 Installation
 
-- **PyQt6**
-- **numpy**
-- **reportlab**
-- **markdown**
-
-## 📦 Installation & Setup Option1: Using `uv`
-
-### Step 1: Install `uv` (if not already installed)
+### Option 1: Using `uv` (recommended)
 
 ```bash
+# Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
-```
 
-### Step 2: Run project
-```bash
+# Clone and run
+git clone https://github.com/DaryllLorenzo/asteroid.git
+cd asteroid
 uv run main.py
 ```
 
-## Option 2: Using `pip` & `venv`
+### Option 2: Using `pip` and `venv`
 
 ```bash
-# Create and activate virtual environment
+# Clone the repository
+git clone https://github.com/DaryllLorenzo/asteroid.git
+cd asteroid
+
+# Create virtual environment
 python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
@@ -157,38 +115,66 @@ pip install markdown numpy pyqt6 reportlab
 python main.py
 ```
 
-or installing from `pyproject.toml`:
-
-```bash
-pip install -e .
-```
-
-> 💡 **Tip:** Option 1 with `uv` is faster and ensures reproducible dependencies. 
-> Use Option 2 if you prefer traditional Python tooling.
-
-# Examples
-![Main interface 1](images/main_interface_example1.png)
-![Main interface 2](images/main_interface_example2.png)
-![Main interface 3](images/main_interface_example3.png)
-
-
-## 📋 TODO & Roadmap
-
-- [x] **Actor/agent node movement within subcanvas** — Allow reorganization of child nodes internally *(completed Dec 24)*
-- [x] **Size property for component names** — Configurable text size for different components
-- [x] **Multi-line text labels** — Support for writing text in multiple lines within node labels
-- [x] **Review of softgoal visual component** — check for a better form of softgoal ui component 
-- [x] **Cross-platform packaging**:
-  - `.deb`/APT package
-  - Windows executable
-  - macOS app bundle
-- [ ] **Visual themes** — Customizable light/dark theme system
-- [ ] **Model validation** — Diagram consistency verification according to Tropos methodology
-- [ ] **Undo/redo history** — Complete undo/redo system for all actions
-- [x] **Keyboard shortcuts** — Comprehensive shortcut system for common operations
-- [ ] **Diagram templates** — Pre-built templates for common Tropos patterns
-- [ ] **Flexible link shape** — The user should be able to drag specific points of a link to change its shape to be more flexible and not just pure straight
+> 💡 **Tip:** Option 1 with `uv` is faster and ensures reproducible dependencies.
 
 ---
 
-**✨ Contributions Welcome** — Feel free to fork the project or open issues to discuss new features!
+## 🖼️ Screenshots
+
+| Main Interface | Actor with Subcanvas |
+|----------------|---------------------|
+| ![Main interface 1](images/main_interface_example1.png) | ![Main interface 2](images/main_interface_example2.png) |
+
+![Main interface 3](images/main_interface_example3.png)
+
+---
+
+## 📋 Roadmap
+
+### Completed
+- [x] Actor/agent node movement within subcanvas
+- [x] Configurable text size for components
+- [x] Multi-line text labels in nodes
+- [x] Softgoal visual component improvements
+- [x] Cross-platform packaging (Windows, Linux, macOS)
+- [x] Keyboard shortcuts system
+
+### In Progress / Planned
+- [ ] Visual themes (light/dark mode)
+- [ ] Model validation (Tropos methodology consistency)
+- [ ] Undo/redo history for all actions
+- [ ] Diagram templates for common Tropos patterns
+- [ ] Flexible link shapes (user-draggable control points)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how you can help:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Commit your changes**: `git commit -m 'Add amazing feature'`
+4. **Push**: `git push origin feature/amazing-feature`
+5. **Open a Pull Request**
+
+Please read our [contributing guidelines](CONTRIBUTING.md) for more details.
+
+### Reporting Issues
+Found a bug? Have a feature request? [Open an issue](https://github.com/DaryllLorenzo/asteroid/issues) with a clear description and, if possible, steps to reproduce.
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
+---
+
+## 📬 Contact & Acknowledgments
+
+- **Author**: Daryll Lorenzo
+- **Project Website**: [https://darylllorenzo.github.io/asteroid-landing/](https://darylllorenzo.github.io/asteroid-landing/)
+- **GitHub Repository**: [https://github.com/DaryllLorenzo/asteroid](https://github.com/DaryllLorenzo/asteroid)
+
+Built with PyQt6, special thanks to the Qt and Python communities.
