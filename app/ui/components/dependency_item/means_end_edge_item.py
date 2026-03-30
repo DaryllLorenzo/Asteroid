@@ -22,27 +22,40 @@ class MeansEndArrowItem(BaseEdgeItem):
         if not self.source_node or not self.dest_node:
             return
 
-        self.update_position()
-        line = self.line()
-        if line.length() == 0:
+        # NO llamar a update_position() aquí para evitar temblor
+        path = self.path()
+        if path.isEmpty():
             return
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
-        painter.drawLine(line)
+        painter.drawPath(path)
 
-        angle = math.atan2(line.dy(), line.dx())
+        end_point = self._end_point
+        
+        # Determinar el último segmento para calcular el ángulo
+        if self.control_points:
+            last_point = self.control_points[-1]
+        else:
+            last_point = self._start_point
+        
+        dx = end_point.x() - last_point.x()
+        dy = end_point.y() - last_point.y()
+        
+        if dx == 0 and dy == 0:
+            return
+        
+        angle = math.atan2(dy, dx)
         ux = math.cos(angle)
         uy = math.sin(angle)
         perp_x = -uy
         perp_y = ux
 
-        end = line.p2()
         size = 12.0
 
-        pA = QPointF(end.x() - ux * size + perp_x * (size * 0.4),
-                     end.y() - uy * size + perp_y * (size * 0.4))
-        pB = QPointF(end.x() - ux * size - perp_x * (size * 0.4),
-                     end.y() - uy * size - perp_y * (size * 0.4))
-        painter.drawLine(end, pA)
-        painter.drawLine(end, pB)
+        pA = QPointF(end_point.x() - ux * size + perp_x * (size * 0.4),
+                     end_point.y() - uy * size + perp_y * (size * 0.4))
+        pB = QPointF(end_point.x() - ux * size - perp_x * (size * 0.4),
+                     end_point.y() - uy * size - perp_y * (size * 0.4))
+        painter.drawLine(end_point, pA)
+        painter.drawLine(end_point, pB)

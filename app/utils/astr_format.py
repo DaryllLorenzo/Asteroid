@@ -120,21 +120,30 @@ class AstrFormat:
         """Serializa una edge individual"""
         if edge.source_node not in node_id_map or edge.dest_node not in node_id_map:
             return None
-            
+
         edge_data = {
             "type": AstrFormat._get_edge_type(edge),
             "source_id": node_id_map.get(edge.source_node, -1),
             "target_id": node_id_map.get(edge.dest_node, -1),
             "properties": {},
-            "parent_id": None
+            "parent_id": None,
+            "control_points": []
         }
-        
+
+        # Serializar control points si existen
+        if hasattr(edge, 'control_points') and edge.control_points:
+            for point in edge.control_points:
+                edge_data["control_points"].append({
+                    "x": float(point.x()),
+                    "y": float(point.y())
+                })
+
         try:
             if hasattr(edge, 'get_serializable_properties') and callable(getattr(edge, 'get_serializable_properties')):
                 edge_data["properties"] = edge.get_serializable_properties()
         except Exception as e:
             pass
-            
+
         return edge_data
 
     @staticmethod

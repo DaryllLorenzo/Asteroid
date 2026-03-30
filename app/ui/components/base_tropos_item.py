@@ -5,13 +5,14 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from PyQt6.QtWidgets import QGraphicsObject
+from PyQt6.QtWidgets import QGraphicsObject, QGraphicsItem
 from PyQt6.QtCore import QRectF, pyqtSignal, Qt, QPointF
 from PyQt6.QtGui import QFont, QColor
 
 class BaseTroposItem(QGraphicsObject):
     nodeDoubleClicked = pyqtSignal(object)
     properties_changed = pyqtSignal(object, dict)
+    positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
 
     def __init__(self, model):
         super().__init__()
@@ -65,6 +66,8 @@ class BaseTroposItem(QGraphicsObject):
             event.accept()
             return
         super().mouseMoveEvent(event)
+        # Emitir señal de movimiento para actualizar edges conectados
+        self.positionChanged.emit()
 
     def mouseReleaseEvent(self, event):
         if self._resizing and event.button() == Qt.MouseButton.LeftButton:
@@ -73,6 +76,12 @@ class BaseTroposItem(QGraphicsObject):
             event.accept()
             return
         super().mouseReleaseEvent(event)
+
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
+        """Emite señal cuando la posición cambia"""
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+            self.positionChanged.emit()
+        return super().itemChange(change, value)
 
     def set_radius(self, new_r: float):
         """Actualiza el radio del modelo"""

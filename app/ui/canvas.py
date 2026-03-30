@@ -6,11 +6,12 @@
 # ---------------------------------------------------
 
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView
-from PyQt6.QtGui import QPainter, QWheelEvent
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QPainter, QWheelEvent, QCursor
+from PyQt6.QtCore import Qt, pyqtSignal, QPointF
 
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.subcanvas_item import SubCanvasItem
+from app.ui.components.control_point_handle import ControlPointHandle
 
 
 class Canvas(QGraphicsView):
@@ -93,7 +94,7 @@ class Canvas(QGraphicsView):
     
     def mousePressEvent(self, event):
         items = self.items(event.pos())
-        
+
         # ✅ Prioridad: primero buscar nodos regulares (incluyendo nodos padre con subcanvas)
         for item in items:
             # Si es un nodo regular (no edge, no subcanvas)
@@ -101,17 +102,67 @@ class Canvas(QGraphicsView):
                 self.node_clicked.emit(item)
                 super().mousePressEvent(event)
                 return
-                
+
             # Si es un subcanvas, ignorar (los eventos pasarán al nodo padre)
             if isinstance(item, SubCanvasItem):
                 # ❌ NO emitir node_clicked para subcanvas - los eventos pasarán al nodo padre
                 super().mousePressEvent(event)
                 return
-        
+
         # Comportamiento por defecto
         if items:
             self.node_clicked.emit(items[0])
         super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        """
+        Doble-click en una arista agrega un control point en esa posición.
+        """
+        scene_pos = self.mapToScene(event.position().toPoint())
+        items = self.items(event.position().toPoint())
+        
+        # Buscar si hay un edge bajo el cursor
+        for item in items:
+            if isinstance(item, BaseEdgeItem) and not isinstance(item, ControlPointHandle):
+                # Agregar control point en la posición del doble-click
+                item.add_control_point(scene_pos)
+                # Seleccionar el edge para mostrar los handles
+                item.setSelected(True)
+                return
+        
+        # Si no es en un edge, comportamiento por defecto
+        super().mouseDoubleClickEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """
+        Cambia el cursor cuando está sobre un handle o edge.
+        """
+        scene_pos = self.mapToScene(event.position().toPoint())
+        items = self.items(event.position().toPoint())
+        
+        # Buscar si hay un handle bajo el cursor
+        cursor_over_handle = False
+        for item in items:
+            if isinstance(item, ControlPointHandle):
+                cursor_over_handle = True
+                break
+        
+        if cursor_over_handle:
+            self.setCursor(Qt.CursorShape.SizeAllCursor)
+        else:
+            # Verificar si está sobre un edge
+            cursor_over_edge = False
+            for item in items:
+                if isinstance(item, BaseEdgeItem) and item.isSelected():
+                    cursor_over_edge = True
+                    break
+            
+            if cursor_over_edge:
+                self.setCursor(Qt.CursorShape.PointingHandCursor)
+            else:
+                self.setCursor(Qt.CursorShape.ArrowCursor)
+        
+        super().mouseMoveEvent(event)
     
     # ---------------------
     # Zoom

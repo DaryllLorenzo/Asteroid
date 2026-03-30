@@ -28,6 +28,7 @@ from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
 from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
 from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeItem
 from app.ui.components.base_edge_item import BaseEdgeItem
+from app.ui.components.control_point_handle import ControlPointHandle
 
 _NODE_MAP = {
     "actor": ActorNodeItem,
@@ -494,13 +495,46 @@ class CanvasController(QObject):
     # Borrado de elementos
     # ---------------------
     def delete_selected_item(self):
-        """Elimina el elemento actualmente seleccionado (nodo o edge)"""
+        """
+        Elimina el elemento actualmente seleccionado (nodo, edge, o control point).
+        Prioridad:
+        1. Si hay un ControlPointHandle seleccionado → eliminar ese control point
+        2. Si hay un edge seleccionado → eliminar el edge completo
+        3. Si hay un nodo seleccionado → eliminar el nodo
+        """
+        # Verificar si hay un control point seleccionado
+        selected_items = self.canvas.scene.selectedItems()
+        for item in selected_items:
+            if isinstance(item, ControlPointHandle):
+                # Eliminar este control point
+                self._delete_selected_control_point(item)
+                return
+        
+        # Comportamiento normal
         if self.selected_edge:
             self.delete_selected_edge()
         elif self.selected_node:
             self.delete_selected_node()
         else:
             print("⚠️ No hay elemento seleccionado para eliminar")
+    
+    def _delete_selected_control_point(self, handle: ControlPointHandle):
+        """Elimina un control point específico de un edge"""
+        if not handle.parent_edge:
+            return
+        
+        edge = handle.parent_edge
+        
+        # Encontrar el índice del handle
+        try:
+            index = edge.control_handles.index(handle)
+            # Eliminar el control point correspondiente
+            edge.remove_control_point(index)
+            # Marcar proyecto como modificado
+            self.mark_as_modified()
+            print(f"✅ Control point eliminado del edge {edge}")
+        except ValueError:
+            pass
 
     def delete_selected_node(self):
         """Elimina el nodo actualmente seleccionado"""
@@ -579,25 +613,38 @@ class CanvasController(QObject):
     def delete_edge(self, edge_to_delete):
         """Elimina una flecha específica"""
         if edge_to_delete in self.edges:
+            # Limpiar handles y desconectar señales primero
+            if hasattr(edge_to_delete, 'cleanup'):
+                edge_to_delete.cleanup()
+            
             if edge_to_delete.scene():
                 edge_to_delete.scene().removeItem(edge_to_delete)
             self.edges.remove(edge_to_delete)
-            
+
             # Limpiar selección
             if edge_to_delete == self.selected_edge:
                 self.selected_edge = None
                 self.current_selection = None
                 self.edge_selected.emit(None)
                 self.selection_changed.emit(None)
-                
+
             self.edge_deleted.emit(edge_to_delete)
-            
+
             # Marcar como modificado
             self.mark_as_modified()
-            
+
             print(f"✅ Flecha eliminada: {edge_to_delete}")
         else:
             print(f"⚠️ Edge no encontrado en la lista: {edge_to_delete}")
+    
+    def straighten_edge(self, edge):
+        """
+        Endereza una flecha eliminando todos sus control points.
+        """
+        if edge and hasattr(edge, 'clear_control_points'):
+            edge.clear_control_points()
+            self.mark_as_modified()
+            print(f"✅ Flecha enderezada: {edge}")
 
     def _remove_node_from_scene(self, node):
         """Elimina un nodo de la escena de forma segura"""
@@ -950,6 +997,16 @@ class CanvasController(QObject):
         properties = edge_data.get('properties', {})
         if hasattr(edge_item, 'update_properties'):
             edge_item.update_properties(properties)
+        
+        # Restaurar control points si existen
+        control_points = edge_data.get('control_points', [])
+        if control_points and hasattr(edge_item, 'control_points'):
+            for point_data in control_points:
+                point = QPointF(float(point_data['x']), float(point_data['y']))
+                edge_item.control_points.append(point)
+            # Actualizar handles después de restaurar todos los puntos
+            edge_item._update_handles_position()
+            edge_item.update_position()
 
         return edge_item
 

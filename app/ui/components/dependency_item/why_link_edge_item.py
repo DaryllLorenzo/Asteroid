@@ -26,23 +26,31 @@ class WhyLinkArrowItem(BaseEdgeItem):
         if not self.source_node or not self.dest_node:
             return
 
-        # Actualizamos la línea entre nodos
-        self.update_position()
-        line = self.line()
-        if line.length() == 0:
+        # NO llamar a update_position() aquí para evitar temblor
+        path = self.path()
+        if path.isEmpty():
             return
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
-        painter.drawLine(line)
+        painter.drawPath(path)
 
         # Triángulo en el punto medio de la línea
-        mid_x = (line.x1() + line.x2()) / 2
-        mid_y = (line.y1() + line.y2()) / 2
+        start_point = self._start_point
+        end_point = self._end_point
+        
+        mid_x = (start_point.x() + end_point.x()) / 2
+        mid_y = (start_point.y() + end_point.y()) / 2
         p_tip = QPointF(mid_x, mid_y)
 
         # Ángulo de la línea
-        angle = math.atan2(line.dy(), line.dx())
+        dx = end_point.x() - start_point.x()
+        dy = end_point.y() - start_point.y()
+        
+        if dx == 0 and dy == 0:
+            return
+        
+        angle = math.atan2(dy, dx)
         size = 12.0
         p1 = QPointF(p_tip.x() - size * math.cos(angle - math.pi / 6),
                      p_tip.y() - size * math.sin(angle - math.pi / 6))

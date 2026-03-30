@@ -20,9 +20,9 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         if not self.source_node or not self.dest_node:
             return
 
-        self.update_position()
-        line = self.line()
-        if line.length() == 0:
+        # NO llamar a update_position() aquí para evitar temblor
+        path = self.path()
+        if path.isEmpty():
             return
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -32,15 +32,24 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         arrow_size = 12.0
 
         # Calcular ángulo y vectores unitarios
-        angle = math.atan2(line.dy(), line.dx())
+        end_point = self._end_point
+        start_point = self._start_point
+        
+        dx = end_point.x() - start_point.x()
+        dy = end_point.y() - start_point.y()
+        
+        if dx == 0 and dy == 0:
+            return
+        
+        angle = math.atan2(dy, dx)
         ux = math.cos(angle)
         uy = math.sin(angle)
         perp_x = -uy
         perp_y = ux
 
         # Línea ajustada para terminar antes de la flecha
-        p_start = line.p1()
-        p_tip = line.p2()
+        p_start = start_point
+        p_tip = end_point
         p_line_end = QPointF(p_tip.x() - arrow_size * ux,
                              p_tip.y() - arrow_size * uy)
         painter.drawLine(p_start, p_line_end)

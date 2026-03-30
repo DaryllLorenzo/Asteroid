@@ -22,9 +22,9 @@ class OrDecompositionArrowItem(BaseEdgeItem):
         if not self.source_node or not self.dest_node:
             return
 
-        self.update_position()
-        line = self.line()
-        if line.length() == 0:
+        # NO llamar a update_position() aquí para evitar temblor
+        path = self.path()
+        if path.isEmpty():
             return
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -34,13 +34,24 @@ class OrDecompositionArrowItem(BaseEdgeItem):
         size = 12.0
 
         # Calcular ángulo de la línea
-        angle = math.atan2(line.dy(), line.dx())
+        end_point = self._end_point
+        start_point = self._start_point
+        
+        dx = end_point.x() - start_point.x()
+        dy = end_point.y() - start_point.y()
+        
+        if dx == 0 and dy == 0:
+            return
+        
+        angle = math.atan2(dy, dx)
+        ux = math.cos(angle)
+        uy = math.sin(angle)
 
         # Ajustar la línea para que termine antes de la punta
-        p_start = line.p1()
-        p_tip = line.p2()
-        p_line_end = QPointF(p_tip.x() - size * math.cos(angle),
-                             p_tip.y() - size * math.sin(angle))
+        p_start = start_point
+        p_tip = end_point
+        p_line_end = QPointF(p_tip.x() - size * ux,
+                             p_tip.y() - size * uy)
         painter.drawLine(p_start, p_line_end)
 
         # Calcular triángulo sin relleno
@@ -53,4 +64,3 @@ class OrDecompositionArrowItem(BaseEdgeItem):
         poly = QPolygonF([p_tip, p1, p2])
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPolygon(poly)
-

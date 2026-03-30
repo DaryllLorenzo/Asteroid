@@ -5,7 +5,7 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from PyQt6.QtWidgets import QGraphicsObject
+from PyQt6.QtWidgets import QGraphicsObject, QGraphicsItem
 from PyQt6.QtCore import QRectF, pyqtSignal, Qt, QPointF
 from PyQt6.QtGui import QFont, QColor
 from app.ui.components.subcanvas_item import SubCanvasItem
@@ -15,7 +15,8 @@ class BaseNodeItem(QGraphicsObject):
     nodeDoubleClicked = pyqtSignal(object)
     subcanvas_toggled = pyqtSignal(object, object)
     properties_changed = pyqtSignal(object, dict)
-    
+    positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
+
     def __init__(self, model):
         super().__init__()
         self.model = model
@@ -26,7 +27,7 @@ class BaseNodeItem(QGraphicsObject):
         self.subcanvas = None
         self._subcanvas_visible = False
         self.setZValue(10)
-        
+
         if not hasattr(self.model, 'font_size'): self.model.font_size = 10
         if not hasattr(self.model, 'text_width'): self.model.text_width = 150
         if not hasattr(self.model, 'text_align'): self.model.text_align = 'center'
@@ -73,6 +74,8 @@ class BaseNodeItem(QGraphicsObject):
             event.accept()
             return
         super().mouseMoveEvent(event)
+        # Emitir señal de movimiento para actualizar edges conectados
+        self.positionChanged.emit()
 
     def mouseReleaseEvent(self, event):
         if self._resizing and event.button() == Qt.MouseButton.LeftButton:
@@ -81,6 +84,12 @@ class BaseNodeItem(QGraphicsObject):
             event.accept()
             return
         super().mouseReleaseEvent(event)
+
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
+        """Emite señal cuando la posición cambia"""
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+            self.positionChanged.emit()
+        return super().itemChange(change, value)
 
     def set_radius(self, new_r: float):
         self.prepareGeometryChange()
