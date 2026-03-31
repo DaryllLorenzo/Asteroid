@@ -28,45 +28,37 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
 
+        # El path completo (con curvas) ya se dibuja aquí
+        painter.drawPath(path)
+
         # Tamaño de la cabeza de flecha
         arrow_size = 12.0
 
-        # Calcular ángulo y vectores unitarios
+        # Calcular ángulo y vectores unitarios usando el último segmento real
         end_point = self._end_point
-        start_point = self._start_point
         
-        dx = end_point.x() - start_point.x()
-        dy = end_point.y() - start_point.y()
-        
+        # Determinar el último segmento para calcular el ángulo correcto
+        if self.control_points:
+            last_point = self.control_points[-1]
+        else:
+            last_point = self._start_point
+
+        dx = end_point.x() - last_point.x()
+        dy = end_point.y() - last_point.y()
+
         if dx == 0 and dy == 0:
             return
-        
+
         angle = math.atan2(dy, dx)
-        ux = math.cos(angle)
-        uy = math.sin(angle)
-        perp_x = -uy
-        perp_y = ux
+        perp_x = -math.sin(angle)
+        perp_y = math.cos(angle)
 
-        # Línea ajustada para terminar antes de la flecha
-        p_start = start_point
+        # Cabeza triangular sin relleno en la punta
+        # La línea ya está dibujada por painter.drawPath(path)
         p_tip = end_point
-        p_line_end = QPointF(p_tip.x() - arrow_size * ux,
-                             p_tip.y() - arrow_size * uy)
-        painter.drawLine(p_start, p_line_end)
-
-        # Barra vertical (T) en 60% de la línea visible
-        t_factor = 0.6
-        pos_x = p_start.x() + (p_line_end.x() - p_start.x()) * t_factor
-        pos_y = p_start.y() + (p_line_end.y() - p_start.y()) * t_factor
-        pos = QPointF(pos_x, pos_y)
-
-        half = 6.0
-        pa = QPointF(pos.x() - perp_x * half, pos.y() - perp_y * half)
-        pb = QPointF(pos.x() + perp_x * half, pos.y() + perp_y * half)
-        painter.drawLine(pa, pb)
-
-        # Cabeza triangular sin relleno
-        base = p_line_end
+        base = QPointF(end_point.x() - arrow_size * math.cos(angle),
+                       end_point.y() - arrow_size * math.sin(angle))
+        
         corner1 = QPointF(base.x() + perp_x * (0.5 * arrow_size),
                           base.y() + perp_y * (0.5 * arrow_size))
         corner2 = QPointF(base.x() - perp_x * (0.5 * arrow_size),
@@ -75,3 +67,17 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         poly = QPolygonF([p_tip, corner1, corner2])
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPolygon(poly)
+
+        # Barra vertical (T) en el 60% REAL del path curvo
+        # Usamos el método utilitario para obtener el punto y ángulo correctos
+        bar_point, bar_angle = self._get_point_at_percentage(0.6)
+        
+        # La barra debe ser perpendicular al path en ese punto
+        half = 6.0
+        # Perpendicular al ángulo del path
+        bar_perp_x = -math.sin(bar_angle)
+        bar_perp_y = math.cos(bar_angle)
+        
+        pa = QPointF(bar_point.x() - bar_perp_x * half, bar_point.y() - bar_perp_y * half)
+        pb = QPointF(bar_point.x() + bar_perp_x * half, bar_point.y() + bar_perp_y * half)
+        painter.drawLine(pa, pb)
