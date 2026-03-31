@@ -486,12 +486,109 @@ class BaseEdgeItem(QGraphicsPathItem):
                 self.source_node.positionChanged.disconnect(self._on_node_moved)
             except (TypeError, RuntimeError):
                 pass  # La señal ya estaba desconectada
-        
+
         if self.dest_node and hasattr(self.dest_node, 'positionChanged'):
             try:
                 self.dest_node.positionChanged.disconnect(self._on_node_moved)
             except (TypeError, RuntimeError):
                 pass
-        
+
         # Eliminar handles
         self.clear_handles()
+
+    def _get_path_segments(self):
+        """
+        Retorna una lista de segmentos del path como tuplas (p1, p2, length).
+        Cada segmento es una línea recta entre dos puntos consecutivos.
+        """
+        path_points, start_point, end_point = self._calculate_path_points()
+        
+        if len(path_points) < 2:
+            return []
+        
+        segments = []
+        for i in range(len(path_points) - 1):
+            p1 = path_points[i]
+            p2 = path_points[i + 1]
+            dx = p2.x() - p1.x()
+            dy = p2.y() - p1.y()
+            length = math.hypot(dx, dy)
+            segments.append((p1, p2, length))
+        
+        return segments
+
+    def _get_point_at_distance(self, distance: float) -> tuple[QPointF, float]:
+        """
+        Retorna el punto en el path a una distancia específica desde el inicio.
+        También retorna el ángulo/tangente en ese punto.
+        
+        Returns:
+            tuple: (QPointF del punto, float del ángulo en radianes)
+        """
+        segments = self._get_path_segments()
+        
+        if not segments:
+            return QPointF(0, 0), 0.0
+        
+        # Calcular longitud total del path
+        total_length = sum(seg[2] for seg in segments)
+        
+        if total_length == 0:
+            return QPointF(0, 0), 0.0
+        
+        # Si la distancia es mayor que la longitud total, retornar el último punto
+        if distance >= total_length:
+            last_seg = segments[-1]
+            angle = math.atan2(last_seg[1].y() - last_seg[0].y(), 
+                              last_seg[1].x() - last_seg[0].x())
+            return last_seg[1], angle
+        
+        # Encontrar el segmento que contiene el punto deseado
+        accumulated = 0.0
+        for p1, p2, seg_length in segments:
+            if accumulated + seg_length >= distance:
+                # El punto está en este segmento
+                t = (distance - accumulated) / seg_length if seg_length > 0 else 0
+                x = p1.x() + t * (p2.x() - p1.x())
+                y = p1.y() + t * (p2.y() - p1.y())
+                angle = math.atan2(p2.y() - p1.y(), p2.x() - p1.x())
+                return QPointF(x, y), angle
+            accumulated += seg_length
+        
+        # No debería llegar aquí
+        last_seg = segments[-1]
+        angle = math.atan2(last_seg[1].y() - last_seg[0].y(), 
+                          last_seg[1].x() - last_seg[0].x())
+        return last_seg[1], angle
+
+    def _get_tangent_at_distance(self, distance: float) -> float:
+        """
+        Retorna el ángulo/tangente del path en un punto a cierta distancia desde el inicio.
+        
+        Returns:
+            float: ángulo en radianes
+        """
+        _, angle = self._get_point_at_distance(distance)
+        return angle
+
+    def _get_point_at_percentage(self, percentage: float) -> tuple[QPointF, float]:
+        """
+        Retorna el punto en el path a un porcentaje específico (0.0 a 1.0).
+        También retorna el ángulo/tangente en ese punto.
+        
+        Returns:
+            tuple: (QPointF del punto, float del ángulo en radianes)
+        """
+        segments = self._get_path_segments()
+        
+        if not segments:
+            return QPointF(0, 0), 0.0
+        
+        # Calcular longitud total del path
+        total_length = sum(seg[2] for seg in segments)
+        
+        if total_length == 0:
+            return QPointF(0, 0), 0.0
+        
+        target_distance = total_length * percentage
+        return self._get_point_at_distance(target_distance)

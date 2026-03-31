@@ -34,31 +34,27 @@ class DependencyLinkArrowItem(BaseEdgeItem):
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
-        
+
         # Dibujar la ruta (línea con control points si existen)
         painter.drawPath(path)
 
-        # Triángulo en el punto medio de la línea
-        start_point = self._start_point
-        end_point = self._end_point
+        # Triángulo en el punto MEDIO REAL del path curvo
+        # Usamos el método utilitario para obtener el punto y ángulo correctos
+        mid_point, mid_angle = self._get_point_at_percentage(0.5)
         
-        mid_x = (start_point.x() + end_point.x()) / 2
-        mid_y = (start_point.y() + end_point.y()) / 2
-        p_tip = QPointF(mid_x, mid_y)
-
-        # Ángulo de la línea
-        dx = end_point.x() - start_point.x()
-        dy = end_point.y() - start_point.y()
-        
-        if dx == 0 and dy == 0:
-            return
-        
-        angle = math.atan2(dy, dx)
+        # Dibujar triángulo apuntando en la dirección del path
         size = 12.0
-        p1 = QPointF(p_tip.x() - size * math.cos(angle - math.pi/6),
-                     p_tip.y() - size * math.sin(angle - math.pi/6))
-        p2 = QPointF(p_tip.x() - size * math.cos(angle + math.pi/6),
-                     p_tip.y() - size * math.sin(angle + math.pi/6))
+        # El vértice del triángulo apunta en la dirección del path
+        p_tip = mid_point
+        # Los otros dos vértices forman la base del triángulo
+        # Calculados perpendicularmente a la dirección del path
+        perp_x = -math.sin(mid_angle)
+        perp_y = math.cos(mid_angle)
+        
+        p1 = QPointF(p_tip.x() - size * math.cos(mid_angle - math.pi/6),
+                     p_tip.y() - size * math.sin(mid_angle - math.pi/6))
+        p2 = QPointF(p_tip.x() - size * math.cos(mid_angle + math.pi/6),
+                     p_tip.y() - size * math.sin(mid_angle + math.pi/6))
 
         poly = QPolygonF([p_tip, p1, p2])
         painter.setBrush(QBrush(self.pen().color()))

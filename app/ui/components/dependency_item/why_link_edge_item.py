@@ -35,33 +35,26 @@ class WhyLinkArrowItem(BaseEdgeItem):
         painter.setPen(self.pen())
         painter.drawPath(path)
 
-        # Triángulo en el punto medio de la línea
-        start_point = self._start_point
-        end_point = self._end_point
+        # Triángulo y texto "WHY" en el punto MEDIO REAL del path curvo
+        # Usamos el método utilitario para obtener el punto y ángulo correctos
+        mid_point, mid_angle = self._get_point_at_percentage(0.5)
         
-        mid_x = (start_point.x() + end_point.x()) / 2
-        mid_y = (start_point.y() + end_point.y()) / 2
-        p_tip = QPointF(mid_x, mid_y)
-
-        # Ángulo de la línea
-        dx = end_point.x() - start_point.x()
-        dy = end_point.y() - start_point.y()
-        
-        if dx == 0 and dy == 0:
-            return
-        
-        angle = math.atan2(dy, dx)
+        # Ángulo del path en el punto medio
+        angle = mid_angle
         size = 12.0
+        
+        # Dibujamos triángulo relleno apuntando en la dirección del path
+        p_tip = mid_point
         p1 = QPointF(p_tip.x() - size * math.cos(angle - math.pi / 6),
                      p_tip.y() - size * math.sin(angle - math.pi / 6))
         p2 = QPointF(p_tip.x() - size * math.cos(angle + math.pi / 6),
                      p_tip.y() - size * math.sin(angle + math.pi / 6))
 
-        # Dibujamos triángulo relleno
         painter.setBrush(QBrush(self.pen().color()))
         painter.drawPolygon(QPolygonF([p_tip, p1, p2]))
 
         # Texto "WHY" centrado encima de la flecha
+        # Rotado para alinearse con el path
         font = QFont("Arial", 9)
         font.setBold(True)
         painter.setFont(font)
@@ -71,7 +64,14 @@ class WhyLinkArrowItem(BaseEdgeItem):
         h = fm.height()
 
         # Desplazamiento vertical para que no choque con el triángulo
+        # Usamos coordenadas rotadas para alinear con el path
+        painter.save()
+        painter.translate(mid_point)
+        painter.rotate(math.degrees(angle))
+        
+        # El texto se dibuja perpendicularmente arriba del path
         text_offset = size + 2
-        text_rect = QRectF(mid_x - w / 2, mid_y - text_offset - h / 2, w, h)
+        text_rect = QRectF(-w / 2, -text_offset - h / 2, w, h)
         painter.setPen(self.pen().color())
         painter.drawText(text_rect, int(Qt.AlignmentFlag.AlignCenter), txt)
+        painter.restore()

@@ -34,7 +34,6 @@ class ContributionArrowItem(BaseEdgeItem):
 
         # Obtener punto final y dirección para la punta de flecha
         end_point = self._end_point
-        start_point = self._start_point
 
         # Determinar el último segmento para dibujar la punta
         if self.control_points:
@@ -65,13 +64,21 @@ class ContributionArrowItem(BaseEdgeItem):
         painter.drawLine(end_point, pA)
         painter.drawLine(end_point, pB)
 
-        # símbolo '+' cerca del cuerpo (en el punto medio del path)
-        # Para simplificar, usamos el punto medio entre start y end
-        mid_x = (start_point.x() + end_point.x()) / 2
-        mid_y = (start_point.y() + end_point.y()) / 2
-        pos = QPointF(mid_x, mid_y)
-
+        # símbolo '+' en el punto medio REAL del path curvo
+        # Usamos el método utilitario para obtener el punto y ángulo correctos
+        mid_point, mid_angle = self._get_point_at_percentage(0.5)
+        
         painter.save()
+        # Rotar el sistema de coordenadas para alinear el '+' con el path
+        painter.translate(mid_point)
+        painter.rotate(math.degrees(mid_angle))
+        
         painter.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        painter.drawText(pos, "+")
+        # Dibujar '+' centrado, ligeramente desplazado perpendicularmente para no tapar la línea
+        fm = painter.fontMetrics()
+        w = fm.horizontalAdvance("+")
+        h = fm.height()
+        # Pequeño offset perpendicular para que el '+' no se superponga con la línea
+        offset_perp = 8.0
+        painter.drawText(QPointF(-w/2, -h/2 - offset_perp), "+")
         painter.restore()
