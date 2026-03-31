@@ -31,12 +31,14 @@ class DraggableLabel(QLabel):
     Label arrastrable para nodos / links o boton de composite.
     Si se proporciona `on_click` se ejecuta con click (usado para composites).
     """
-    def __init__(self, text: str, item_type: str, on_click=None):
+    def __init__(self, text: str, item_type: str, on_click=None, tooltip_text: str = None):
         super().__init__(text)
         self.item_type = item_type
         self.on_click = on_click
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setWordWrap(True)
+        if tooltip_text:
+            self.setToolTip(tooltip_text)
         self.setStyleSheet("""
             QLabel {
                 border: 2px solid #cccccc;
@@ -195,11 +197,20 @@ class Sidebar(QWidget):
     def __init__(self, controller=None):
         super().__init__()
         self.controller = controller
+        self.setStyleSheet("""
+            QToolTip {
+                background-color: #ffffff;
+                color: #000000;
+                border: 1px solid #333333;
+                padding: 4px;
+                font-size: 12px;
+            }
+        """)
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
         # ===== Items =====
-        items_title = QLabel("🧩 Items")
+        items_title = QLabel("Items")
         items_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
         items_title.setStyleSheet("font-weight:bold; font-size:14px; margin:8px;")
         main_layout.addWidget(items_title)
@@ -208,12 +219,12 @@ class Sidebar(QWidget):
         items_grid.setHorizontalSpacing(8)
         items_grid.setVerticalSpacing(8)
 
-        self.actor_label = DraggableLabel("Actor", "actor")
-        self.agent_label = DraggableLabel("Agent", "agent")
-        self.hardgoal_label = DraggableLabel("HardGoal", "hard_goal")
-        self.softgoal_label = DraggableLabel("SoftGoal", "soft_goal")
-        self.plan_label = DraggableLabel("Plan", "plan")
-        self.resource_label = DraggableLabel("Resource", "resource")
+        self.actor_label = DraggableLabel("Actor", "actor", tooltip_text="Actor")
+        self.agent_label = DraggableLabel("Agent", "agent", tooltip_text="Agent")
+        self.hardgoal_label = DraggableLabel("HardGoal", "hard_goal", tooltip_text="HardGoal")
+        self.softgoal_label = DraggableLabel("SoftGoal", "soft_goal", tooltip_text="SoftGoal")
+        self.plan_label = DraggableLabel("Plan", "plan", tooltip_text="Plan")
+        self.resource_label = DraggableLabel("Resource", "resource", tooltip_text="Resource")
 
         items_grid.addWidget(self.actor_label, 0, 0)
         items_grid.addWidget(self.agent_label, 0, 1)
@@ -225,7 +236,7 @@ class Sidebar(QWidget):
         main_layout.addLayout(items_grid)
 
         # ===== Links =====
-        links_title = QLabel("🔗 Links")
+        links_title = QLabel("Links")
         links_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
         links_title.setStyleSheet("font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;")
         main_layout.addWidget(links_title)
@@ -234,12 +245,12 @@ class Sidebar(QWidget):
         links_grid.setHorizontalSpacing(8)
         links_grid.setVerticalSpacing(8)
 
-        self.dependency_label = DraggableLabel("Dependency", "dependency_link")
-        self.why_label = DraggableLabel("Why", "why_link")
-        self.or_label = DraggableLabel("OR Decomposition", "or_decomposition")
-        self.and_label = DraggableLabel("AND Decomposition", "and_decomposition")
-        self.contribution_label = DraggableLabel("Contribution", "contribution")
-        self.means_label = DraggableLabel("Means-End", "means_end")
+        self.dependency_label = DraggableLabel("Dependency", "dependency_link", tooltip_text="Dependency Link")
+        self.why_label = DraggableLabel("Why", "why_link", tooltip_text="Why Link")
+        self.or_label = DraggableLabel("OR Decomposition", "or_decomposition", tooltip_text="OR Decomposition")
+        self.and_label = DraggableLabel("AND Decomposition", "and_decomposition", tooltip_text="AND Decomposition")
+        self.contribution_label = DraggableLabel("Contribution", "contribution", tooltip_text="Contribution")
+        self.means_label = DraggableLabel("Means-End", "means_end", tooltip_text="Means-End")
 
         links_grid.addWidget(self.dependency_label, 0, 0)
         links_grid.addWidget(self.why_label, 0, 1)
@@ -251,7 +262,7 @@ class Sidebar(QWidget):
         main_layout.addLayout(links_grid)
 
         # ===== Composite Dependencies =====
-        comp_title = QLabel("🧩 Composite Dependencies")
+        comp_title = QLabel("Composite Dependencies")
         comp_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
         comp_title.setStyleSheet("font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;")
         main_layout.addWidget(comp_title)
@@ -264,10 +275,10 @@ class Sidebar(QWidget):
         def make_onclick(node_type):
             return lambda: self._start_composite(node_type)
 
-        self.hard_comp = DraggableLabel("HardGoal Composite", "composite:hard_goal", on_click=make_onclick("hard_goal"))
-        self.soft_comp = DraggableLabel("SoftGoal Composite", "composite:soft_goal", on_click=make_onclick("soft_goal"))
-        self.plan_comp = DraggableLabel("Plan Composite", "composite:plan", on_click=make_onclick("plan"))
-        self.res_comp = DraggableLabel("Resource Composite", "composite:resource", on_click=make_onclick("resource"))
+        self.hard_comp = DraggableLabel("HardGoal Composite", "composite:hard_goal", on_click=make_onclick("hard_goal"), tooltip_text="HardGoal Composite")
+        self.soft_comp = DraggableLabel("SoftGoal Composite", "composite:soft_goal", on_click=make_onclick("soft_goal"), tooltip_text="SoftGoal Composite")
+        self.plan_comp = DraggableLabel("Plan Composite", "composite:plan", on_click=make_onclick("plan"), tooltip_text="Plan Composite")
+        self.res_comp = DraggableLabel("Resource Composite", "composite:resource", on_click=make_onclick("resource"), tooltip_text="Resource Composite")
 
         comp_grid.addWidget(self.hard_comp, 0, 0)
         comp_grid.addWidget(self.soft_comp, 0, 1)
