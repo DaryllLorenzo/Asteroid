@@ -5,7 +5,7 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from PyQt6.QtGui import QPainter, QPen, QPolygonF
+from PyQt6.QtGui import QPainter, QPen, QPolygonF, QPainterPath
 from PyQt6.QtCore import QPointF, Qt
 import math
 from app.ui.components.base_edge_item import BaseEdgeItem
@@ -27,9 +27,6 @@ class AndDecompositionArrowItem(BaseEdgeItem):
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
-
-        # El path completo (con curvas) ya se dibuja aquí
-        painter.drawPath(path)
 
         # Tamaño de la cabeza de flecha
         arrow_size = 12.0
@@ -53,11 +50,41 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         perp_x = -math.sin(angle)
         perp_y = math.cos(angle)
 
+        # Calcular el punto donde termina la línea (base del triángulo)
+        line_end_point = QPointF(end_point.x() - arrow_size * math.cos(angle),
+                                 end_point.y() - arrow_size * math.sin(angle))
+        
+        # Crear un path modificado que termine en la base del triángulo
+        # Obtener todos los puntos del path original
+        path_points, start_point, _ = self._calculate_path_points()
+        
+        if len(path_points) >= 2:
+            # Si hay control points, el último segmento va del último control point al end_point
+            # Reemplazamos el último punto con line_end_point
+            if self.control_points:
+                modified_points = path_points[:-1] + [line_end_point]
+            else:
+                modified_points = [start_point, line_end_point]
+            
+            # Crear path modificado en coordenadas locales
+            if self.scene():
+                local_points = [self.mapFromScene(p) for p in modified_points]
+            else:
+                local_points = modified_points
+            
+            modified_path = QPainterPath(local_points[0])
+            for point in local_points[1:]:
+                modified_path.lineTo(point)
+            
+            # Dibujar el path modificado (línea que termina antes)
+            painter.drawPath(modified_path)
+        else:
+            # Fallback: dibujar path original
+            painter.drawPath(path)
+
         # Cabeza triangular sin relleno en la punta
-        # La línea ya está dibujada por painter.drawPath(path)
         p_tip = end_point
-        base = QPointF(end_point.x() - arrow_size * math.cos(angle),
-                       end_point.y() - arrow_size * math.sin(angle))
+        base = line_end_point
         
         corner1 = QPointF(base.x() + perp_x * (0.5 * arrow_size),
                           base.y() + perp_y * (0.5 * arrow_size))
