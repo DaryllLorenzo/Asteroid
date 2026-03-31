@@ -7,7 +7,7 @@
 
 # app/ui/components/dependency_item/or_decomposition_edge_item.py
 from PyQt6.QtGui import QPainter, QPen, QPolygonF, QPainterPath
-from PyQt6.QtCore import QPointF, Qt
+from PyQt6.QtCore import QPointF, Qt, QRectF
 import math
 
 from app.ui.components.base_edge_item import BaseEdgeItem
@@ -17,6 +17,14 @@ class OrDecompositionArrowItem(BaseEdgeItem):
 
     def __init__(self, source_node, dest_node):
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
+
+    def boundingRect(self):
+        """Extiende el bounding rect para incluir la cabeza de flecha triangular."""
+        # Obtener boundingRect base de la línea
+        base_rect = super().boundingRect()
+        # Extra para la cabeza de flecha (triángulo de ~12px)
+        extra = 15
+        return base_rect.adjusted(-extra, -extra, extra, extra)
 
     def paint(self, painter: QPainter, option, widget=None):
         if not self.source_node or not self.dest_node:

@@ -7,7 +7,7 @@
 
 # app/ui/components/dependency_item/means_end_edge_item.py
 from PyQt6.QtGui import QPainter, QPen
-from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import QPointF, QRectF
 import math
 
 from app.ui.components.base_edge_item import BaseEdgeItem
@@ -17,6 +17,14 @@ class MeansEndArrowItem(BaseEdgeItem):
 
     def __init__(self, source_node, dest_node):
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
+
+    def boundingRect(self):
+        """Extiende el bounding rect para incluir la cabeza de flecha en V."""
+        # Obtener boundingRect base de la línea
+        base_rect = super().boundingRect()
+        # Extra para la V abierta (~12px)
+        extra = 15
+        return base_rect.adjusted(-extra, -extra, extra, extra)
 
     def paint(self, painter: QPainter, option, widget=None):
         if not self.source_node or not self.dest_node:

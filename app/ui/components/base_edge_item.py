@@ -56,27 +56,48 @@ class BaseEdgeItem(QGraphicsPathItem):
         self._connect_to_nodes()
     
     def _connect_to_nodes(self):
-        """Conecta a las señales de cambio de posición de los nodos"""
+        """Conecta a las señales de cambio de posición y tamaño de los nodos"""
         # Conectar a positionChanged de ambos nodos (si existe)
         if self.source_node and hasattr(self.source_node, 'positionChanged'):
             try:
                 self.source_node.positionChanged.connect(self._on_node_moved)
             except (TypeError, AttributeError):
                 pass  # El nodo no tiene esta señal
-        
+
         if self.dest_node and hasattr(self.dest_node, 'positionChanged'):
             try:
                 self.dest_node.positionChanged.connect(self._on_node_moved)
             except (TypeError, AttributeError):
                 pass
+        
+        # Conectar a properties_changed para detectar cambios de tamaño (radius)
+        if self.source_node and hasattr(self.source_node, 'properties_changed'):
+            try:
+                self.source_node.properties_changed.connect(self._on_node_properties_changed)
+            except (TypeError, AttributeError):
+                pass
+        
+        if self.dest_node and hasattr(self.dest_node, 'properties_changed'):
+            try:
+                self.dest_node.properties_changed.connect(self._on_node_properties_changed)
+            except (TypeError, AttributeError):
+                pass
+    
+    def _on_node_properties_changed(self, node, properties):
+        """Callback cuando cambian las propiedades de un nodo (ej: tamaño/radio)"""
+        # Si el radio cambió, necesitamos actualizar el edge
+        if 'radius' in properties:
+            self._on_node_moved()
     
     def _on_node_moved(self):
         """Callback cuando un nodo conectado se mueve"""
         if not self._updating_position:
+            # Notificar que la geometría está a punto de cambiar
+            # Esto es CRÍTICO para que Qt sepa que debe recalcular colisiones y redibujar
+            self.prepareGeometryChange()
             self.update_position()
             # Forzar redibujado y actualizar bounding rect
             self.update()
-            self.prepareGeometryChange()
 
     def boundingRect(self):
         """Rectángulo delimitador que incluye la línea y los handles"""
@@ -480,7 +501,7 @@ class BaseEdgeItem(QGraphicsPathItem):
     
     def cleanup(self):
         """Limpia el edge: desconecta señales y elimina handles"""
-        # Desconectar de los nodos
+        # Desconectar de los nodos (positionChanged)
         if self.source_node and hasattr(self.source_node, 'positionChanged'):
             try:
                 self.source_node.positionChanged.disconnect(self._on_node_moved)
@@ -490,6 +511,19 @@ class BaseEdgeItem(QGraphicsPathItem):
         if self.dest_node and hasattr(self.dest_node, 'positionChanged'):
             try:
                 self.dest_node.positionChanged.disconnect(self._on_node_moved)
+            except (TypeError, RuntimeError):
+                pass
+        
+        # Desconectar de los nodos (properties_changed)
+        if self.source_node and hasattr(self.source_node, 'properties_changed'):
+            try:
+                self.source_node.properties_changed.disconnect(self._on_node_properties_changed)
+            except (TypeError, RuntimeError):
+                pass
+        
+        if self.dest_node and hasattr(self.dest_node, 'properties_changed'):
+            try:
+                self.dest_node.properties_changed.disconnect(self._on_node_properties_changed)
             except (TypeError, RuntimeError):
                 pass
 
