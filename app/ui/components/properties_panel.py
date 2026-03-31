@@ -128,27 +128,28 @@ class PropertiesPanel(QWidget):
 
         # --- Flecha ---
         self.edge_group = QGroupBox("Flecha")
+        self.edge_group.setStyleSheet("QGroupBox { color: #FFFFFF; font-weight: bold; }")
         edge_layout = QVBoxLayout()
 
         # Información de la flecha
         self.edge_info_label = QLabel("Flecha seleccionada")
-        self.edge_info_label.setStyleSheet("color: #000000; font-weight: bold;")
+        self.edge_info_label.setStyleSheet("color: #FFFFFF; font-weight: bold;")
         edge_layout.addWidget(self.edge_info_label)
 
         # Instrucciones de edición
         instructions_label = QLabel(
-            "📝 <b>Edición de Flecha</b><br><br>"
-            "• Arrastra los puntos (⊙) para modificar la forma<br>"
+            "<b>Edición de Flecha</b><br><br>"
+            "• Arrastra los puntos para modificar la forma<br>"
             "• Doble-click en la línea para agregar un punto<br>"
             "• Selecciona un punto y presiona Delete para eliminar<br>"
             "• Click en 'Enderezar' para línea recta"
         )
         instructions_label.setWordWrap(True)
-        instructions_label.setStyleSheet("background-color: #f5f5f5; color: #000000; padding: 8px; border-radius: 4px; margin: 4px 0;")
+        instructions_label.setStyleSheet("background-color: #f5f5f5; color: #333333; padding: 8px; border-radius: 4px; margin: 4px 0;")
         edge_layout.addWidget(instructions_label)
 
         # Botón para enderezar la flecha
-        self.straighten_button = QPushButton("🔃 Enderezar Flecha")
+        self.straighten_button = QPushButton("Enderezar Flecha")
         self.straighten_button.clicked.connect(self.on_straighten_edge_clicked)
         edge_layout.addWidget(self.straighten_button)
 
@@ -192,8 +193,8 @@ class PropertiesPanel(QWidget):
         if hasattr(edge, 'source_node') and hasattr(edge, 'dest_node'):
             src_name = getattr(edge.source_node.model, 'label', 'Nodo') if hasattr(edge.source_node, 'model') else 'Nodo'
             dst_name = getattr(edge.dest_node.model, 'label', 'Nodo') if hasattr(edge.dest_node, 'model') else 'Nodo'
-            edge_type = f"🔗 {src_name} → {dst_name}"
-        
+            edge_type = f"{src_name} → {dst_name}"
+
         self.edge_info_label.setText(edge_type)
         self.update_visibility()
     
