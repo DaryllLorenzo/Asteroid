@@ -51,6 +51,8 @@ Built with **Python** and **PyQt6**, it follows a clean **MVC-inspired architect
 asteroid/
 ├── app/
 │   ├── controllers/          # Canvas logic and state management
+│   │   ├── canvas_controller.py
+│   │   └── __init__.py
 │   ├── core/                 # Business logic and data models
 │   │   ├── models/           # Tropos/i* element definitions
 │   │   │   ├── entity/       # Actor, Agent
@@ -60,8 +62,20 @@ asteroid/
 │   │   ├── canvas.py         # Main drawing area
 │   │   ├── sidebar.py        # Element toolbar
 │   │   ├── components/       # Visual items for nodes and edges
+│   │   │   ├── dependency_item/  # Edge types (arrows, links)
+│   │   │   ├── entity_item/      # Actor, Agent nodes
+│   │   │   ├── tropos_element_item/ # Goals, Resources, Plans
+│   │   │   ├── base_edge_item.py   # Base class for edges
+│   │   │   ├── base_node_item.py   # Base class for nodes
+│   │   │   ├── base_tropos_item.py # Base class for Tropos elements
+│   │   │   ├── control_point_handle.py  # Flexible edge control points
+│   │   │   ├── position_controll_widget.py  # Position control UI
+│   │   │   ├── properties_panel.py   # Properties sidebar panel
+│   │   │   └── subcanvas_item.py     # Subcanvas component
 │   │   └── help/             # Markdown documentation system
 │   └── utils/                # PDF export and serialization
+│       ├── astr_format.py    # ASTR file format serialization
+│       └── pdf_export.py     # PDF export functionality
 ├── images/                   # Static assets and screenshots
 ├── main.py                   # Application entry point
 ├── pyproject.toml            # Project dependencies
@@ -138,13 +152,14 @@ python main.py
 - [x] Softgoal visual component improvements
 - [x] Cross-platform packaging (Windows, Linux, macOS)
 - [x] Keyboard shortcuts system
+- [x] Flexible link shapes (user-draggable control points for edges)
 
 ### In Progress / Planned
 - [ ] Visual themes (light/dark mode)
 - [ ] Model validation (Tropos methodology consistency)
 - [ ] Undo/redo history for all actions
 - [ ] Diagram templates for common Tropos patterns
-- [ ] Flexible link shapes (user-draggable control points)
+- [ ] Multi-language support (English, Spanish) with language switcher
 
 ---
 
