@@ -16,7 +16,9 @@ class ResourceNodeItem(BaseTroposItem):
         super().__init__(Resource(x, y, radius))
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        r = self.model.radius
+        # ✅ Usar _independent_model si existe
+        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
+        r = model_for_props.radius
         rect = QRectF(-r, -r/2, 2 * r, r)
         if rect.contains(pos):
             dist_left = abs(pos.x() - rect.left())
@@ -37,16 +39,21 @@ class ResourceNodeItem(BaseTroposItem):
         default_color = QColor(200, 150, 250)
         default_border = QColor(0, 0, 0)
         default_text = QColor(255, 255, 255)
+
+        # ✅ Usar _independent_model si existe (para nodos composite internos)
+        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
         
+        # Colores son sincronizados, usar self.model (wrapper)
         fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
         border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
         text_color = QColor(self.model.text_color) if hasattr(self.model, 'text_color') else default_text
-        
+
         painter.setRenderHint(painter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
 
-        r = self.model.radius
+        # ✅ Usar radio del modelo independiente
+        r = model_for_props.radius
         rect = QRectF(-r, -r/2, 2 * r, r)
         painter.drawRect(rect)
 

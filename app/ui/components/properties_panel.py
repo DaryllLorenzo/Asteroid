@@ -210,12 +210,16 @@ class PropertiesPanel(QWidget):
             # Solo actualizar si el texto es distinto para no mover el cursor
             if self.label_edit.toPlainText() != node.model.label:
                 self.label_edit.setPlainText(node.model.label)
+
+            # ✅ Usar _independent_model si existe (para nodos composite internos)
+            has_independent = hasattr(node, '_independent_model') and node._independent_model
+            model_for_independent = node._independent_model if has_independent else node.model
             
-            self.radius_spin.setValue(int(node.model.radius))
-            self.font_size_spin.setValue(int(getattr(node.model, 'font_size', 10)))
-            self.text_width_spin.setValue(int(getattr(node.model, 'text_width', 150)))
-            
-            align = getattr(node.model, 'text_align', 'center')
+            self.radius_spin.setValue(int(model_for_independent.radius))
+            self.font_size_spin.setValue(int(getattr(model_for_independent, 'font_size', 10)))
+            self.text_width_spin.setValue(int(getattr(model_for_independent, 'text_width', 150)))
+
+            align = getattr(model_for_independent, 'text_align', 'center')
             self.btn_align_left.setChecked(align == 'left')
             self.btn_align_center.setChecked(align == 'center')
             self.btn_align_right.setChecked(align == 'right')
@@ -229,13 +233,16 @@ class PropertiesPanel(QWidget):
     def on_node_property_changed(self):
         if not self.current_selection or not hasattr(self.current_selection, 'model'):
             return
+
+        # ✅ Para propiedades independientes, usar _independent_model si existe
+        model_for_independent = self.current_selection._independent_model if hasattr(self.current_selection, '_independent_model') and self.current_selection._independent_model else self.current_selection.model
         
         props = {
-            'label': self.label_edit.toPlainText(),
-            'radius': self.radius_spin.value(),
-            'font_size': self.font_size_spin.value(),
-            'text_width': self.text_width_spin.value(),
-            'text_align': 'left' if self.btn_align_left.isChecked() else 'right' if self.btn_align_right.isChecked() else 'center'
+            'label': self.label_edit.toPlainText(),  # Sincronizado
+            'radius': model_for_independent.radius,  # Independiente
+            'font_size': getattr(model_for_independent, 'font_size', 10),  # Independiente
+            'text_width': getattr(model_for_independent, 'text_width', 150),  # Independiente
+            'text_align': 'left' if self.btn_align_left.isChecked() else 'right' if self.btn_align_right.isChecked() else 'center'  # Independiente
         }
         self.properties_changed.emit(props)
 
@@ -273,6 +280,7 @@ class PropertiesPanel(QWidget):
         if is_node:
             type_name = self.current_selection.__class__.__name__
             is_behaviour_node = type_name in ["ActorNodeItem", "AgentNodeItem"]
+            # ✅ Usar model directamente para show_subcanvas (propiedad no sincronizada)
             has_subcanvas = getattr(self.current_selection.model, 'show_subcanvas', False)
 
         self.node_group.setVisible(is_node)
@@ -284,6 +292,7 @@ class PropertiesPanel(QWidget):
 
     def choose_color(self, color_type):
         if not self.current_selection: return
+        # ✅ Colores son sincronizados, usar node.model (wrapper)
         current = QColor(getattr(self.current_selection.model, color_type, "#ffffff"))
         color = QColorDialog.getColor(current, self)
         if color.isValid():
@@ -292,6 +301,7 @@ class PropertiesPanel(QWidget):
 
     def update_color_buttons(self):
         if not self.current_selection or not hasattr(self.current_selection, 'model'): return
+        # ✅ Colores son sincronizados, usar node.model (wrapper)
         m = self.current_selection.model
         self.color_btn.setStyleSheet(f"background-color: {getattr(m, 'color', '#eee')}; border: 1px solid #999;")
         self.border_color_btn.setStyleSheet(f"background-color: {getattr(m, 'border_color', '#eee')}; border: 1px solid #999;")
@@ -302,6 +312,7 @@ class PropertiesPanel(QWidget):
 
     def on_position_in_subcanvas_changed(self, x, y):
         if self.current_selection:
+            # ✅ Position es independiente, emitir como está
             self.properties_changed.emit({'position_in_subcanvas_x': x, 'position_in_subcanvas_y': y})
 
     def reset_position_in_subcanvas(self):

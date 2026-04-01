@@ -16,7 +16,9 @@ class PlanNodeItem(BaseTroposItem):
         super().__init__(Plan(x, y, radius))
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        r = self.model.radius
+        # ✅ Usar _independent_model si existe
+        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
+        r = model_for_props.radius
         points = [
             QPointF(-r, 0), QPointF(-r/2, -r/2), QPointF(r/2, -r/2),
             QPointF(r, 0), QPointF(r/2, r/2), QPointF(-r/2, r/2)
@@ -50,15 +52,20 @@ class PlanNodeItem(BaseTroposItem):
         default_color = QColor(150, 180, 250)
         default_border = QColor(0, 0, 0)
         default_text = QColor(255, 255, 255)
+
+        # ✅ Usar _independent_model si existe (para nodos composite internos)
+        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
         
+        # Colores son sincronizados, usar self.model (wrapper)
         fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
         border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
         text_color = QColor(self.model.text_color) if hasattr(self.model, 'text_color') else default_text
-        
+
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
 
-        r = self.model.radius
+        # ✅ Usar radio del modelo independiente
+        r = model_for_props.radius
         points = [
             QPointF(-r, 0), QPointF(-r/2, -r/2), QPointF(r/2, -r/2),
             QPointF(r, 0), QPointF(r/2, r/2), QPointF(-r/2, r/2)

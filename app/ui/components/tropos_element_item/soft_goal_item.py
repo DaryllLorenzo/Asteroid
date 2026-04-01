@@ -18,11 +18,14 @@ class SoftGoalNodeItem(BaseTroposItem):
         self.path = self._create_cloud_path()
 
     def _create_cloud_path(self):
+        return self._create_cloud_path_for_radius(float(self.model.radius))
+    
+    def _create_cloud_path_for_radius(self, r: float):
+        """Crea un path de nube para un radio específico"""
         path = QPainterPath()
-        r = float(self.model.radius)
-        w = r * 2.8 
+        w = r * 2.8
         h = r * 0.95
-        
+
         path.moveTo(-w * 0.85, 0)
         path.cubicTo(-w * 1.05, -h * 0.8, -w * 0.75, -h * 1.3, -w * 0.35, -h * 0.85)
         path.cubicTo(-w * 0.15, -h * 1.25, w * 0.15, -h * 1.25, w * 0.35, -h * 0.85)
@@ -35,21 +38,26 @@ class SoftGoalNodeItem(BaseTroposItem):
 
     def boundingRect(self):
         if not hasattr(self, "path") or self.path.isEmpty():
-            r = self.model.radius
+            # ✅ Usar _independent_model si existe
+            model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
+            r = model_for_props.radius
             return QRectF(-r, -r, r*2, r*2)
         return self.path.boundingRect().adjusted(-2, -2, 2, 2)
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
         """Distancia aproximada al borde de la nube."""
+        # ✅ Usar _independent_model si existe
+        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
+        
         if hasattr(self, 'path') and not self.path.isEmpty():
             # Crear un stroker para simular el borde
             from PyQt6.QtGui import QPen, QPainterPathStroker
             stroker = QPainterPathStroker()
             stroker.setWidth(10)  # Ancho del área de detección
-            
+
             # Crear path para el borde
             stroke_path = stroker.createStroke(self.path)
-            
+
             # Si el punto está en el borde, distancia = 0
             if stroke_path.contains(pos):
                 return 0
@@ -59,7 +67,7 @@ class SoftGoalNodeItem(BaseTroposItem):
                 center = br.center()
                 dist_to_center = math.sqrt((pos.x() - center.x())**2 + (pos.y() - center.y())**2)
                 # Aproximación simple
-                return abs(dist_to_center - self.model.radius)
+                return abs(dist_to_center - model_for_props.radius)
         return super()._get_distance_to_border(pos)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
@@ -73,14 +81,25 @@ class SoftGoalNodeItem(BaseTroposItem):
         default_color = QColor(220, 220, 180)
         default_border = QColor(0, 0, 0)
         default_text = QColor(0, 0, 0)
+
+        # ✅ Usar _independent_model si existe (para nodos composite internos)
+        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
         
+        # Colores son sincronizados, usar self.model (wrapper)
         fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
         border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
         text_color = QColor(self.model.text_color) if hasattr(self.model, 'text_color') else default_text
-        
+
         painter.setRenderHint(painter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
+        
+        # ✅ Actualizar path con radio independiente si es necesario
+        if model_for_props is not self.model:
+            # Para nodos composite, necesitamos actualizar el path con el radio correcto
+            r = model_for_props.radius
+            self.path = self._create_cloud_path_for_radius(r)
+        
         painter.drawPath(self.path)
 
         # DIBUJAR TEXTO MULTILÍNEA

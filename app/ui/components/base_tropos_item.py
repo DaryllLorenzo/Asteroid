@@ -17,19 +17,31 @@ class BaseTroposItem(QGraphicsObject):
     def __init__(self, model):
         super().__init__()
         self.model = model
+        # Para nodos composite internos: modelo independiente para radius, posición, etc.
+        self._independent_model = None
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable)
         self.setAcceptHoverEvents(True)
         self.setZValue(10)
         self._resizing = False
         if not hasattr(self.model, 'font_size'): self.model.font_size = 10
+    
+    def _get_model_for_independent_prop(self, prop_name, default=None):
+        """
+        Obtiene una propiedad independiente (radius, x, y, etc.)
+        Si es un nodo composite interno, usa el modelo interno.
+        Si no, usa el modelo normal.
+        """
+        if self._independent_model and hasattr(self._independent_model, prop_name):
+            return getattr(self._independent_model, prop_name)
+        return getattr(self.model, prop_name, default)
 
     def boundingRect(self) -> QRectF:
-        r = getattr(self.model, "radius", 50)
+        r = self._get_model_for_independent_prop("radius", 50)
         return QRectF(-r, -r, 2 * r, 2 * r)
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        r = getattr(self.model, "radius", 50)
+        r = self._get_model_for_independent_prop("radius", 50)
         center_dist = (pos.x()**2 + pos.y()**2) ** 0.5
         return abs(center_dist - r)
 
@@ -86,8 +98,14 @@ class BaseTroposItem(QGraphicsObject):
     def set_radius(self, new_r: float):
         """Actualiza el radio del modelo"""
         self.prepareGeometryChange()
-        old_r = getattr(self.model, 'radius', new_r)
-        self.model.radius = new_r
+        old_r = self._get_model_for_independent_prop('radius', new_r)
+        
+        # Usar el modelo independiente si existe, sino el modelo normal
+        if self._independent_model:
+            self._independent_model.radius = new_r
+        else:
+            self.model.radius = new_r
+        
         self.update()
 
         if old_r != new_r:
@@ -98,35 +116,50 @@ class BaseTroposItem(QGraphicsObject):
         super().mouseDoubleClickEvent(event)
 
     def draw_multiline_text(self, painter, text_color_hex):
+        # Label y color se sincronizan, así que usar self.model (wrapper)
         label = getattr(self.model, "label", "")
         if not label: return
-        text_width = getattr(self.model, "text_width", 150)
-        font_size = getattr(self.model, "font_size", 10)
-        align_str = getattr(self.model, "text_align", "center")
         
+        # text_width, font_size, align pueden ser independientes
+        text_width = self._get_model_for_independent_prop("text_width", 150)
+        font_size = self._get_model_for_independent_prop("font_size", 10)
+        align_str = self._get_model_for_independent_prop("text_align", "center")
+
         align_flag = Qt.AlignmentFlag.AlignCenter
         if align_str == "left": align_flag = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         elif align_str == "right": align_flag = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        
+
         painter.setPen(QColor(text_color_hex))
         font = QFont("Arial", int(font_size))
         font.setBold(True)
         painter.setFont(font)
 
-        rect_height = 500 
+        rect_height = 500
         text_rect = QRectF(-text_width/2, -rect_height/2, text_width, rect_height)
         painter.drawText(text_rect, Qt.TextFlag.TextWordWrap | align_flag, label)
 
     def get_serializable_properties(self):
+        # Radius es independiente
+        radius = self._get_model_for_independent_prop('radius', 50)
+        # Label y color son sincronizados (wrapper)
+        label = getattr(self.model, 'label', '')
+        color = getattr(self.model, 'color', '#3498db')
+        border_color = getattr(self.model, 'border_color', '#2980b9')
+        text_color = getattr(self.model, 'text_color', '#ffffff')
+        # Font properties pueden ser independientes
+        font_size = self._get_model_for_independent_prop('font_size', 10)
+        text_width = self._get_model_for_independent_prop('text_width', 150)
+        text_align = self._get_model_for_independent_prop('text_align', 'center')
+        
         return {
-            'radius': getattr(self.model, 'radius', 50),
-            'label': getattr(self.model, 'label', ''),
-            'font_size': getattr(self.model, 'font_size', 10),
-            'text_width': getattr(self.model, 'text_width', 150),
-            'text_align': getattr(self.model, 'text_align', 'center'),
-            'color': getattr(self.model, 'color', '#3498db'),
-            'border_color': getattr(self.model, 'border_color', '#2980b9'),
-            'text_color': getattr(self.model, 'text_color', '#ffffff'),
+            'radius': radius,
+            'label': label,
+            'font_size': font_size,
+            'text_width': text_width,
+            'text_align': text_align,
+            'color': color,
+            'border_color': border_color,
+            'text_color': text_color,
             'x': self.pos().x(),
             'y': self.pos().y()
         }
@@ -136,15 +169,26 @@ class BaseTroposItem(QGraphicsObject):
         for key, value in properties.items():
             if key == 'radius':
                 self.set_radius(float(value))
+            elif key in ('label', 'color', 'border_color', 'text_color'):
+                # Propiedades sincronizadas - usar el modelo wrapper
+                if hasattr(self.model, key):
+                    setattr(self.model, key, value)
+            elif self._independent_model and hasattr(self._independent_model, key):
+                # Propiedades independientes - usar el modelo independiente
+                setattr(self._independent_model, key, value)
             elif hasattr(self.model, key):
                 setattr(self.model, key, value)
-        
+
         if 'x' in properties and 'y' in properties:
-            self.model.x = properties['x']
-            self.model.y = properties['y']
+            if self._independent_model:
+                self._independent_model.x = properties['x']
+                self._independent_model.y = properties['y']
+            else:
+                self.model.x = properties['x']
+                self.model.y = properties['y']
             self.setPos(properties['x'], properties['y'])
-        
+
         if 'radius' not in properties:
             self.update()
-        
+
         self.properties_changed.emit(self, properties)

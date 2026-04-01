@@ -425,6 +425,8 @@ class CanvasController(QObject):
         mid_node.setPos(mid_x, mid_y)
         # Reemplazar el modelo con el wrapper
         mid_node.model = wrapper
+        # ✅ El nodo externo usa el modelo externo como independiente
+        mid_node._independent_model = external_model
         self.canvas.scene.addItem(mid_node)
         self.nodes.append(mid_node)
 
@@ -432,6 +434,8 @@ class CanvasController(QObject):
         internal_node = NodeClass(0, 0)
         # Reemplazar el modelo con el wrapper
         internal_node.model = wrapper
+        # ✅ IMPORTANTE: Establecer el modelo independiente para radius, posición, etc.
+        internal_node._independent_model = internal_model
         
         # Crear edges
         e1 = DependencyLinkArrowItem(src, mid_node)
@@ -796,18 +800,6 @@ class CanvasController(QObject):
                         if child_node:
                             self._move_node_to_subcanvas(child_node, parent_node)
 
-            # ✅ SEGUNDA PASADA B: Crear nodos internos para composite dependencies
-            for node_data in scene_data.get('nodes', []):
-                model_props = node_data.get('model_properties', {})
-                if model_props.get('is_composite', False):
-                    node_id = node_data['id']
-                    parent_node = node_map.get(node_id)
-                    if parent_node and hasattr(parent_node, 'model'):
-                        # Verificar si el modelo es un CompositeModelWrapper
-                        if hasattr(parent_node.model, 'get_internal_model'):
-                            # Crear el nodo interno en el subcanvas
-                            self._create_composite_internal_node(parent_node, model_props)
-
             # ✅ TERCERA PASADA: Reconstruir edges (TODAS, incluyendo las de subcanvas)
             edge_count = 0
             edge_parent_map = {}  # ✅ Nuevo: mapeo de edges a sus padres
@@ -828,6 +820,135 @@ class CanvasController(QObject):
                 parent_node = node_map.get(parent_id)
                 if parent_node and hasattr(parent_node, 'subcanvas'):
                     self._move_edge_to_subcanvas(edge, parent_node)
+
+            # ✅ QUINTA PASADA: Vincular nodos composite internos con externos
+            # Esto debe hacerse DESPUÉS de crear los edges para poder buscar el target
+            composite_nodes = {}  # id -> node_data mapping
+            
+            for node_data in scene_data.get('nodes', []):
+                model_props = node_data.get('model_properties', {})
+                if model_props.get('is_composite', False):
+                    # ✅ Solo considerar nodos externos (los que NO tienen parent_id)
+                    parent_id = node_data.get('parent_id')
+                    if parent_id is None:
+                        composite_nodes[node_data['id']] = node_data
+            
+            # Para cada nodo composite externo, buscar su interno y vincularlos
+            linked_internal_nodes = set()  # Para evitar vincular el mismo nodo interno dos veces
+            
+            for node_id, node_data in composite_nodes.items():
+                external_node = node_map.get(node_id)
+                if not external_node:
+                    continue
+                
+                model_props = node_data.get('model_properties', {})
+                
+                # ✅ El nodo interno está en el subcanvas del DESTINO de la flecha (target)
+                # Necesitamos encontrar el edge que sale de este nodo composite para saber el destino
+                target_node = None
+                for edge in self.edges:
+                    if edge.source_node == external_node:
+                        target_node = edge.dest_node
+                        break
+                
+                if not target_node:
+                    print(f"⚠️ No se encontró edge saliente para nodo composite {node_id}")
+                    continue
+                
+                # Buscar el nodo interno en el subcanvas del target
+                if hasattr(target_node, 'subcanvas') and target_node.subcanvas:
+                    # Buscar el nodo interno en el subcanvas
+                    internal_node = None
+                    
+                    # ✅ Obtener posición interna esperada (puede ser diferente para cada nodo)
+                    expected_x = target_node.subcanvas.radius * float(model_props.get('internal_position_in_subcanvas_x', 0.6))
+                    expected_y = target_node.subcanvas.radius * float(model_props.get('internal_position_in_subcanvas_y', 0.0))
+                    
+                    # ✅ Buscar todos los nodos del mismo tipo en el subcanvas
+                    candidates = []
+                    for child in target_node.subcanvas.childItems():
+                        # ✅ Evitar nodos ya vinculados
+                        if id(child) in linked_internal_nodes:
+                            continue
+                        
+                        if isinstance(child, type(external_node)) and hasattr(child, 'model'):
+                            candidates.append(child)
+                    
+                    # ✅ Si hay múltiples candidatos, buscar el más cercano a la posición esperada
+                    if len(candidates) == 1:
+                        internal_node = candidates[0]
+                        print(f"🔍 Nodo interno encontrado (único candidato) en subcanvas de {target_node}")
+                    elif len(candidates) > 1:
+                        # Buscar el más cercano a la posición esperada
+                        min_dist = float('inf')
+                        for candidate in candidates:
+                            dist = abs(candidate.pos().x() - expected_x) + abs(candidate.pos().y() - expected_y)
+                            if dist < min_dist:
+                                min_dist = dist
+                                internal_node = candidate
+                        print(f"🔍 Nodo interno encontrado en subcanvas de {target_node} (distancia={min_dist:.1f})")
+                    else:
+                        print(f"⚠️ No se encontraron nodos del tipo {type(external_node).__name__} en subcanvas de {target_node}")
+                    
+                    if internal_node:
+                        # Marcar como vinculado
+                        linked_internal_nodes.add(id(internal_node))
+                        
+                        # Crear wrapper y vincular ambos nodos
+                        ModelClass = _MODEL_MAP.get(node_data['type'])
+                        if ModelClass:
+                            # ✅ PRESERVAR radio interno antes de crear el wrapper
+                            internal_radius = internal_node._independent_model.radius if hasattr(internal_node, '_independent_model') else getattr(internal_node.model, 'radius', 50)
+                            
+                            # Crear modelo interno con los datos serializados
+                            new_internal_model = ModelClass(0, 0)
+                            new_internal_model.position_in_subcanvas_x = float(model_props.get('internal_position_in_subcanvas_x', 0.6))
+                            new_internal_model.position_in_subcanvas_y = float(model_props.get('internal_position_in_subcanvas_y', 0.0))
+                            # ✅ Preservar radio interno
+                            new_internal_model.radius = internal_radius
+                            
+                            # El modelo externo es el que ya tiene el nodo externo
+                            external_model = external_node.model
+                            
+                            # Crear wrapper
+                            wrapper = CompositeModelWrapper(external_model, new_internal_model)
+                            
+                            # Actualizar ambos nodos con el wrapper
+                            external_node.model = wrapper
+                            external_node._independent_model = external_model
+                            
+                            internal_node.model = wrapper
+                            internal_node._independent_model = new_internal_model
+                            
+                            # ✅ Actualizar propiedades sincronizadas a través del wrapper
+                            wrapper.label = model_props.get('label', '')
+                            wrapper.color = model_props.get('color', '#3498db')
+                            wrapper.border_color = model_props.get('border_color', '#2980b9')
+                            wrapper.text_color = model_props.get('text_color', '#ffffff')
+                            
+                            # ✅ Actualizar radio independiente del nodo externo
+                            external_model.radius = float(model_props.get('radius', 50))
+                            
+                            # Forzar redibujado inicial
+                            external_node.update()
+                            internal_node.update()
+                            
+                            # Agregar callbacks
+                            def on_external_changed(prop_name, value):
+                                external_node.update()
+                                external_node.properties_changed.emit(external_node, {prop_name: value})
+                            
+                            def on_internal_changed(prop_name, value):
+                                internal_node.update()
+                            
+                            wrapper.add_change_callback(on_external_changed)
+                            wrapper.add_change_callback(on_internal_changed)
+                            
+                            print(f"✅ Nodo composite interno vinculado con externo (radio externo={external_model.radius}, interno={internal_radius})")
+                    else:
+                        print(f"⚠️ No se encontró nodo interno en subcanvas de {target_node}")
+                else:
+                    print(f"⚠️ Target {target_node} no tiene subcanvas")
 
             print(f"✅ Proyecto cargado exitosamente: {filename}")
             print(f"📊 Resumen: {len(node_map)} nodos, {edge_count} edges reconstruidos")
@@ -900,6 +1021,8 @@ class CanvasController(QObject):
             # Crear nodo interno con el wrapper como modelo
             internal_node = NodeClass(0, 0)
             internal_node.model = parent_node.model  # Compartir el wrapper
+            # ✅ IMPORTANTE: Establecer el modelo independiente para radius, posición, etc.
+            internal_node._independent_model = internal_model
             
             # Agregar callback para redibujar nodo interno cuando cambien propiedades sincronizadas
             wrapper = parent_node.model
@@ -1017,7 +1140,7 @@ class CanvasController(QObject):
             if model_props:
                 # Verificar si es un nodo composite
                 is_composite = model_props.get('is_composite', False)
-                
+
                 if is_composite:
                     # Crear modelo interno para el subcanvas
                     ModelClass = _MODEL_MAP.get(node_type)
@@ -1026,33 +1149,56 @@ class CanvasController(QObject):
                         internal_model.position_in_subcanvas_x = float(model_props.get('internal_position_in_subcanvas_x', 0.6))
                         internal_model.position_in_subcanvas_y = float(model_props.get('internal_position_in_subcanvas_y', 0.0))
 
-                        # Crear wrapper - el modelo externo es el que ya tiene el nodo
-                        wrapper = CompositeModelWrapper(node.model, internal_model)
-                        node.model = wrapper
+                        # Guardar modelo externo original antes de crear wrapper
+                        external_model = node.model
                         
+                        # Crear wrapper - el modelo externo es el que ya tiene el nodo
+                        wrapper = CompositeModelWrapper(external_model, internal_model)
+                        node.model = wrapper
+                        # ✅ El nodo externo usa su modelo original como independiente
+                        node._independent_model = external_model
+
                         # Agregar callback para redibujar nodos cuando cambien propiedades sincronizadas
                         def on_model_changed(prop_name, value):
                             node.update()
                             node.properties_changed.emit(node, {prop_name: value})
-                        
+
                         wrapper.add_change_callback(on_model_changed)
-                
-                node.model.x = float(model_props.get('x', pos_data['x']))
-                node.model.y = float(model_props.get('y', pos_data['y']))
-                node.model.radius = float(model_props.get('radius', 50))
-                node.model.label = model_props.get('label', '')
-                node.model.color = model_props.get('color', '#3498db')
-                node.model.border_color = model_props.get('border_color', '#2980b9')
-                node.model.text_color = model_props.get('text_color', '#ffffff')
-                node.model.show_subcanvas = model_props.get('show_subcanvas', False)
+                    
+                    # ✅ Actualizar propiedades sincronizadas a través del wrapper
+                    wrapper.label = model_props.get('label', '')
+                    wrapper.color = model_props.get('color', '#3498db')
+                    wrapper.border_color = model_props.get('border_color', '#2980b9')
+                    wrapper.text_color = model_props.get('text_color', '#ffffff')
+                    
+                    # ✅ Propiedades independientes en el modelo externo
+                    external_model = node._independent_model if hasattr(node, '_independent_model') else node.model
+                    external_model.x = float(model_props.get('x', pos_data['x']))
+                    external_model.y = float(model_props.get('y', pos_data['y']))
+                    external_model.radius = float(model_props.get('radius', 50))
+                    external_model.show_subcanvas = model_props.get('show_subcanvas', False)
+                    external_model.position_in_subcanvas_x = float(model_props.get('position_in_subcanvas_x', 0.0))
+                    external_model.position_in_subcanvas_y = float(model_props.get('position_in_subcanvas_y', 0.0))
+                    external_model.content_offset_x = float(model_props.get('content_offset_x', 0.0))
+                    external_model.content_offset_y = float(model_props.get('content_offset_y', 0.0))
+                else:
+                    # Nodo normal (no composite)
+                    node.model.x = float(model_props.get('x', pos_data['x']))
+                    node.model.y = float(model_props.get('y', pos_data['y']))
+                    node.model.radius = float(model_props.get('radius', 50))
+                    node.model.label = model_props.get('label', '')
+                    node.model.color = model_props.get('color', '#3498db')
+                    node.model.border_color = model_props.get('border_color', '#2980b9')
+                    node.model.text_color = model_props.get('text_color', '#ffffff')
+                    node.model.show_subcanvas = model_props.get('show_subcanvas', False)
 
-                # 🚀 NUEVO: Recuperar la posición del nodo dentro de su subcanvas
-                node.model.position_in_subcanvas_x = float(model_props.get('position_in_subcanvas_x', 0.0))
-                node.model.position_in_subcanvas_y = float(model_props.get('position_in_subcanvas_y', 0.0))
+                    # 🚀 NUEVO: Recuperar la posición del nodo dentro de su subcanvas
+                    node.model.position_in_subcanvas_x = float(model_props.get('position_in_subcanvas_x', 0.0))
+                    node.model.position_in_subcanvas_y = float(model_props.get('position_in_subcanvas_y', 0.0))
 
-                # ✅ Mantener también los offsets de contenido interno
-                node.model.content_offset_x = float(model_props.get('content_offset_x', 0.0))
-                node.model.content_offset_y = float(model_props.get('content_offset_y', 0.0))
+                    # ✅ Mantener también los offsets de contenido interno
+                    node.model.content_offset_x = float(model_props.get('content_offset_x', 0.0))
+                    node.model.content_offset_y = float(model_props.get('content_offset_y', 0.0))
             else:
                 # Fallback a los valores básicos si no hay model_properties
                 node.model.x = float(pos_data['x'])
