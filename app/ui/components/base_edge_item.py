@@ -244,11 +244,13 @@ class BaseEdgeItem(QGraphicsPathItem):
                        self.dest_node.subcanvas_parent is not None and
                        self.source_node.subcanvas_parent == self.dest_node.subcanvas_parent)
 
+        is_selected = self.isSelected()
+
         # Asegurar que hay tantos handles como control points
         while len(self.control_handles) < len(self.control_points):
             # Los control_points están en coordenadas LOCALES del edge
             local_pos = self.control_points[len(self.control_handles)]
-            
+
             handle = ControlPointHandle(
                 self,
                 local_pos,  # Pasar posición en coordenadas locales del edge
@@ -257,7 +259,9 @@ class BaseEdgeItem(QGraphicsPathItem):
             )
             # El handle es hijo del edge, así que usa coordenadas locales
             handle.setParentItem(self)
-            
+            # ✅ IMPORTANTE: Los handles solo son visibles cuando el edge está seleccionado
+            handle.setVisible(is_selected)
+
             self.control_handles.append(handle)
 
         while len(self.control_handles) > len(self.control_points):
@@ -271,7 +275,8 @@ class BaseEdgeItem(QGraphicsPathItem):
         for i, handle in enumerate(self.control_handles):
             if handle is not self._dragging_handle:
                 handle.setPos(self.control_points[i])
-            handle.update_appearance(self.isSelected())
+            handle.update_appearance(is_selected)
+            handle.setVisible(is_selected)
     
     def _on_handle_released(self):
         """Callback cuando se suelta un handle"""
@@ -420,10 +425,12 @@ class BaseEdgeItem(QGraphicsPathItem):
         """Maneja cambios de estado del item (selección, escena, etc.)"""
         if change == QGraphicsItem.GraphicsItemChange.ItemSelectedHasChanged:
             # Actualizar visibilidad de handles
-            self.set_handles_visible(self.isSelected())
+            is_selected = self.isSelected()
+            self.set_handles_visible(is_selected)
             # Actualizar apariencia de handles
             for handle in self.control_handles:
-                handle.update_appearance(self.isSelected())
+                handle.update_appearance(is_selected)
+                handle.setVisible(is_selected)
 
         # Cuando el edge se agrega a una escena, los handles se agregan automáticamente
         # porque son hijos del edge. No necesitamos hacer nada especial.

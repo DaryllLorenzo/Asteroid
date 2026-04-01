@@ -1009,6 +1009,10 @@ class CanvasController(QObject):
             # Actualizar handles después de restaurar todos los puntos
             edge_item._update_handles_position()
             edge_item.update_position()
+            # ✅ Asegurar que el edge y sus handles NO estén seleccionados al cargar
+            edge_item.setSelected(False)
+            # ✅ IMPORTANTE: Ocultar handles explícitamente (el edge no está seleccionado)
+            edge_item.set_handles_visible(False)
 
         return edge_item
 
