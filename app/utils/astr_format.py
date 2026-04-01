@@ -25,10 +25,25 @@ class AstrFormat:
         node_id_map = {}
         
         # Serializar nodos
-        for idx, node in enumerate(nodes):
+        # Primero, identificar nodos composite para evitar duplicarlos
+        serialized_nodes = set()
+        node_id_map = {}
+        idx = 0
+        
+        for node in nodes:
+            # Si el nodo tiene un CompositeModelWrapper, verificar si ya fue serializado
+            if hasattr(node, 'model') and hasattr(node.model, 'get_external_model'):
+                # Es un nodo composite
+                external_model = node.model.get_external_model()
+                if external_model in serialized_nodes:
+                    # Ya serializamos el nodo externo, saltar este interno
+                    continue
+            
             node_data = AstrFormat._serialize_node(node, idx)
             node_id_map[node] = idx
+            serialized_nodes.add(id(node.model) if hasattr(node, 'model') else idx)
             scene_data["nodes"].append(node_data)
+            idx += 1
 
         # Actualizar parent_id para nodos en subcanvas
         for node, node_id in node_id_map.items():
@@ -66,7 +81,7 @@ class AstrFormat:
             "properties": {},
             "parent_id": None
         }
-        
+
         # Obtener propiedades serializables (incluye los nuevos text_width y align)
         try:
             if hasattr(node, 'get_serializable_properties') and callable(getattr(node, 'get_serializable_properties')):
@@ -82,7 +97,7 @@ class AstrFormat:
         except Exception as e:
             print(f"Error serializando propiedades: {e}")
             node_data["properties"] = {}
-            
+
         # Información del subcanvas
         if hasattr(node, 'subcanvas') and node.subcanvas:
             node_data["subcanvas"] = {
@@ -90,29 +105,60 @@ class AstrFormat:
                 "radius": float(node.subcanvas.radius),
                 "original_radius": float(getattr(node.subcanvas, 'original_radius', node.subcanvas.radius))
             }
-        
+
         # Información del modelo completa
         if hasattr(node, 'model'):
-            node_data["model_properties"] = {
-                "show_subcanvas": getattr(node.model, 'show_subcanvas', False),
-                "x": float(getattr(node.model, 'x', 0)),
-                "y": float(getattr(node.model, 'y', 0)),
-                "radius": float(getattr(node.model, 'radius', 50)),
-                "label": getattr(node.model, 'label', ''),
-                "color": getattr(node.model, 'color', '#3498db'),
-                "border_color": getattr(node.model, 'border_color', '#2980b9'),
-                "text_color": getattr(node.model, 'text_color', '#ffffff'),
-                
-                # Posición en subcanvas
-                "position_in_subcanvas_x": float(getattr(node.model, 'position_in_subcanvas_x', 0.0)),
-                "position_in_subcanvas_y": float(getattr(node.model, 'position_in_subcanvas_y', 0.0)),
-                "content_offset_x": float(getattr(node.model, 'content_offset_x', 0.0)),
-                "content_offset_y": float(getattr(node.model, 'content_offset_y', 0.0)),
-                
-                "text_width": float(getattr(node.model, 'text_width', 150)),
-                "text_align": getattr(node.model, 'text_align', 'center')
-            }
-            
+            # Si es un CompositeModelWrapper, guardar información de ambos modelos
+            if hasattr(node.model, 'get_internal_model'):
+                internal_model = node.model.get_internal_model()
+                node_data["model_properties"] = {
+                    "show_subcanvas": getattr(node.model, 'show_subcanvas', False),
+                    "x": float(getattr(node.model, 'x', 0)),
+                    "y": float(getattr(node.model, 'y', 0)),
+                    "radius": float(getattr(node.model, 'radius', 50)),
+                    "label": getattr(node.model, 'label', ''),
+                    "color": getattr(node.model, 'color', '#3498db'),
+                    "border_color": getattr(node.model, 'border_color', '#2980b9'),
+                    "text_color": getattr(node.model, 'text_color', '#ffffff'),
+
+                    # Posición en subcanvas (del modelo interno)
+                    "internal_position_in_subcanvas_x": float(getattr(internal_model, 'position_in_subcanvas_x', 0.0)),
+                    "internal_position_in_subcanvas_y": float(getattr(internal_model, 'position_in_subcanvas_y', 0.0)),
+                    
+                    # Posición en subcanvas (del modelo externo también)
+                    "position_in_subcanvas_x": float(getattr(node.model, 'position_in_subcanvas_x', 0.0)),
+                    "position_in_subcanvas_y": float(getattr(node.model, 'position_in_subcanvas_y', 0.0)),
+                    "content_offset_x": float(getattr(node.model, 'content_offset_x', 0.0)),
+                    "content_offset_y": float(getattr(node.model, 'content_offset_y', 0.0)),
+
+                    "text_width": float(getattr(node.model, 'text_width', 150)),
+                    "text_align": getattr(node.model, 'text_align', 'center'),
+                    
+                    # Marcar como nodo composite
+                    "is_composite": True
+                }
+            else:
+                # Nodo normal (no composite)
+                node_data["model_properties"] = {
+                    "show_subcanvas": getattr(node.model, 'show_subcanvas', False),
+                    "x": float(getattr(node.model, 'x', 0)),
+                    "y": float(getattr(node.model, 'y', 0)),
+                    "radius": float(getattr(node.model, 'radius', 50)),
+                    "label": getattr(node.model, 'label', ''),
+                    "color": getattr(node.model, 'color', '#3498db'),
+                    "border_color": getattr(node.model, 'border_color', '#2980b9'),
+                    "text_color": getattr(node.model, 'text_color', '#ffffff'),
+
+                    # Posición en subcanvas
+                    "position_in_subcanvas_x": float(getattr(node.model, 'position_in_subcanvas_x', 0.0)),
+                    "position_in_subcanvas_y": float(getattr(node.model, 'position_in_subcanvas_y', 0.0)),
+                    "content_offset_x": float(getattr(node.model, 'content_offset_x', 0.0)),
+                    "content_offset_y": float(getattr(node.model, 'content_offset_y', 0.0)),
+
+                    "text_width": float(getattr(node.model, 'text_width', 150)),
+                    "text_align": getattr(node.model, 'text_align', 'center')
+                }
+
         return node_data
 
     @staticmethod

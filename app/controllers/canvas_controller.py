@@ -27,6 +27,11 @@ from app.ui.components.tropos_element_item.hard_goal_item import HardGoalNodeIte
 from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
 from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
 from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeItem
+from app.core.models.tropos_element.hard_goal import HardGoal
+from app.core.models.tropos_element.soft_goal import SoftGoal
+from app.core.models.tropos_element.plan import Plan
+from app.core.models.tropos_element.resource import Resource
+from app.core.models.composite_model_wrapper import CompositeModelWrapper
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.control_point_handle import ControlPointHandle
 
@@ -37,6 +42,14 @@ _NODE_MAP = {
     "soft_goal": SoftGoalNodeItem,
     "plan": PlanNodeItem,
     "resource": ResourceNodeItem,
+}
+
+# Mapeo de clases de modelo (para crear modelos puros sin vista)
+_MODEL_MAP = {
+    "hard_goal": HardGoal,
+    "soft_goal": SoftGoal,
+    "plan": Plan,
+    "resource": Resource,
 }
 
 _ARROW_TYPES = {
@@ -372,16 +385,57 @@ class CanvasController(QObject):
 
         src, dst = self.selected_nodes_for_arrow
         NodeClass = _NODE_MAP[self.composite_node_type]
+        ModelClass = _MODEL_MAP.get(self.composite_node_type)
+        
+        if not ModelClass:
+            print(f"⚠️ No hay modelo para el tipo '{self.composite_node_type}'")
+            return None
 
+        # Crear nodo externo (canvas principal)
         mid_x = (src.pos().x() + dst.pos().x()) / 2.0
         mid_y = (src.pos().y() + dst.pos().y()) / 2.0
+        
+        # Crear modelo externo (puro, sin vista)
+        external_model = ModelClass(0, 0)
+        external_model.x = mid_x
+        external_model.y = mid_y
+        
+        # Crear modelo interno (para el subcanvas)
+        internal_model = ModelClass(0, 0)
+        # El modelo interno tendrá posición relativa al subcanvas
+        internal_model.position_in_subcanvas_x = 0.6  # 60% del radio hacia la derecha
+        internal_model.position_in_subcanvas_y = 0.0
+        
+        # Crear wrapper que sincroniza ambos modelos
+        wrapper = CompositeModelWrapper(external_model, internal_model)
+        
+        # Agregar callback para redibujar nodos cuando cambien propiedades sincronizadas
+        def on_model_changed(prop_name, value):
+            # Redibujar ambos nodos
+            mid_node.update()
+            if hasattr(internal_node, 'update'):
+                internal_node.update()
+            # Notificar cambio de propiedades para edges conectados
+            mid_node.properties_changed.emit(mid_node, {prop_name: value})
+        
+        wrapper.add_change_callback(on_model_changed)
+        
+        # Crear nodo externo - inicialmente con modelo normal, luego reemplazamos
         mid_node = NodeClass(0, 0)
         mid_node.setPos(mid_x, mid_y)
+        # Reemplazar el modelo con el wrapper
+        mid_node.model = wrapper
         self.canvas.scene.addItem(mid_node)
         self.nodes.append(mid_node)
 
+        # Crear nodo interno - inicialmente con modelo normal, luego reemplazamos
+        internal_node = NodeClass(0, 0)
+        # Reemplazar el modelo con el wrapper
+        internal_node.model = wrapper
+        
+        # Crear edges
         e1 = DependencyLinkArrowItem(src, mid_node)
-        e2 = DependencyLinkArrowItem(mid_node, dst) 
+        e2 = DependencyLinkArrowItem(mid_node, dst)
         self.canvas.scene.addItem(e1)
         self.canvas.scene.addItem(e2)
         self.edges.extend([e1, e2])
@@ -393,7 +447,6 @@ class CanvasController(QObject):
             print("⚠️ El nodo destino no soporta subcanvas, se omite la inserción interna.")
 
         if subcanvas:
-            internal_node = NodeClass(0, 0)
             internal_node.setParentItem(subcanvas)
             offset_x = subcanvas.radius * 0.6
             offset_y = 0
@@ -743,6 +796,18 @@ class CanvasController(QObject):
                         if child_node:
                             self._move_node_to_subcanvas(child_node, parent_node)
 
+            # ✅ SEGUNDA PASADA B: Crear nodos internos para composite dependencies
+            for node_data in scene_data.get('nodes', []):
+                model_props = node_data.get('model_properties', {})
+                if model_props.get('is_composite', False):
+                    node_id = node_data['id']
+                    parent_node = node_map.get(node_id)
+                    if parent_node and hasattr(parent_node, 'model'):
+                        # Verificar si el modelo es un CompositeModelWrapper
+                        if hasattr(parent_node.model, 'get_internal_model'):
+                            # Crear el nodo interno en el subcanvas
+                            self._create_composite_internal_node(parent_node, model_props)
+
             # ✅ TERCERA PASADA: Reconstruir edges (TODAS, incluyendo las de subcanvas)
             edge_count = 0
             edge_parent_map = {}  # ✅ Nuevo: mapeo de edges a sus padres
@@ -808,9 +873,62 @@ class CanvasController(QObject):
             
             print(f"✅ Nodo movido al subcanvas de {parent_node} en posición {current_pos}")
             return True
-            
+
         except Exception as e:
             print(f"❌ Error moviendo nodo a subcanvas: {e}")
+            return False
+
+    def _create_composite_internal_node(self, parent_node, model_props):
+        """Crea el nodo interno de un composite dependency en el subcanvas"""
+        try:
+            # Preparar subcanvas del padre
+            subcanvas = parent_node.ensure_subcanvas_visible()
+            if not subcanvas:
+                print(f"❌ No se pudo obtener subcanvas para composite interno de {parent_node}")
+                return False
+
+            # Obtener el modelo interno del wrapper
+            if not hasattr(parent_node.model, 'get_internal_model'):
+                return
+            
+            internal_model = parent_node.model.get_internal_model()
+            node_type = internal_model.node_type()
+            NodeClass = _NODE_MAP.get(node_type)
+            if not NodeClass:
+                return
+
+            # Crear nodo interno con el wrapper como modelo
+            internal_node = NodeClass(0, 0)
+            internal_node.model = parent_node.model  # Compartir el wrapper
+            
+            # Agregar callback para redibujar nodo interno cuando cambien propiedades sincronizadas
+            wrapper = parent_node.model
+            def on_model_changed(prop_name, value):
+                internal_node.update()
+            
+            wrapper.add_change_callback(on_model_changed)
+
+            # Posicionar en el subcanvas
+            internal_node.setParentItem(subcanvas)
+            offset_x = subcanvas.radius * float(model_props.get('internal_position_in_subcanvas_x', 0.6))
+            offset_y = subcanvas.radius * float(model_props.get('internal_position_in_subcanvas_y', 0.0))
+            internal_node.setPos(offset_x, offset_y)
+            internal_node.setVisible(True)
+            internal_node.subcanvas_parent = subcanvas
+
+            self.nodes.append(internal_node)
+
+            if not hasattr(parent_node, "child_nodes"):
+                parent_node.child_nodes = []
+            parent_node.child_nodes.append(internal_node)
+
+            print(f"✅ Nodo composite interno '{node_type}' creado en subcanvas de {parent_node} en ({offset_x:.1f}, {offset_y:.1f})")
+            return True
+
+        except Exception as e:
+            print(f"❌ Error creando nodo composite interno: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def export_to_image(self, filename: str = None) -> bool:
@@ -882,21 +1000,43 @@ class CanvasController(QObject):
         """Crea un nodo a partir de datos serializados - VERSIÓN CON SOPORTE DE POSICIÓN EN SUBCANVAS"""
         node_type = node_data['type']
         pos_data = node_data['position']
-    
+
         print(f"🔧 Creando nodo {node_type} en posición ({pos_data['x']}, {pos_data['y']})")
-    
+
         # ✅ CREAR el nodo en la posición CERO primero
         node = self.add_node(node_type, 0, 0)
         if not node:
             return None
-    
+
         # ✅ LUEGO establecer la posición real en el Canvas
         node.setPos(float(pos_data['x']), float(pos_data['y']))
-    
+
         # ✅ ACTUALIZAR el modelo con la posición correcta y otras propiedades
         if hasattr(node, 'model'):
             model_props = node_data.get('model_properties', {})
             if model_props:
+                # Verificar si es un nodo composite
+                is_composite = model_props.get('is_composite', False)
+                
+                if is_composite:
+                    # Crear modelo interno para el subcanvas
+                    ModelClass = _MODEL_MAP.get(node_type)
+                    if ModelClass:
+                        internal_model = ModelClass(0, 0)
+                        internal_model.position_in_subcanvas_x = float(model_props.get('internal_position_in_subcanvas_x', 0.6))
+                        internal_model.position_in_subcanvas_y = float(model_props.get('internal_position_in_subcanvas_y', 0.0))
+
+                        # Crear wrapper - el modelo externo es el que ya tiene el nodo
+                        wrapper = CompositeModelWrapper(node.model, internal_model)
+                        node.model = wrapper
+                        
+                        # Agregar callback para redibujar nodos cuando cambien propiedades sincronizadas
+                        def on_model_changed(prop_name, value):
+                            node.update()
+                            node.properties_changed.emit(node, {prop_name: value})
+                        
+                        wrapper.add_change_callback(on_model_changed)
+                
                 node.model.x = float(model_props.get('x', pos_data['x']))
                 node.model.y = float(model_props.get('y', pos_data['y']))
                 node.model.radius = float(model_props.get('radius', 50))
@@ -905,11 +1045,11 @@ class CanvasController(QObject):
                 node.model.border_color = model_props.get('border_color', '#2980b9')
                 node.model.text_color = model_props.get('text_color', '#ffffff')
                 node.model.show_subcanvas = model_props.get('show_subcanvas', False)
-                
+
                 # 🚀 NUEVO: Recuperar la posición del nodo dentro de su subcanvas
                 node.model.position_in_subcanvas_x = float(model_props.get('position_in_subcanvas_x', 0.0))
                 node.model.position_in_subcanvas_y = float(model_props.get('position_in_subcanvas_y', 0.0))
-                
+
                 # ✅ Mantener también los offsets de contenido interno
                 node.model.content_offset_x = float(model_props.get('content_offset_x', 0.0))
                 node.model.content_offset_y = float(model_props.get('content_offset_y', 0.0))
@@ -921,52 +1061,52 @@ class CanvasController(QObject):
                 node.model.position_in_subcanvas_y = 0.0
                 node.model.content_offset_x = 0.0
                 node.model.content_offset_y = 0.0
-    
+
         # ✅ RESTAURAR estado del subcanvas (Lógica existente mantenida)
         subcanvas_data = node_data.get('subcanvas')
         if subcanvas_data:
             if not hasattr(node, 'subcanvas') or node.subcanvas is None:
                 node.prepare_subcanvas_for_internal_use()
-            
+
             if node.subcanvas is not None:
                 if 'radius' in subcanvas_data:
                     node.subcanvas.radius = float(subcanvas_data['radius'])
                 if 'original_radius' in subcanvas_data:
                     node.subcanvas.original_radius = float(subcanvas_data['original_radius'])
-    
+
                 if subcanvas_data.get('visible', False):
                     node.ensure_subcanvas_visible()
                 else:
                     node.model.show_subcanvas = False
                     if node.subcanvas:
                         node.subcanvas.setVisible(False)
-    
+
                 if hasattr(node.subcanvas, '_update_handle_pos'):
                     node.subcanvas._update_handle_pos()
-    
+
         # ✅ APLICAR propiedades adicionales y forzar actualización visual
         properties = node_data.get('properties', {})
         if hasattr(node, 'update_properties'):
             properties['x'] = float(pos_data['x'])
             properties['y'] = float(pos_data['y'])
-            
+
             # 🚀 Asegurarnos de que el diccionario de propiedades lleve ambos tipos de offsets
             if hasattr(node, 'model'):
                 properties['content_offset_x'] = node.model.content_offset_x
                 properties['content_offset_y'] = node.model.content_offset_y
                 properties['position_in_subcanvas_x'] = node.model.position_in_subcanvas_x
                 properties['position_in_subcanvas_y'] = node.model.position_in_subcanvas_y
-                
+
             node.update_properties(properties)
-        
+
         # 🚀 APLICAR posición física en subcanvas después de crear el nodo completamente
         if hasattr(node, 'is_subcanvas_visible') and node.is_subcanvas_visible():
             if hasattr(node, 'apply_position_in_subcanvas'):
                 node.apply_position_in_subcanvas()
-        
+
         # Forzar el redibujado
         node.update()
-    
+
         print(f"✅ Nodo {node_type} creado y posicionado. Posición en subcanvas: ({node.model.position_in_subcanvas_x}, {node.model.position_in_subcanvas_y})")
         return node
 
