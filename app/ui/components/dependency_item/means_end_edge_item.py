@@ -40,19 +40,19 @@ class MeansEndArrowItem(BaseEdgeItem):
         painter.drawPath(path)
 
         end_point = self._end_point
-        
+
         # Determinar el último segmento para calcular el ángulo
         if self.control_points:
             last_point = self.control_points[-1]
         else:
             last_point = self._start_point
-        
+
         dx = end_point.x() - last_point.x()
         dy = end_point.y() - last_point.y()
-        
+
         if dx == 0 and dy == 0:
             return
-        
+
         angle = math.atan2(dy, dx)
         ux = math.cos(angle)
         uy = math.sin(angle)

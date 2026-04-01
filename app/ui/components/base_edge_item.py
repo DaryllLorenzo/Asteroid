@@ -27,7 +27,7 @@ class BaseEdgeItem(QGraphicsPathItem):
         self.setFlag(QGraphicsPathItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setZValue(5)
 
-        # Lista de puntos de control (coordenadas en sistema de escena)
+        # Lista de puntos de control (coordenadas LOCALES del edge)
         self.control_points: list[QPointF] = []
         # Lista de handles gráficos asociados a los control points
         self.control_handles: list[ControlPointHandle] = []
@@ -160,7 +160,7 @@ class BaseEdgeItem(QGraphicsPathItem):
     def _calculate_path_points(self):
         """
         Calcula los puntos de la ruta (inicio, control points, fin).
-        Retorna lista de puntos en coordenadas de escena.
+        Retorna lista de puntos en coordenadas LOCALES del edge.
         """
         if not self.source_node or not self.dest_node:
             return [], QPointF(0, 0), QPointF(0, 0)
@@ -173,32 +173,38 @@ class BaseEdgeItem(QGraphicsPathItem):
                        self.source_node.subcanvas_parent == self.dest_node.subcanvas_parent)
 
         if in_subcanvas:
-            # Ambos nodos en el mismo subcanvas - usar coordenadas locales convertidas a escena
-            src_pos = self.source_node.scenePos()
-            dst_pos = self.dest_node.scenePos()
-            
-            # Calcular puntos de conexión en los bordes
-            start_point = self._get_node_border_point(self.source_node, dst_pos, use_local_coords=False)
-            end_point = self._get_node_border_point(self.dest_node, src_pos, use_local_coords=False)
+            # ✅ AMBOS nodos en el MISMO subcanvas - usar coordenadas LOCALES
+            src_pos = self.source_node.pos()
+            dst_pos = self.dest_node.pos()
+
+            # Calcular puntos de conexión en los bordes usando coordenadas locales
+            start_point = self._get_node_border_point(self.source_node, dst_pos, use_local_coords=True)
+            end_point = self._get_node_border_point(self.dest_node, src_pos, use_local_coords=True)
         else:
-            # Nodos en canvas principal o diferentes contextos
+            # ❌ Nodos en diferentes contextos - usar coordenadas de ESCENA
             src_scene_pos = self.source_node.scenePos()
             dst_scene_pos = self.dest_node.scenePos()
-            
+
             start_point = self._get_node_border_point(self.source_node, dst_scene_pos, use_local_coords=False)
             end_point = self._get_node_border_point(self.dest_node, src_scene_pos, use_local_coords=False)
+            
+            # Transformar start_point y end_point de escena a local del edge
+            if self.scene():
+                start_point = self.mapFromScene(start_point)
+                end_point = self.mapFromScene(end_point)
 
         self._start_point = start_point
         self._end_point = end_point
-        
+
         # Construir lista completa de puntos
+        # control_points ya está en coordenadas locales
         if self.control_points:
             # Hay control points: inicio -> controls -> fin
             all_points = [start_point] + self.control_points + [end_point]
         else:
             # Sin control points: solo inicio y fin
             all_points = [start_point, end_point]
-        
+
         return all_points, start_point, end_point
 
     def update_position(self):
@@ -206,26 +212,19 @@ class BaseEdgeItem(QGraphicsPathItem):
         # Evitar actualizaciones recursivas
         if self._updating_position:
             return
-        
+
         self._updating_position = True
-        
+
         try:
             path_points, start_point, end_point = self._calculate_path_points()
 
             if not path_points:
                 return
 
-            # Transformar puntos de coordenadas de escena a locales
-            # Si el edge no tiene escena, usar las coordenadas directamente
-            if self.scene():
-                local_points = [self.mapFromScene(p) for p in path_points]
-            else:
-                # Sin escena, asumir que el edge está en (0,0) y los puntos son relativos
-                local_points = path_points
-            
-            # Crear el path en coordenadas locales
-            path = QPainterPath(local_points[0])
-            for point in local_points[1:]:
+            # _calculate_path_points ya retorna puntos en coordenadas LOCALES
+            # Crear el path en coordenadas locales directamente
+            path = QPainterPath(path_points[0])
+            for point in path_points[1:]:
                 path.lineTo(point)
 
             self.setPath(path)
@@ -238,32 +237,39 @@ class BaseEdgeItem(QGraphicsPathItem):
 
     def _update_handles_position(self):
         """Sincroniza la posición visual de los handles con los control_points"""
+        # Determinar si estamos en subcanvas
+        in_subcanvas = (hasattr(self.source_node, 'subcanvas_parent') and
+                       self.source_node.subcanvas_parent is not None and
+                       hasattr(self.dest_node, 'subcanvas_parent') and
+                       self.dest_node.subcanvas_parent is not None and
+                       self.source_node.subcanvas_parent == self.dest_node.subcanvas_parent)
+
         # Asegurar que hay tantos handles como control points
         while len(self.control_handles) < len(self.control_points):
+            # Los control_points están en coordenadas LOCALES del edge
+            local_pos = self.control_points[len(self.control_handles)]
+            
             handle = ControlPointHandle(
                 self,
-                self.control_points[len(self.control_handles)],
+                local_pos,  # Pasar posición en coordenadas locales del edge
                 self._on_handle_position_changed,
                 self._on_handle_released
             )
-            # Agregar el handle a la escena (los handles viven en coordenadas de escena)
-            if self.scene():
-                self.scene().addItem(handle)
-            else:
-                # Si el edge no tiene escena aún, se agregará cuando la tenga
-                pass
+            # El handle es hijo del edge, así que usa coordenadas locales
+            handle.setParentItem(self)
+            
             self.control_handles.append(handle)
 
         while len(self.control_handles) > len(self.control_points):
             handle = self.control_handles.pop()
             if handle.scene():
                 handle.scene().removeItem(handle)
+            handle.setParentItem(None)  # Desvincular del edge
 
-        # Actualizar posición de cada handle en coordenadas de escena
-        # Los control_points están en coordenadas de escena
+        # Actualizar posición de cada handle
+        # Los handles ahora son hijos del edge, así que usan coordenadas locales
         for i, handle in enumerate(self.control_handles):
             if handle is not self._dragging_handle:
-                # Los handles viven en la escena, así que usamos las coordenadas de escena directamente
                 handle.setPos(self.control_points[i])
             handle.update_appearance(self.isSelected())
     
@@ -280,7 +286,7 @@ class BaseEdgeItem(QGraphicsPathItem):
         for i, h in enumerate(self.control_handles):
             if h is handle:
                 # Este es el handle que se movió
-                # new_pos está en coordenadas de escena (porque el handle vive en la escena)
+                # new_pos está en coordenadas LOCALES del edge (porque el handle es hijo del edge)
                 self.control_points[i] = new_pos
                 # Recalcular solo el path (sin actualizar handles para evitar temblor)
                 self._update_path_only()
@@ -295,19 +301,23 @@ class BaseEdgeItem(QGraphicsPathItem):
         if not path_points:
             return
 
-        # Transformar puntos de coordenadas de escena a locales
-        # Si el edge no tiene escena, usar las coordenadas directamente
-        if self.scene():
-            local_points = [self.mapFromScene(p) for p in path_points]
-        else:
-            local_points = path_points
-        
-        # Crear el path en coordenadas locales
-        path = QPainterPath(local_points[0])
-        for point in local_points[1:]:
+        # _calculate_path_points ya retorna puntos en coordenadas LOCALES
+        # Crear el path en coordenadas locales directamente
+        path = QPainterPath(path_points[0])
+        for point in path_points[1:]:
             path.lineTo(point)
 
         self.setPath(path)
+
+    def get_line(self):
+        """
+        Retorna QLineF equivalente para compatibilidad con código original.
+        Útil para flechas especiales que usan APIs de QGraphicsLineItem.
+        
+        Nota: _start_point y _end_point ya están en coordenadas LOCALES del edge.
+        """
+        return QLineF(self._start_point.x(), self._start_point.y(),
+                     self._end_point.x(), self._end_point.y())
 
     def set_handles_visible(self, visible: bool):
         """Muestra u oculta los handles de control"""
@@ -320,33 +330,36 @@ class BaseEdgeItem(QGraphicsPathItem):
         Agrega un punto de control en la posición dada.
         La posición debe estar en coordenadas de escena.
         """
+        # Transformar scene_pos a coordenadas locales del edge
+        local_pos = self.mapFromScene(scene_pos)
+
         # Insertar en la posición correcta (más cercano al segmento)
         path_points, start_point, end_point = self._calculate_path_points()
-        
+
         if len(path_points) < 2:
             return
-        
+
         # Encontrar el segmento más cercano al punto clickeado
         min_dist = float('inf')
         insert_index = 0
-        
+
         for i in range(len(path_points) - 1):
             p1 = path_points[i]
             p2 = path_points[i + 1]
-            
-            # Calcular distancia punto-segmento
-            dist = self._point_to_segment_distance(scene_pos, p1, p2)
-            
+
+            # Calcular distancia punto-segmento (usando coordenadas locales)
+            dist = self._point_to_segment_distance(local_pos, p1, p2)
+
             if dist < min_dist:
                 min_dist = dist
                 insert_index = i + 1
-        
-        # Insertar el nuevo control point
-        self.control_points.insert(insert_index, scene_pos)
-        
+
+        # Insertar el nuevo control point en coordenadas locales
+        self.control_points.insert(insert_index, local_pos)
+
         # Actualizar handles
         self._update_handles_position()
-        
+
         # Recalcular ruta
         self.update_position()
 
@@ -411,16 +424,13 @@ class BaseEdgeItem(QGraphicsPathItem):
             # Actualizar apariencia de handles
             for handle in self.control_handles:
                 handle.update_appearance(self.isSelected())
-        
-        # Cuando el edge se agrega a una escena, asegurar que los handles también se agreguen
+
+        # Cuando el edge se agrega a una escena, los handles se agregan automáticamente
+        # porque son hijos del edge. No necesitamos hacer nada especial.
         elif change == QGraphicsItem.GraphicsItemChange.ItemSceneHasChanged:
-            new_scene = value
-            if new_scene:
-                # Agregar handles a la nueva escena si no están ya
-                for handle in self.control_handles:
-                    if not handle.scene():
-                        new_scene.addItem(handle)
-        
+            # Los handles son hijos del edge, se mueven automáticamente con él
+            pass
+
         return super().itemChange(change, value)
 
     def paint(self, painter: QPainter, option, widget=None):
@@ -492,8 +502,9 @@ class BaseEdgeItem(QGraphicsPathItem):
         painter.drawPolygon(QPolygonF([adjusted_end, arrow_p1, arrow_p2]))
 
     def clear_handles(self):
-        """Elimina todos los handles de la escena"""
+        """Elimina todos los handles"""
         for handle in self.control_handles:
+            handle.setParentItem(None)  # Desvincular del edge
             if handle.scene():
                 handle.scene().removeItem(handle)
         self.control_handles.clear()

@@ -43,7 +43,7 @@ class OrDecompositionArrowItem(BaseEdgeItem):
 
         # Calcular ángulo usando el ÚLTIMO segmento real del path curvo
         end_point = self._end_point
-        
+
         # Determinar el último segmento para calcular el ángulo correcto
         if self.control_points:
             last_point = self.control_points[-1]
@@ -57,15 +57,15 @@ class OrDecompositionArrowItem(BaseEdgeItem):
             return
 
         angle = math.atan2(dy, dx)
-        
+
         # Calcular el punto donde termina la línea (base del triángulo)
         line_end_point = QPointF(end_point.x() - size * math.cos(angle),
                                  end_point.y() - size * math.sin(angle))
-        
+
         # Crear un path modificado que termine en la base del triángulo
-        # Obtener todos los puntos del path original
+        # Obtener todos los puntos del path original (ya en coordenadas locales)
         path_points, start_point, _ = self._calculate_path_points()
-        
+
         if len(path_points) >= 2:
             # Si hay control points, el último segmento va del último control point al end_point
             # Reemplazamos el último punto con line_end_point
@@ -73,30 +73,25 @@ class OrDecompositionArrowItem(BaseEdgeItem):
                 modified_points = path_points[:-1] + [line_end_point]
             else:
                 modified_points = [start_point, line_end_point]
-            
-            # Crear path modificado en coordenadas locales
-            if self.scene():
-                local_points = [self.mapFromScene(p) for p in modified_points]
-            else:
-                local_points = modified_points
-            
-            modified_path = QPainterPath(local_points[0])
-            for point in local_points[1:]:
+
+            # Los puntos ya están en coordenadas locales
+            modified_path = QPainterPath(modified_points[0])
+            for point in modified_points[1:]:
                 modified_path.lineTo(point)
-            
+
             # Dibujar el path modificado (línea que termina antes)
             painter.drawPath(modified_path)
         else:
             # Fallback: dibujar path original
             painter.drawPath(path)
-        
+
         # Dibujar triángulo sin relleno en la punta
         perp_x = math.sin(angle) * (size * 0.5)
         perp_y = -math.cos(angle) * (size * 0.5)
-        
+
         p_tip = end_point
         p_base = line_end_point
-        
+
         p1 = QPointF(p_base.x() + perp_x, p_base.y() + perp_y)
         p2 = QPointF(p_base.x() - perp_x, p_base.y() - perp_y)
 

@@ -346,6 +346,8 @@ class CanvasController(QObject):
 
         if self._current_subcanvas:
             edge_item.setParentItem(self._current_subcanvas)
+            # CRÍTICO: Recalcular después de setParentItem porque el sistema de coordenadas cambia
+            edge_item.update_position()
             print(f"✅ Edge creada dentro de subcanvas: {self._current_subcanvas}")
         else:
             self.canvas.scene.addItem(edge_item)

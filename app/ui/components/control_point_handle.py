@@ -63,9 +63,17 @@ class ControlPointHandle(QGraphicsEllipseItem):
     def mouseMoveEvent(self, event):
         """Mover el handle y notificar al edge padre"""
         if self._is_dragging and event.buttons() & Qt.MouseButton.LeftButton:
-            # Usar directamente la posición en escena para movimiento suave
-            new_pos = event.scenePos()
-            self.setPos(new_pos)
+            # Transformar posición de escena a coordenadas locales del padre (edge)
+            parent = self.parentItem()
+            if parent:
+                # Convertir de coordenadas de escena a coordenadas locales del padre
+                local_pos = parent.mapFromScene(event.scenePos())
+                self.setPos(local_pos)
+                new_pos = local_pos
+            else:
+                # Sin padre, usar coordenadas de escena directamente
+                new_pos = event.scenePos()
+                self.setPos(new_pos)
 
             # Notificar al edge padre sobre el cambio de posición
             if self.on_position_changed:

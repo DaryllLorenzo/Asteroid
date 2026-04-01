@@ -63,9 +63,9 @@ class AndDecompositionArrowItem(BaseEdgeItem):
                                  end_point.y() - arrow_size * math.sin(angle))
         
         # Crear un path modificado que termine en la base del triángulo
-        # Obtener todos los puntos del path original
+        # Obtener todos los puntos del path original (ya en coordenadas locales)
         path_points, start_point, _ = self._calculate_path_points()
-        
+
         if len(path_points) >= 2:
             # Si hay control points, el último segmento va del último control point al end_point
             # Reemplazamos el último punto con line_end_point
@@ -73,17 +73,12 @@ class AndDecompositionArrowItem(BaseEdgeItem):
                 modified_points = path_points[:-1] + [line_end_point]
             else:
                 modified_points = [start_point, line_end_point]
-            
-            # Crear path modificado en coordenadas locales
-            if self.scene():
-                local_points = [self.mapFromScene(p) for p in modified_points]
-            else:
-                local_points = modified_points
-            
-            modified_path = QPainterPath(local_points[0])
-            for point in local_points[1:]:
+
+            # Los puntos ya están en coordenadas locales
+            modified_path = QPainterPath(modified_points[0])
+            for point in modified_points[1:]:
                 modified_path.lineTo(point)
-            
+
             # Dibujar el path modificado (línea que termina antes)
             painter.drawPath(modified_path)
         else:
