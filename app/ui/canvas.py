@@ -103,9 +103,20 @@ class Canvas(QGraphicsView):
                 super().mousePressEvent(event)
                 return
 
-            # Si es un subcanvas, ignorar (los eventos pasarán al nodo padre)
+            # ✅ Si es subcanvas, buscar el nodo padre y emitir ese
             if isinstance(item, SubCanvasItem):
-                # ❌ NO emitir node_clicked para subcanvas - los eventos pasarán al nodo padre
+                parent = item.parentItem()
+                # Buscar recursivamente hasta encontrar un nodo que no sea subcanvas
+                while parent is not None and isinstance(parent, SubCanvasItem):
+                    parent = parent.parentItem()
+                
+                # Si encontramos un nodo padre válido, usarlo
+                if parent is not None and not isinstance(parent, BaseEdgeItem):
+                    print(f"🔍 Subcanvas click - usando nodo padre: {parent}")
+                    self.node_clicked.emit(parent)
+                else:
+                    # Si no hay padre válido, ignorar
+                    pass
                 super().mousePressEvent(event)
                 return
 
