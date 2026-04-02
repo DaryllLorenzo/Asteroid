@@ -1066,7 +1066,10 @@ class CanvasController(QObject):
                 )
                 if not filename:
                     return False
-            
+
+                if not filename.endswith('.png'):
+                    filename += '.png'
+
             # Obtener el rectángulo que contiene todos los items
             rect = self.canvas.scene.itemsBoundingRect()
             

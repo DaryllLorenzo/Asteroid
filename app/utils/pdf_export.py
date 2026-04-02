@@ -115,33 +115,35 @@ class PDFGenerator:
     def _capture_canvas_image(self) -> Optional[str]:
         """
         Captura el canvas como imagen y retorna la ruta temporal
-        
+
         Returns:
             Ruta de la imagen temporal o None si falla
         """
         try:
             canvas = self.canvas_controller.canvas
-            
-            # Obtener los límites de la escena
-            scene_rect = canvas.scene.sceneRect()
-            
-            # Crear pixmap del tamaño de la escena
-            pixmap = QPixmap(int(scene_rect.width()), int(scene_rect.height()))
+
+            # ✅ Obtener los límites reales de todos los items + margen para evitar cortes
+            scene_rect = canvas.scene.itemsBoundingRect()
+            margin = 50.0  # Margen extra para asegurar que no se corten bordes (subcanvas, etc.)
+            expanded_rect = scene_rect.adjusted(-margin, -margin, margin, margin)
+
+            # Crear pixmap del tamaño expandido
+            pixmap = QPixmap(int(expanded_rect.width()), int(expanded_rect.height()))
             pixmap.fill(QColor(255, 255, 255))  # Usar QColor en lugar de colors.white
-            
-            # Renderizar la escena en el pixmap
+
+            # Renderizar la escena en el pixmap con el rect expandido
             painter = QPainter(pixmap)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-            
-            # Renderizar solo los elementos del diagrama
-            canvas.scene.render(painter)
+
+            # ✅ Renderizar usando el rect expandido para capturar todos los elementos completos
+            canvas.scene.render(painter, source=expanded_rect)
             painter.end()
-            
+
             # Guardar como PNG temporal
             temp_path = Path(__file__).parent.parent.parent / "temp_diagram.png"
             pixmap.save(str(temp_path), "PNG")
-            
+
             return str(temp_path)
             
         except Exception as e:
