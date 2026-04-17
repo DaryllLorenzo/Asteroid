@@ -1,4 +1,4 @@
-# 🌌 Asteroid — Interactive Diagramming Tool for Tropos and i* Methodologies
+# Asteroid — Interactive Diagramming Tool for Tropos and i* Methodologies
 
 <p align="center">
   <img src="images/AsteroidLogo.png" alt="Asteroid Logo" width="400">
@@ -18,7 +18,7 @@ Built with **Python** and **PyQt6**, it follows a clean **MVC-inspired architect
 
 ---
 
-## 🚀 Features
+## Features
 
 ### Core Diagramming
 - **Interactive QGraphicsView canvas** with:
@@ -45,7 +45,7 @@ Built with **Python** and **PyQt6**, it follows a clean **MVC-inspired architect
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 asteroid/
@@ -84,7 +84,7 @@ asteroid/
 
 ---
 
-## ⚙️ Requirements
+## Requirements
 
 | Requirement | Version |
 |-------------|---------|
@@ -96,7 +96,7 @@ asteroid/
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Option 1: Using `uv` (recommended)
 
@@ -133,7 +133,7 @@ python main.py
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 | Main Interface | Actor with Subcanvas |
 |----------------|---------------------|
@@ -143,7 +143,7 @@ python main.py
 
 ---
 
-## 📋 Roadmap
+## Roadmap
 
 ### Completed
 - [x] Actor/agent node movement within subcanvas
@@ -163,7 +163,7 @@ python main.py
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Here's how you can help:
 
@@ -180,13 +180,13 @@ Found a bug? Have a feature request? [Open an issue](https://github.com/DaryllLo
 
 ---
 
-## 📄 License
+## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 ---
 
-## 📬 Contact & Acknowledgments
+## Contact & Acknowledgments
 
 - **Author**: Daryll Lorenzo
 - **Project Website**: [https://darylllorenzo.github.io/asteroid-landing/](https://darylllorenzo.github.io/asteroid-landing/)
