@@ -5,33 +5,35 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView
-from PyQt6.QtGui import QPainter, QWheelEvent, QCursor
-from PyQt6.QtCore import Qt, pyqtSignal, QPointF
+from PyQt6.QtCore import Qt
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QWheelEvent
+from PyQt6.QtWidgets import QGraphicsScene
+from PyQt6.QtWidgets import QGraphicsView
 
 from app.ui.components.base_edge_item import BaseEdgeItem
-from app.ui.components.subcanvas_item import SubCanvasItem
 from app.ui.components.control_point_handle import ControlPointHandle
+from app.ui.components.subcanvas_item import SubCanvasItem
 
 
 class Canvas(QGraphicsView):
     """Vista del lienzo. Gestiona la escena y el zoom."""
 
-    zoom_changed = pyqtSignal(float)       # Nuevo factor de zoom
-    node_dropped = pyqtSignal(str, float, float)   # tipo, x, y
-    arrow_dropped = pyqtSignal(str)        # tipo de flecha
-    node_clicked = pyqtSignal(object)      # para controladores
+    zoom_changed = pyqtSignal(float)  # Nuevo factor de zoom
+    node_dropped = pyqtSignal(str, float, float)  # tipo, x, y
+    arrow_dropped = pyqtSignal(str)  # tipo de flecha
+    node_clicked = pyqtSignal(object)  # para controladores
 
     def __init__(self):
         super().__init__()
         self.scene = QGraphicsScene()
         self.setScene(self.scene)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
+
         # ✅ Fondo blanco
         self.setBackgroundBrush(Qt.GlobalColor.white)
         self.scene.setBackgroundBrush(Qt.GlobalColor.white)
-
 
         # Drag & Drop
         self.setAcceptDrops(True)
@@ -69,29 +71,56 @@ class Canvas(QGraphicsView):
         for it in items:
             if hasattr(it, "subnode_dropped") or hasattr(it, "subarrow_dropped"):
                 local_pt = it.mapFromScene(scene_pos)
-                if item_type in ["simple", "dashed", "dependency_link", "why_link",
-                                 "or_decomposition", "and_decomposition", "contribution", "means_end"]:
+                if item_type in [
+                    "simple",
+                    "dashed",
+                    "dependency_link",
+                    "why_link",
+                    "or_decomposition",
+                    "and_decomposition",
+                    "contribution",
+                    "means_end",
+                ]:
                     # forward a subcanvas
                     it.subarrow_dropped.emit(item_type)
                     print(f"Canvas: forwarded arrow '{item_type}' to subcanvas {it}")
                 else:
                     # forward a subcanvas node
-                    it.subnode_dropped.emit(item_type, float(local_pt.x()), float(local_pt.y()))
-                    print(f"Canvas: forwarded node '{item_type}' to subcanvas {it} at local {local_pt}")
+                    it.subnode_dropped.emit(
+                        item_type, float(local_pt.x()), float(local_pt.y())
+                    )
+                    print(
+                        f"Canvas: forwarded node '{item_type}' to subcanvas {it} at local {local_pt}"
+                    )
                 event.acceptProposedAction()
                 return
 
         # si no hay subcanvas debajo, dropeo global
-        if item_type in ["actor", "agent", "hard_goal", "soft_goal", "plan", "resource"]:
+        if item_type in [
+            "actor",
+            "agent",
+            "hard_goal",
+            "soft_goal",
+            "plan",
+            "resource",
+        ]:
             self.node_dropped.emit(item_type, scene_pos.x(), scene_pos.y())
             print(f"Canvas: node dropped globally '{item_type}' at scene {scene_pos}")
             event.acceptProposedAction()
-        elif item_type in ["simple", "dashed", "dependency_link", "why_link",
-                           "or_decomposition", "and_decomposition", "contribution", "means_end"]:
+        elif item_type in [
+            "simple",
+            "dashed",
+            "dependency_link",
+            "why_link",
+            "or_decomposition",
+            "and_decomposition",
+            "contribution",
+            "means_end",
+        ]:
             self.arrow_dropped.emit(item_type)
             print(f"Canvas: arrow dropped globally '{item_type}'")
             event.acceptProposedAction()
-    
+
     def mousePressEvent(self, event):
         items = self.items(event.pos())
 
@@ -109,7 +138,7 @@ class Canvas(QGraphicsView):
                 # Buscar recursivamente hasta encontrar un nodo que no sea subcanvas
                 while parent is not None and isinstance(parent, SubCanvasItem):
                     parent = parent.parentItem()
-                
+
                 # Si encontramos un nodo padre válido, usarlo
                 if parent is not None and not isinstance(parent, BaseEdgeItem):
                     print(f"🔍 Subcanvas click - usando nodo padre: {parent}")
@@ -131,16 +160,18 @@ class Canvas(QGraphicsView):
         """
         scene_pos = self.mapToScene(event.position().toPoint())
         items = self.items(event.position().toPoint())
-        
+
         # Buscar si hay un edge bajo el cursor
         for item in items:
-            if isinstance(item, BaseEdgeItem) and not isinstance(item, ControlPointHandle):
+            if isinstance(item, BaseEdgeItem) and not isinstance(
+                item, ControlPointHandle
+            ):
                 # Agregar control point en la posición del doble-click
                 item.add_control_point(scene_pos)
                 # Seleccionar el edge para mostrar los handles
                 item.setSelected(True)
                 return
-        
+
         # Si no es en un edge, comportamiento por defecto
         super().mouseDoubleClickEvent(event)
 
@@ -150,14 +181,14 @@ class Canvas(QGraphicsView):
         """
         scene_pos = self.mapToScene(event.position().toPoint())
         items = self.items(event.position().toPoint())
-        
+
         # Buscar si hay un handle bajo el cursor
         cursor_over_handle = False
         for item in items:
             if isinstance(item, ControlPointHandle):
                 cursor_over_handle = True
                 break
-        
+
         if cursor_over_handle:
             self.setCursor(Qt.CursorShape.SizeAllCursor)
         else:
@@ -167,14 +198,14 @@ class Canvas(QGraphicsView):
                 if isinstance(item, BaseEdgeItem) and item.isSelected():
                     cursor_over_edge = True
                     break
-            
+
             if cursor_over_edge:
                 self.setCursor(Qt.CursorShape.PointingHandCursor)
             else:
                 self.setCursor(Qt.CursorShape.ArrowCursor)
-        
+
         super().mouseMoveEvent(event)
-    
+
     # ---------------------
     # Zoom
     # ---------------------

@@ -5,9 +5,15 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from PyQt6.QtWidgets import QGraphicsObject, QGraphicsItem
-from PyQt6.QtCore import QRectF, pyqtSignal, Qt, QPointF
-from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import QRectF
+from PyQt6.QtCore import Qt
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import QGraphicsItem
+from PyQt6.QtWidgets import QGraphicsObject
+
 from app.ui.components.subcanvas_item import SubCanvasItem
 
 
@@ -28,9 +34,12 @@ class BaseNodeItem(QGraphicsObject):
         self._subcanvas_visible = False
         self.setZValue(10)
 
-        if not hasattr(self.model, 'font_size'): self.model.font_size = 10
-        if not hasattr(self.model, 'text_width'): self.model.text_width = 150
-        if not hasattr(self.model, 'text_align'): self.model.text_align = 'center'
+        if not hasattr(self.model, "font_size"):
+            self.model.font_size = 10
+        if not hasattr(self.model, "text_width"):
+            self.model.text_width = 150
+        if not hasattr(self.model, "text_align"):
+            self.model.text_align = "center"
 
     def boundingRect(self) -> QRectF:
         r = getattr(self.model, "radius", 50)
@@ -38,11 +47,11 @@ class BaseNodeItem(QGraphicsObject):
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
         r = getattr(self.model, "radius", 50)
-        center_dist = (pos.x()**2 + pos.y()**2) ** 0.5
+        center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
         return abs(center_dist - r)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
-        center_dist = (pos.x()**2 + pos.y()**2) ** 0.5
+        center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
         return max(center_dist, 10.0)
 
     def hoverMoveEvent(self, event):
@@ -93,7 +102,7 @@ class BaseNodeItem(QGraphicsObject):
 
     def set_radius(self, new_r: float):
         self.prepareGeometryChange()
-        old_r = getattr(self.model, 'radius', new_r)
+        old_r = getattr(self.model, "radius", new_r)
         self.model.radius = new_r
         self.update()
 
@@ -112,7 +121,7 @@ class BaseNodeItem(QGraphicsObject):
             self.model.show_subcanvas = not getattr(self.model, "show_subcanvas", False)
 
         show = getattr(self.model, "show_subcanvas", False)
-        
+
         if show:
             if not self.subcanvas:
                 subcanvas_radius = max(120.0, self.model.radius * 2.0)
@@ -130,14 +139,19 @@ class BaseNodeItem(QGraphicsObject):
                     self.subcanvas.setZValue(self.zValue() - 1)
                 except Exception:
                     pass
-            
+
             self.subcanvas_toggled.emit(self, self.subcanvas)
             self._subcanvas_visible = True
-            
-            if hasattr(self.model, 'position_in_subcanvas_x') and hasattr(self.model, 'position_in_subcanvas_y'):
-                if abs(self.model.position_in_subcanvas_x) > 0.001 or abs(self.model.position_in_subcanvas_y) > 0.001:
+
+            if hasattr(self.model, "position_in_subcanvas_x") and hasattr(
+                self.model, "position_in_subcanvas_y"
+            ):
+                if (
+                    abs(self.model.position_in_subcanvas_x) > 0.001
+                    or abs(self.model.position_in_subcanvas_y) > 0.001
+                ):
                     self.apply_position_in_subcanvas()
-            
+
         else:
             if self.subcanvas:
                 self.subcanvas.setVisible(False)
@@ -170,13 +184,18 @@ class BaseNodeItem(QGraphicsObject):
 
         self.subcanvas_toggled.emit(self, self.subcanvas)
         self._subcanvas_visible = True
-        
-        if hasattr(self.model, 'position_in_subcanvas_x') and hasattr(self.model, 'position_in_subcanvas_y'):
-            if abs(self.model.position_in_subcanvas_x) > 0.001 or abs(self.model.position_in_subcanvas_y) > 0.001:
+
+        if hasattr(self.model, "position_in_subcanvas_x") and hasattr(
+            self.model, "position_in_subcanvas_y"
+        ):
+            if (
+                abs(self.model.position_in_subcanvas_x) > 0.001
+                or abs(self.model.position_in_subcanvas_y) > 0.001
+            ):
                 self.apply_position_in_subcanvas()
-        
+
         return self.subcanvas
-    
+
     def prepare_subcanvas_for_internal_use(self):
         if not self.subcanvas:
             initial_radius = max(250.0, self.model.radius * 3.0)
@@ -191,27 +210,33 @@ class BaseNodeItem(QGraphicsObject):
             self.subcanvas._update_handle_pos()
             self._subcanvas_original_pos = QPointF(0, 0)
         else:
-            if not self.subcanvas.isVisible() and getattr(self.model, "show_subcanvas", False):
+            if not self.subcanvas.isVisible() and getattr(
+                self.model, "show_subcanvas", False
+            ):
                 self.subcanvas.setVisible(True)
                 try:
                     self.subcanvas.setZValue(self.zValue() - 1)
                 except Exception:
                     pass
-        
+
         return self.subcanvas
 
     def apply_position_in_subcanvas(self):
-        if not hasattr(self.model, 'position_in_subcanvas_x') or not hasattr(self.model, 'position_in_subcanvas_y'):
+        if not hasattr(self.model, "position_in_subcanvas_x") or not hasattr(
+            self.model, "position_in_subcanvas_y"
+        ):
             return
 
         if self.is_subcanvas_visible() and self.subcanvas:
             offset_x = self.model.position_in_subcanvas_x * self.subcanvas.radius
             offset_y = self.model.position_in_subcanvas_y * self.subcanvas.radius
-            
-            if not hasattr(self, '_subcanvas_original_pos'):
+
+            if not hasattr(self, "_subcanvas_original_pos"):
                 self._subcanvas_original_pos = QPointF(0, 0)
 
-            new_subcanvas_pos = self._subcanvas_original_pos - QPointF(offset_x, offset_y)
+            new_subcanvas_pos = self._subcanvas_original_pos - QPointF(
+                offset_x, offset_y
+            )
             self.subcanvas.setPos(new_subcanvas_pos)
             self.setZValue(self.subcanvas.zValue() + 1)
             self.update()
@@ -219,53 +244,64 @@ class BaseNodeItem(QGraphicsObject):
     def position_within_subcanvas(self, x_norm, y_norm):
         if not self.is_subcanvas_visible() or not self.subcanvas:
             return
-        
+
         self.model.position_in_subcanvas_x = x_norm
         self.model.position_in_subcanvas_y = y_norm
-        
+
         self.apply_position_in_subcanvas()
-        
-        self.properties_changed.emit(self, {
-            'position_in_subcanvas_x': x_norm,
-            'position_in_subcanvas_y': y_norm
-        })
+
+        self.properties_changed.emit(
+            self, {"position_in_subcanvas_x": x_norm, "position_in_subcanvas_y": y_norm}
+        )
 
     def draw_multiline_text(self, painter, text_color_hex):
         label = getattr(self.model, "label", "")
-        if not label: return
+        if not label:
+            return
 
         text_width = getattr(self.model, "text_width", 150)
         font_size = getattr(self.model, "font_size", 10)
         align_str = getattr(self.model, "text_align", "center")
-        
+
         align_flag = Qt.AlignmentFlag.AlignCenter
-        if align_str == "left": align_flag = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        elif align_str == "right": align_flag = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        
+        if align_str == "left":
+            align_flag = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        elif align_str == "right":
+            align_flag = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+
         flags = Qt.TextFlag.TextWordWrap | align_flag
         painter.setPen(QColor(text_color_hex))
         painter.setFont(QFont("Arial", int(font_size)))
 
-        offset_x = getattr(self.model, 'content_offset_x', 0)
-        offset_y = getattr(self.model, 'content_offset_y', 0)
-        rect_height = 500 
-        text_rect = QRectF(-text_width / 2 + offset_x, -rect_height / 2 + offset_y, text_width, rect_height)
+        offset_x = getattr(self.model, "content_offset_x", 0)
+        offset_y = getattr(self.model, "content_offset_y", 0)
+        rect_height = 500
+        text_rect = QRectF(
+            -text_width / 2 + offset_x,
+            -rect_height / 2 + offset_y,
+            text_width,
+            rect_height,
+        )
         painter.drawText(text_rect, flags, label)
 
     def get_serializable_properties(self):
         return {
-            'radius': getattr(self.model, 'radius', 50),
-            'label': getattr(self.model, 'label', ''),
-            'color': getattr(self.model, 'color', '#3498db'),
-            'border_color': getattr(self.model, 'border_color', '#2980b9'),
-            'text_color': getattr(self.model, 'text_color', '#ffffff'),
-            'font_size': getattr(self.model, 'font_size', 10),
-            'text_width': getattr(self.model, 'text_width', 150),
-            'text_align': getattr(self.model, 'text_align', 'center'),
-            'x': self.pos().x(),
-            'y': self.pos().y(),
-            'position_in_subcanvas_x': getattr(self.model, 'position_in_subcanvas_x', 0.0),
-            'position_in_subcanvas_y': getattr(self.model, 'position_in_subcanvas_y', 0.0),
+            "radius": getattr(self.model, "radius", 50),
+            "label": getattr(self.model, "label", ""),
+            "color": getattr(self.model, "color", "#3498db"),
+            "border_color": getattr(self.model, "border_color", "#2980b9"),
+            "text_color": getattr(self.model, "text_color", "#ffffff"),
+            "font_size": getattr(self.model, "font_size", 10),
+            "text_width": getattr(self.model, "text_width", 150),
+            "text_align": getattr(self.model, "text_align", "center"),
+            "x": self.pos().x(),
+            "y": self.pos().y(),
+            "position_in_subcanvas_x": getattr(
+                self.model, "position_in_subcanvas_x", 0.0
+            ),
+            "position_in_subcanvas_y": getattr(
+                self.model, "position_in_subcanvas_y", 0.0
+            ),
         }
 
     def update_properties(self, properties: dict):
@@ -274,17 +310,19 @@ class BaseNodeItem(QGraphicsObject):
             if hasattr(self.model, key):
                 setattr(self.model, key, value)
 
-        if 'radius' in properties:
+        if "radius" in properties:
             self.prepareGeometryChange()
-            self.model.radius = properties['radius']
+            self.model.radius = properties["radius"]
 
-        if 'x' in properties and 'y' in properties:
-            self.model.x = properties['x']
-            self.model.y = properties['y']
-            self.setPos(properties['x'], properties['y'])
+        if "x" in properties and "y" in properties:
+            self.model.x = properties["x"]
+            self.model.y = properties["y"]
+            self.setPos(properties["x"], properties["y"])
 
-        if ('position_in_subcanvas_x' in properties or 
-            'position_in_subcanvas_y' in properties):
+        if (
+            "position_in_subcanvas_x" in properties
+            or "position_in_subcanvas_y" in properties
+        ):
             if self.is_subcanvas_visible():
                 self.apply_position_in_subcanvas()
 
@@ -293,7 +331,7 @@ class BaseNodeItem(QGraphicsObject):
 
     def is_subcanvas_visible(self):
         return (
-            self.subcanvas is not None 
-            and self.subcanvas.isVisible() 
+            self.subcanvas is not None
+            and self.subcanvas.isVisible()
             and getattr(self.model, "show_subcanvas", False)
         )

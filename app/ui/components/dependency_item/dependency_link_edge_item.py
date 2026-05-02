@@ -6,11 +6,16 @@
 # ---------------------------------------------------
 
 # app/ui/components/dependency_item/dependency_link_edge_item.py
-from PyQt6.QtGui import QPainter, QBrush, QColor, QPolygonF
-from PyQt6.QtCore import QPointF
 import math
 
+from PyQt6.QtCore import QPointF
+from PyQt6.QtGui import QBrush
+from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPolygonF
+
 from app.ui.components.base_edge_item import BaseEdgeItem
+
 
 class DependencyLinkArrowItem(BaseEdgeItem):
     """Flecha tipo dependency: línea de centro a centro con triángulo en el medio."""
@@ -41,7 +46,7 @@ class DependencyLinkArrowItem(BaseEdgeItem):
         # Triángulo en el punto MEDIO REAL del path curvo
         # Usamos el método utilitario para obtener el punto y ángulo correctos
         mid_point, mid_angle = self._get_point_at_percentage(0.5)
-        
+
         # Dibujar triángulo apuntando en la dirección del path
         size = 12.0
         # El vértice del triángulo apunta en la dirección del path
@@ -50,11 +55,15 @@ class DependencyLinkArrowItem(BaseEdgeItem):
         # Calculados perpendicularmente a la dirección del path
         perp_x = -math.sin(mid_angle)
         perp_y = math.cos(mid_angle)
-        
-        p1 = QPointF(p_tip.x() - size * math.cos(mid_angle - math.pi/6),
-                     p_tip.y() - size * math.sin(mid_angle - math.pi/6))
-        p2 = QPointF(p_tip.x() - size * math.cos(mid_angle + math.pi/6),
-                     p_tip.y() - size * math.sin(mid_angle + math.pi/6))
+
+        p1 = QPointF(
+            p_tip.x() - size * math.cos(mid_angle - math.pi / 6),
+            p_tip.y() - size * math.sin(mid_angle - math.pi / 6),
+        )
+        p2 = QPointF(
+            p_tip.x() - size * math.cos(mid_angle + math.pi / 6),
+            p_tip.y() - size * math.sin(mid_angle + math.pi / 6),
+        )
 
         poly = QPolygonF([p_tip, p1, p2])
         painter.setBrush(QBrush(self.pen().color()))

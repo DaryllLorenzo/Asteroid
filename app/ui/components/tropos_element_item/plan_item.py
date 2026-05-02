@@ -5,11 +5,18 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from app.ui.components.base_tropos_item import BaseTroposItem
-from app.core.models.tropos_element.plan import Plan
-from PyQt6.QtGui import QBrush, QPen, QColor, QPolygonF, QFont
-from PyQt6.QtCore import QPointF, Qt, QRectF
 import math
+
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QBrush
+from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QPen
+from PyQt6.QtGui import QPolygonF
+
+from app.core.models.tropos_element.plan import Plan
+from app.ui.components.base_tropos_item import BaseTroposItem
+
 
 class PlanNodeItem(BaseTroposItem):
     def __init__(self, x=0, y=0, radius=50):
@@ -17,13 +24,21 @@ class PlanNodeItem(BaseTroposItem):
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
         # ✅ Usar _independent_model si existe
-        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
+        model_for_props = (
+            self._independent_model
+            if hasattr(self, "_independent_model") and self._independent_model
+            else self.model
+        )
         r = model_for_props.radius
         points = [
-            QPointF(-r, 0), QPointF(-r/2, -r/2), QPointF(r/2, -r/2),
-            QPointF(r, 0), QPointF(r/2, r/2), QPointF(-r/2, r/2)
+            QPointF(-r, 0),
+            QPointF(-r / 2, -r / 2),
+            QPointF(r / 2, -r / 2),
+            QPointF(r, 0),
+            QPointF(r / 2, r / 2),
+            QPointF(-r / 2, r / 2),
         ]
-        min_dist = float('inf')
+        min_dist = float("inf")
         n = len(points)
         for i in range(n):
             p1 = points[i]
@@ -43,10 +58,10 @@ class PlanNodeItem(BaseTroposItem):
         projection = QPointF(a.x() + t * ab.x(), a.y() + t * ab.y())
         dx = p.x() - projection.x()
         dy = p.y() - projection.y()
-        return math.sqrt(dx*dx + dy*dy)
+        return math.sqrt(dx * dx + dy * dy)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
-        return max((pos.x()**2 + pos.y()**2) ** 0.5, 15.0)
+        return max((pos.x() ** 2 + pos.y() ** 2) ** 0.5, 15.0)
 
     def paint(self, painter, option, widget=None):
         default_color = QColor(150, 180, 250)
@@ -54,12 +69,26 @@ class PlanNodeItem(BaseTroposItem):
         default_text = QColor(255, 255, 255)
 
         # ✅ Usar _independent_model si existe (para nodos composite internos)
-        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
-        
+        model_for_props = (
+            self._independent_model
+            if hasattr(self, "_independent_model") and self._independent_model
+            else self.model
+        )
+
         # Colores son sincronizados, usar self.model (wrapper)
-        fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
-        border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
-        text_color = QColor(self.model.text_color) if hasattr(self.model, 'text_color') else default_text
+        fill_color = (
+            QColor(self.model.color) if hasattr(self.model, "color") else default_color
+        )
+        border_color = (
+            QColor(self.model.border_color)
+            if hasattr(self.model, "border_color")
+            else default_border
+        )
+        text_color = (
+            QColor(self.model.text_color)
+            if hasattr(self.model, "text_color")
+            else default_text
+        )
 
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
@@ -67,8 +96,12 @@ class PlanNodeItem(BaseTroposItem):
         # ✅ Usar radio del modelo independiente
         r = model_for_props.radius
         points = [
-            QPointF(-r, 0), QPointF(-r/2, -r/2), QPointF(r/2, -r/2),
-            QPointF(r, 0), QPointF(r/2, r/2), QPointF(-r/2, r/2)
+            QPointF(-r, 0),
+            QPointF(-r / 2, -r / 2),
+            QPointF(r / 2, -r / 2),
+            QPointF(r, 0),
+            QPointF(r / 2, r / 2),
+            QPointF(-r / 2, r / 2),
         ]
         painter.drawPolygon(QPolygonF(points))
 
@@ -82,8 +115,8 @@ class PlanNodeItem(BaseTroposItem):
 
     def get_serializable_properties(self):
         base_properties = super().get_serializable_properties()
-        base_properties['node_type'] = 'plan'
+        base_properties["node_type"] = "plan"
         return base_properties
-    
+
     def update_properties(self, properties: dict):
         super().update_properties(properties)

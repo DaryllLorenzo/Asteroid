@@ -7,8 +7,8 @@
 
 from app.core.models.base_edge import BaseEdge
 
+
 class SimpleEdge(BaseEdge):
-    
     def __init__(self, source, target):
         super().__init__(source, target)
 

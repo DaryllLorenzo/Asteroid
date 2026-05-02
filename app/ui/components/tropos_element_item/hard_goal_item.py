@@ -4,11 +4,19 @@
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
-from app.ui.components.base_tropos_item import BaseTroposItem
-from app.core.models.tropos_element.hard_goal import HardGoal
-from PyQt6.QtGui import QBrush, QPen, QColor, QPainterPath, QFont
-from PyQt6.QtCore import QRectF, QPointF, Qt
 import math
+
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import QRectF
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QBrush
+from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QPainterPath
+from PyQt6.QtGui import QPen
+
+from app.core.models.tropos_element.hard_goal import HardGoal
+from app.ui.components.base_tropos_item import BaseTroposItem
+
 
 class HardGoalNodeItem(BaseTroposItem):
     def __init__(self, x=0, y=0, radius=60):
@@ -16,9 +24,13 @@ class HardGoalNodeItem(BaseTroposItem):
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
         # ✅ Usar _independent_model si existe
-        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
+        model_for_props = (
+            self._independent_model
+            if hasattr(self, "_independent_model") and self._independent_model
+            else self.model
+        )
         r = model_for_props.radius
-        rect = QRectF(-r, -r/2, 2 * r, r)
+        rect = QRectF(-r, -r / 2, 2 * r, r)
         if rect.contains(pos):
             dist_left = abs(pos.x() - rect.left())
             dist_right = abs(pos.x() - rect.right())
@@ -28,7 +40,7 @@ class HardGoalNodeItem(BaseTroposItem):
         else:
             dx = max(rect.left() - pos.x(), 0, pos.x() - rect.right())
             dy = max(rect.top() - pos.y(), 0, pos.y() - rect.bottom())
-            return math.sqrt(dx*dx + dy*dy)
+            return math.sqrt(dx * dx + dy * dy)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
         new_r = abs(pos.x())
@@ -40,12 +52,26 @@ class HardGoalNodeItem(BaseTroposItem):
         default_text = QColor(255, 255, 255)
 
         # ✅ Usar _independent_model si existe (para nodos composite internos)
-        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
-        
+        model_for_props = (
+            self._independent_model
+            if hasattr(self, "_independent_model") and self._independent_model
+            else self.model
+        )
+
         # Colores son sincronizados, usar self.model (wrapper)
-        fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
-        border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
-        text_color = QColor(self.model.text_color) if hasattr(self.model, 'text_color') else default_text
+        fill_color = (
+            QColor(self.model.color) if hasattr(self.model, "color") else default_color
+        )
+        border_color = (
+            QColor(self.model.border_color)
+            if hasattr(self.model, "border_color")
+            else default_border
+        )
+        text_color = (
+            QColor(self.model.text_color)
+            if hasattr(self.model, "text_color")
+            else default_text
+        )
 
         painter.setRenderHint(painter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(fill_color))
@@ -53,9 +79,9 @@ class HardGoalNodeItem(BaseTroposItem):
 
         # ✅ Usar radio del modelo independiente
         r = model_for_props.radius
-        rect = QRectF(-r, -r/2, 2 * r, r)
+        rect = QRectF(-r, -r / 2, 2 * r, r)
         path = QPainterPath()
-        path.addRoundedRect(rect, r/2, r/2)
+        path.addRoundedRect(rect, r / 2, r / 2)
         painter.drawPath(path)
 
         #   DIBUJAR TEXTO MULTILÍNEA
@@ -68,7 +94,7 @@ class HardGoalNodeItem(BaseTroposItem):
 
     def get_serializable_properties(self):
         base_properties = super().get_serializable_properties()
-        base_properties['node_type'] = 'hard_goal'
+        base_properties["node_type"] = "hard_goal"
         return base_properties
 
     def update_properties(self, properties: dict):

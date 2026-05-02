@@ -4,30 +4,45 @@
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                            QLineEdit, QPushButton, QColorDialog, QFrame,
-                            QSpinBox, QFormLayout, QGroupBox, QCheckBox, QMessageBox,
-                            QPlainTextEdit, QButtonGroup, QScrollArea)
-from PyQt6.QtCore import pyqtSignal, Qt
-from PyQt6.QtGui import QColor, QIcon, QTextCursor
+from PyQt6.QtCore import Qt
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QTextCursor
+from PyQt6.QtWidgets import QButtonGroup
+from PyQt6.QtWidgets import QColorDialog
+from PyQt6.QtWidgets import QFormLayout
+from PyQt6.QtWidgets import QFrame
+from PyQt6.QtWidgets import QGroupBox
+from PyQt6.QtWidgets import QHBoxLayout
+from PyQt6.QtWidgets import QLabel
+from PyQt6.QtWidgets import QPlainTextEdit
+from PyQt6.QtWidgets import QPushButton
+from PyQt6.QtWidgets import QScrollArea
+from PyQt6.QtWidgets import QSpinBox
+from PyQt6.QtWidgets import QVBoxLayout
+from PyQt6.QtWidgets import QWidget
+
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.control_point_handle import ControlPointHandle
 from app.ui.components.position_controll_widget import PositionControlWidget
+
 
 class PropertiesPanel(QWidget):
     properties_changed = pyqtSignal(dict)
     selection_mode_changed = pyqtSignal(bool)
     delete_requested = pyqtSignal()
-    
+
     def __init__(self, controller=None):
         super().__init__()
         self.controller = controller
         self.current_selection = None
         self.selection_mode = False
         self.init_ui()
-        
+
         if controller:
-            controller.selected_node_properties_changed.connect(self.on_controller_properties_changed)
+            controller.selected_node_properties_changed.connect(
+                self.on_controller_properties_changed
+            )
             controller.selection_changed.connect(self.on_selection_changed)
 
     def init_ui(self):
@@ -37,7 +52,7 @@ class PropertiesPanel(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
-        
+
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(10, 10, 10, 10)
@@ -46,13 +61,13 @@ class PropertiesPanel(QWidget):
         # --- Grupo de Propiedades de NODO ---
         self.node_group = QGroupBox("Propiedades del Nodo")
         node_layout = QFormLayout()
-        
+
         self.label_edit = QPlainTextEdit()
         self.label_edit.setPlaceholderText("Nombre del nodo...")
         self.label_edit.setMaximumHeight(60)
         self.label_edit.textChanged.connect(self.on_node_property_changed)
         node_layout.addRow("Nombre:", self.label_edit)
-        
+
         self.radius_spin = QSpinBox()
         self.radius_spin.setRange(10, 500)
         self.radius_spin.setSuffix(" px")
@@ -75,21 +90,21 @@ class PropertiesPanel(QWidget):
         align_layout = QHBoxLayout()
         align_layout.setSpacing(2)
         self.align_group = QButtonGroup(self)
-        
+
         self.btn_align_left = QPushButton("L")
         self.btn_align_center = QPushButton("C")
         self.btn_align_right = QPushButton("R")
-        
+
         for btn in [self.btn_align_left, self.btn_align_center, self.btn_align_right]:
             btn.setCheckable(True)
             btn.setFixedWidth(35)
             self.align_group.addButton(btn)
             align_layout.addWidget(btn)
-        
+
         self.btn_align_center.setChecked(True)
         self.align_group.buttonClicked.connect(self.on_node_property_changed)
         node_layout.addRow("Alineación:", align_layout)
-        
+
         self.node_group.setLayout(node_layout)
         layout.addWidget(self.node_group)
 
@@ -97,15 +112,15 @@ class PropertiesPanel(QWidget):
         self.colors_group = QGroupBox("Colores")
         colors_layout = QFormLayout()
         self.color_btn = QPushButton("▆▆▆")
-        self.color_btn.clicked.connect(lambda: self.choose_color('color'))
+        self.color_btn.clicked.connect(lambda: self.choose_color("color"))
         colors_layout.addRow("Relleno:", self.color_btn)
-        
+
         self.border_color_btn = QPushButton("▆▆▆")
-        self.border_color_btn.clicked.connect(lambda: self.choose_color('border_color'))
+        self.border_color_btn.clicked.connect(lambda: self.choose_color("border_color"))
         colors_layout.addRow("Borde:", self.border_color_btn)
-        
+
         self.text_color_btn = QPushButton("▆▆▆")
-        self.text_color_btn.clicked.connect(lambda: self.choose_color('text_color'))
+        self.text_color_btn.clicked.connect(lambda: self.choose_color("text_color"))
         colors_layout.addRow("Texto:", self.text_color_btn)
         self.colors_group.setLayout(colors_layout)
         layout.addWidget(self.colors_group)
@@ -128,7 +143,9 @@ class PropertiesPanel(QWidget):
 
         # --- Flecha ---
         self.edge_group = QGroupBox("Flecha")
-        self.edge_group.setStyleSheet("QGroupBox { color: #FFFFFF; font-weight: bold; }")
+        self.edge_group.setStyleSheet(
+            "QGroupBox { color: #FFFFFF; font-weight: bold; }"
+        )
         edge_layout = QVBoxLayout()
 
         # Información de la flecha
@@ -145,7 +162,9 @@ class PropertiesPanel(QWidget):
             "• Click en 'Enderezar' para línea recta"
         )
         instructions_label.setWordWrap(True)
-        instructions_label.setStyleSheet("background-color: #f5f5f5; color: #333333; padding: 8px; border-radius: 4px; margin: 4px 0;")
+        instructions_label.setStyleSheet(
+            "background-color: #f5f5f5; color: #333333; padding: 8px; border-radius: 4px; margin: 4px 0;"
+        )
         edge_layout.addWidget(instructions_label)
 
         # Botón para enderezar la flecha
@@ -160,7 +179,9 @@ class PropertiesPanel(QWidget):
         self.actions_group = QGroupBox("Acciones")
         actions_layout = QVBoxLayout()
         self.delete_button = QPushButton("🗑️ Eliminar Elemento")
-        self.delete_button.setStyleSheet("background-color: #ff4444; color: white; font-weight: bold; padding: 6px;")
+        self.delete_button.setStyleSheet(
+            "background-color: #ff4444; color: white; font-weight: bold; padding: 6px;"
+        )
         self.delete_button.clicked.connect(self.on_delete_clicked)
         actions_layout.addWidget(self.delete_button)
         self.actions_group.setLayout(actions_layout)
@@ -190,81 +211,117 @@ class PropertiesPanel(QWidget):
         """Muestra información de la flecha seleccionada"""
         # Obtener el tipo de flecha
         edge_type = "Flecha"
-        if hasattr(edge, 'source_node') and hasattr(edge, 'dest_node'):
-            src_name = getattr(edge.source_node.model, 'label', 'Nodo') if hasattr(edge.source_node, 'model') else 'Nodo'
-            dst_name = getattr(edge.dest_node.model, 'label', 'Nodo') if hasattr(edge.dest_node, 'model') else 'Nodo'
+        if hasattr(edge, "source_node") and hasattr(edge, "dest_node"):
+            src_name = (
+                getattr(edge.source_node.model, "label", "Nodo")
+                if hasattr(edge.source_node, "model")
+                else "Nodo"
+            )
+            dst_name = (
+                getattr(edge.dest_node.model, "label", "Nodo")
+                if hasattr(edge.dest_node, "model")
+                else "Nodo"
+            )
             edge_type = f"{src_name} → {dst_name}"
 
         self.edge_info_label.setText(edge_type)
         self.update_visibility()
-    
+
     def on_straighten_edge_clicked(self):
         """Endereza la flecha seleccionada eliminando todos los control points"""
         if self.current_selection and isinstance(self.current_selection, BaseEdgeItem):
-            if self.controller and hasattr(self.controller, 'straighten_edge'):
+            if self.controller and hasattr(self.controller, "straighten_edge"):
                 self.controller.straighten_edge(self.current_selection)
 
     def on_node_selected(self, node):
-        if node and hasattr(node, 'model'):
+        if node and hasattr(node, "model"):
             self.blockSignals(True)
             # Solo actualizar si el texto es distinto para no mover el cursor
             if self.label_edit.toPlainText() != node.model.label:
                 self.label_edit.setPlainText(node.model.label)
 
             # ✅ Usar _independent_model si existe (para nodos composite internos)
-            has_independent = hasattr(node, '_independent_model') and node._independent_model
-            model_for_independent = node._independent_model if has_independent else node.model
-            
-            self.radius_spin.setValue(int(model_for_independent.radius))
-            self.font_size_spin.setValue(int(getattr(model_for_independent, 'font_size', 10)))
-            self.text_width_spin.setValue(int(getattr(model_for_independent, 'text_width', 150)))
+            has_independent = (
+                hasattr(node, "_independent_model") and node._independent_model
+            )
+            model_for_independent = (
+                node._independent_model if has_independent else node.model
+            )
 
-            align = getattr(model_for_independent, 'text_align', 'center')
-            self.btn_align_left.setChecked(align == 'left')
-            self.btn_align_center.setChecked(align == 'center')
-            self.btn_align_right.setChecked(align == 'right')
+            self.radius_spin.setValue(int(model_for_independent.radius))
+            self.font_size_spin.setValue(
+                int(getattr(model_for_independent, "font_size", 10))
+            )
+            self.text_width_spin.setValue(
+                int(getattr(model_for_independent, "text_width", 150))
+            )
+
+            align = getattr(model_for_independent, "text_align", "center")
+            self.btn_align_left.setChecked(align == "left")
+            self.btn_align_center.setChecked(align == "center")
+            self.btn_align_right.setChecked(align == "right")
             self.blockSignals(False)
             self.update_color_buttons()
 
-            if hasattr(node.model, 'position_in_subcanvas_x'):
-                self.pos_control.set_position(node.model.position_in_subcanvas_x, node.model.position_in_subcanvas_y)
+            if hasattr(node.model, "position_in_subcanvas_x"):
+                self.pos_control.set_position(
+                    node.model.position_in_subcanvas_x,
+                    node.model.position_in_subcanvas_y,
+                )
         self.update_visibility()
 
     def on_node_property_changed(self):
-        if not self.current_selection or not hasattr(self.current_selection, 'model'):
+        if not self.current_selection or not hasattr(self.current_selection, "model"):
             return
 
         # ✅ Para propiedades independientes, usar _independent_model si existe
-        model_for_independent = self.current_selection._independent_model if hasattr(self.current_selection, '_independent_model') and self.current_selection._independent_model else self.current_selection.model
-        
+        model_for_independent = (
+            self.current_selection._independent_model
+            if hasattr(self.current_selection, "_independent_model")
+            and self.current_selection._independent_model
+            else self.current_selection.model
+        )
+
         props = {
-            'label': self.label_edit.toPlainText(),  # Sincronizado
-            'radius': model_for_independent.radius,  # Independiente
-            'font_size': getattr(model_for_independent, 'font_size', 10),  # Independiente
-            'text_width': getattr(model_for_independent, 'text_width', 150),  # Independiente
-            'text_align': 'left' if self.btn_align_left.isChecked() else 'right' if self.btn_align_right.isChecked() else 'center'  # Independiente
+            "label": self.label_edit.toPlainText(),  # Sincronizado
+            "radius": model_for_independent.radius,  # Independiente
+            "font_size": getattr(
+                model_for_independent, "font_size", 10
+            ),  # Independiente
+            "text_width": getattr(
+                model_for_independent, "text_width", 150
+            ),  # Independiente
+            "text_align": "left"
+            if self.btn_align_left.isChecked()
+            else "right"
+            if self.btn_align_right.isChecked()
+            else "center",  # Independiente
         }
         self.properties_changed.emit(props)
 
     def on_controller_properties_changed(self, properties: dict):
         # Esta parte es vital para el cursor
-        if not self.current_selection: return
-        
+        if not self.current_selection:
+            return
+
         self.blockSignals(True)
-        if 'label' in properties:
+        if "label" in properties:
             # Solo actualizamos el widget si el texto realmente cambió externamente
             # y no es lo que el usuario acaba de escribir
-            if self.label_edit.toPlainText() != properties['label']:
-                self.label_edit.setPlainText(properties['label'])
+            if self.label_edit.toPlainText() != properties["label"]:
+                self.label_edit.setPlainText(properties["label"])
                 # Mover cursor al final por si acaso
                 cursor = self.label_edit.textCursor()
                 cursor.movePosition(QTextCursor.MoveOperation.End)
                 self.label_edit.setTextCursor(cursor)
-        
+
         # Actualizar los demás campos sin problemas de cursor
-        if 'radius' in properties: self.radius_spin.setValue(int(properties['radius']))
-        if 'font_size' in properties: self.font_size_spin.setValue(int(properties['font_size']))
-        if 'text_width' in properties: self.text_width_spin.setValue(int(properties['text_width']))
+        if "radius" in properties:
+            self.radius_spin.setValue(int(properties["radius"]))
+        if "font_size" in properties:
+            self.font_size_spin.setValue(int(properties["font_size"]))
+        if "text_width" in properties:
+            self.text_width_spin.setValue(int(properties["text_width"]))
         self.blockSignals(False)
         self.update_color_buttons()
 
@@ -272,7 +329,11 @@ class PropertiesPanel(QWidget):
         has_selection = self.current_selection is not None
         # Excluir ControlPointHandle de las selecciones válidas
         is_control_point = isinstance(self.current_selection, ControlPointHandle)
-        is_node = has_selection and not isinstance(self.current_selection, BaseEdgeItem) and not is_control_point
+        is_node = (
+            has_selection
+            and not isinstance(self.current_selection, BaseEdgeItem)
+            and not is_control_point
+        )
         is_edge = has_selection and isinstance(self.current_selection, BaseEdgeItem)
 
         is_behaviour_node = False
@@ -281,7 +342,9 @@ class PropertiesPanel(QWidget):
             type_name = self.current_selection.__class__.__name__
             is_behaviour_node = type_name in ["ActorNodeItem", "AgentNodeItem"]
             # ✅ Usar model directamente para show_subcanvas (propiedad no sincronizada)
-            has_subcanvas = getattr(self.current_selection.model, 'show_subcanvas', False)
+            has_subcanvas = getattr(
+                self.current_selection.model, "show_subcanvas", False
+            )
 
         self.node_group.setVisible(is_node)
         self.colors_group.setVisible(is_node)
@@ -291,7 +354,8 @@ class PropertiesPanel(QWidget):
         self.no_selection_label.setVisible(not has_selection or is_control_point)
 
     def choose_color(self, color_type):
-        if not self.current_selection: return
+        if not self.current_selection:
+            return
         # ✅ Colores son sincronizados, usar node.model (wrapper)
         current = QColor(getattr(self.current_selection.model, color_type, "#ffffff"))
         color = QColorDialog.getColor(current, self)
@@ -300,12 +364,19 @@ class PropertiesPanel(QWidget):
             self.update_color_buttons()
 
     def update_color_buttons(self):
-        if not self.current_selection or not hasattr(self.current_selection, 'model'): return
+        if not self.current_selection or not hasattr(self.current_selection, "model"):
+            return
         # ✅ Colores son sincronizados, usar node.model (wrapper)
         m = self.current_selection.model
-        self.color_btn.setStyleSheet(f"background-color: {getattr(m, 'color', '#eee')}; border: 1px solid #999;")
-        self.border_color_btn.setStyleSheet(f"background-color: {getattr(m, 'border_color', '#eee')}; border: 1px solid #999;")
-        self.text_color_btn.setStyleSheet(f"background-color: {getattr(m, 'text_color', '#eee')}; border: 1px solid #999;")
+        self.color_btn.setStyleSheet(
+            f"background-color: {getattr(m, 'color', '#eee')}; border: 1px solid #999;"
+        )
+        self.border_color_btn.setStyleSheet(
+            f"background-color: {getattr(m, 'border_color', '#eee')}; border: 1px solid #999;"
+        )
+        self.text_color_btn.setStyleSheet(
+            f"background-color: {getattr(m, 'text_color', '#eee')}; border: 1px solid #999;"
+        )
 
     def on_delete_clicked(self):
         self.delete_requested.emit()
@@ -313,7 +384,9 @@ class PropertiesPanel(QWidget):
     def on_position_in_subcanvas_changed(self, x, y):
         if self.current_selection:
             # ✅ Position es independiente, emitir como está
-            self.properties_changed.emit({'position_in_subcanvas_x': x, 'position_in_subcanvas_y': y})
+            self.properties_changed.emit(
+                {"position_in_subcanvas_x": x, "position_in_subcanvas_y": y}
+            )
 
     def reset_position_in_subcanvas(self):
         self.pos_control.set_position(0, 0)

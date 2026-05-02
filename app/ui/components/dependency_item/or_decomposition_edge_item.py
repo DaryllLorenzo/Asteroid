@@ -6,11 +6,17 @@
 # ---------------------------------------------------
 
 # app/ui/components/dependency_item/or_decomposition_edge_item.py
-from PyQt6.QtGui import QPainter, QPen, QPolygonF, QPainterPath
-from PyQt6.QtCore import QPointF, Qt, QRectF
 import math
 
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPainterPath
+from PyQt6.QtGui import QPen
+from PyQt6.QtGui import QPolygonF
+
 from app.ui.components.base_edge_item import BaseEdgeItem
+
 
 class OrDecompositionArrowItem(BaseEdgeItem):
     """Cabeza triangular sin relleno en la punta (OR)."""
@@ -59,8 +65,10 @@ class OrDecompositionArrowItem(BaseEdgeItem):
         angle = math.atan2(dy, dx)
 
         # Calcular el punto donde termina la línea (base del triángulo)
-        line_end_point = QPointF(end_point.x() - size * math.cos(angle),
-                                 end_point.y() - size * math.sin(angle))
+        line_end_point = QPointF(
+            end_point.x() - size * math.cos(angle),
+            end_point.y() - size * math.sin(angle),
+        )
 
         # Crear un path modificado que termine en la base del triángulo
         # Obtener todos los puntos del path original (ya en coordenadas locales)

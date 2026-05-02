@@ -6,10 +6,20 @@
 # ---------------------------------------------------
 
 # app/ui/components/dependency_item/why_link_edge_item.py
-from PyQt6.QtGui import QPainter, QBrush, QColor, QFont, QFontMetrics, QPolygonF
-from PyQt6.QtCore import QPointF, QRectF, Qt
 import math
+
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import QRectF
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QBrush
+from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFontMetrics
+from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPolygonF
+
 from app.ui.components.base_edge_item import BaseEdgeItem
+
 
 class WhyLinkArrowItem(BaseEdgeItem):
     """Flecha tipo WHY: línea de extremo a extremo con triángulo en el medio y texto 'WHY' encima."""
@@ -38,17 +48,21 @@ class WhyLinkArrowItem(BaseEdgeItem):
         # Triángulo y texto "WHY" en el punto MEDIO REAL del path curvo
         # Usamos el método utilitario para obtener el punto y ángulo correctos
         mid_point, mid_angle = self._get_point_at_percentage(0.5)
-        
+
         # Ángulo del path en el punto medio
         angle = mid_angle
         size = 12.0
-        
+
         # Dibujamos triángulo relleno apuntando en la dirección del path
         p_tip = mid_point
-        p1 = QPointF(p_tip.x() - size * math.cos(angle - math.pi / 6),
-                     p_tip.y() - size * math.sin(angle - math.pi / 6))
-        p2 = QPointF(p_tip.x() - size * math.cos(angle + math.pi / 6),
-                     p_tip.y() - size * math.sin(angle + math.pi / 6))
+        p1 = QPointF(
+            p_tip.x() - size * math.cos(angle - math.pi / 6),
+            p_tip.y() - size * math.sin(angle - math.pi / 6),
+        )
+        p2 = QPointF(
+            p_tip.x() - size * math.cos(angle + math.pi / 6),
+            p_tip.y() - size * math.sin(angle + math.pi / 6),
+        )
 
         painter.setBrush(QBrush(self.pen().color()))
         painter.drawPolygon(QPolygonF([p_tip, p1, p2]))
@@ -68,7 +82,7 @@ class WhyLinkArrowItem(BaseEdgeItem):
         painter.save()
         painter.translate(mid_point)
         painter.rotate(math.degrees(angle))
-        
+
         # El texto se dibuja perpendicularmente arriba del path
         text_offset = size + 2
         text_rect = QRectF(-w / 2, -text_offset - h / 2, w, h)

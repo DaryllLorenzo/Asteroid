@@ -5,10 +5,17 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from PyQt6.QtGui import QPainter, QPen, QPolygonF, QPainterPath
-from PyQt6.QtCore import QPointF, Qt, QRectF
 import math
+
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPainterPath
+from PyQt6.QtGui import QPen
+from PyQt6.QtGui import QPolygonF
+
 from app.ui.components.base_edge_item import BaseEdgeItem
+
 
 class AndDecompositionArrowItem(BaseEdgeItem):
     """Barra (T) cerca del final + cabeza triangular sin relleno."""
@@ -41,7 +48,7 @@ class AndDecompositionArrowItem(BaseEdgeItem):
 
         # Calcular ángulo y vectores unitarios usando el último segmento real
         end_point = self._end_point
-        
+
         # Determinar el último segmento para calcular el ángulo correcto
         if self.control_points:
             last_point = self.control_points[-1]
@@ -59,9 +66,11 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         perp_y = math.cos(angle)
 
         # Calcular el punto donde termina la línea (base del triángulo)
-        line_end_point = QPointF(end_point.x() - arrow_size * math.cos(angle),
-                                 end_point.y() - arrow_size * math.sin(angle))
-        
+        line_end_point = QPointF(
+            end_point.x() - arrow_size * math.cos(angle),
+            end_point.y() - arrow_size * math.sin(angle),
+        )
+
         # Crear un path modificado que termine en la base del triángulo
         # Obtener todos los puntos del path original (ya en coordenadas locales)
         path_points, start_point, _ = self._calculate_path_points()
@@ -88,11 +97,15 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         # Cabeza triangular sin relleno en la punta
         p_tip = end_point
         base = line_end_point
-        
-        corner1 = QPointF(base.x() + perp_x * (0.5 * arrow_size),
-                          base.y() + perp_y * (0.5 * arrow_size))
-        corner2 = QPointF(base.x() - perp_x * (0.5 * arrow_size),
-                          base.y() - perp_y * (0.5 * arrow_size))
+
+        corner1 = QPointF(
+            base.x() + perp_x * (0.5 * arrow_size),
+            base.y() + perp_y * (0.5 * arrow_size),
+        )
+        corner2 = QPointF(
+            base.x() - perp_x * (0.5 * arrow_size),
+            base.y() - perp_y * (0.5 * arrow_size),
+        )
 
         poly = QPolygonF([p_tip, corner1, corner2])
         painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -101,13 +114,17 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         # Barra vertical (T) en el 60% REAL del path curvo
         # Usamos el método utilitario para obtener el punto y ángulo correctos
         bar_point, bar_angle = self._get_point_at_percentage(0.6)
-        
+
         # La barra debe ser perpendicular al path en ese punto
         half = 6.0
         # Perpendicular al ángulo del path
         bar_perp_x = -math.sin(bar_angle)
         bar_perp_y = math.cos(bar_angle)
-        
-        pa = QPointF(bar_point.x() - bar_perp_x * half, bar_point.y() - bar_perp_y * half)
-        pb = QPointF(bar_point.x() + bar_perp_x * half, bar_point.y() + bar_perp_y * half)
+
+        pa = QPointF(
+            bar_point.x() - bar_perp_x * half, bar_point.y() - bar_perp_y * half
+        )
+        pb = QPointF(
+            bar_point.x() + bar_perp_x * half, bar_point.y() + bar_perp_y * half
+        )
         painter.drawLine(pa, pb)

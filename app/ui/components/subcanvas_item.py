@@ -6,22 +6,33 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from PyQt6.QtWidgets import QGraphicsObject, QGraphicsRectItem, QGraphicsItem
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
-from PyQt6.QtCore import QRectF, pyqtSignal, Qt, QPointF
 import math
+
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import QRectF
+from PyQt6.QtCore import Qt
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QBrush
+from PyQt6.QtGui import QPainterPath
+from PyQt6.QtGui import QPen
+from PyQt6.QtWidgets import QGraphicsItem
+from PyQt6.QtWidgets import QGraphicsObject
+from PyQt6.QtWidgets import QGraphicsRectItem
 
 # Lista de tipos de "links" soportados dentro del subcanvas
 ARROW_TYPES = {
-    "dependency_link", "why_link",
-    "or_decomposition", "and_decomposition",
-    "contribution", "means_end"
+    "dependency_link",
+    "why_link",
+    "or_decomposition",
+    "and_decomposition",
+    "contribution",
+    "means_end",
 }
 
 
 class ResizeHandle(QGraphicsRectItem):
     def __init__(self, parent_subcanvas, size: float = 10.0):
-        super().__init__(-size/2.0, -size/2.0, size, size)
+        super().__init__(-size / 2.0, -size / 2.0, size, size)
         self.setParentItem(parent_subcanvas)
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsSelectable, False)
@@ -68,7 +79,9 @@ class SubCanvasItem(QGraphicsObject):
     def boundingRect(self) -> QRectF:
         r = float(self.radius)
         margin = 4.0
-        return QRectF(-r - margin, -r - margin, 2.0 * r + margin * 2.0, 2.0 * r + margin * 2.0)
+        return QRectF(
+            -r - margin, -r - margin, 2.0 * r + margin * 2.0, 2.0 * r + margin * 2.0
+        )
 
     def shape(self):
         path = QPainterPath()
@@ -142,6 +155,8 @@ class SubCanvasItem(QGraphicsObject):
             return
 
         # Si no es flecha, lo tratamos como nodo tropos
-        print(f"SubCanvasItem: node dropped '{item_type}' at local ({pos.x():.1f}, {pos.y():.1f})")
+        print(
+            f"SubCanvasItem: node dropped '{item_type}' at local ({pos.x():.1f}, {pos.y():.1f})"
+        )
         self.subnode_dropped.emit(item_type, float(pos.x()), float(pos.y()))
         event.acceptProposedAction()
