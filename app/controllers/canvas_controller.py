@@ -290,31 +290,32 @@ class CanvasController(QObject):
             node_item = node_item.source_node
 
         if self.composite_mode:
-            while node_item is not None and not isinstance(
-                node_item, (ActorNodeItem, AgentNodeItem)
-            ):
-                node_item = node_item.parentItem()
-
-            if node_item is None or not isinstance(
-                node_item, (ActorNodeItem, AgentNodeItem)
-            ):
-                print(
-                    "CanvasController: composite mode only accepts "
-                    "Actor/Agent; ignored."
-                )
-                return
-
-            if node_item not in self.selected_nodes_for_arrow:
-                self.selected_nodes_for_arrow.append(node_item)
-                node_item.setSelected(True)
-
-            if len(self.selected_nodes_for_arrow) == 2:
-                self.create_composite_dependency()
+            self._handle_composite_mode_click(node_item)
             return
 
-        if not self.arrow_mode:
+        if self.arrow_mode:
+            self._handle_arrow_mode_click(node_item)
+
+    def _handle_composite_mode_click(self, node_item):
+        node = self._find_parent_actor_agent(node_item)
+        if node is None:
+            print("CanvasController: composite mode only accepts Actor/Agent; ignored.")
             return
 
+        if node not in self.selected_nodes_for_arrow:
+            self.selected_nodes_for_arrow.append(node)
+            node.setSelected(True)
+
+        if len(self.selected_nodes_for_arrow) == 2:
+            self.create_composite_dependency()
+
+    def _find_parent_actor_agent(self, node_item):
+        node = node_item
+        while node is not None and not isinstance(node, (ActorNodeItem, AgentNodeItem)):
+            node = node.parentItem()
+        return node
+
+    def _handle_arrow_mode_click(self, node_item):
         node_subcanvas = getattr(node_item, "subcanvas_parent", None)
         if self._current_subcanvas:
             if node_subcanvas is not self._current_subcanvas:

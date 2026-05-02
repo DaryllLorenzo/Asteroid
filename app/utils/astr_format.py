@@ -9,9 +9,16 @@ from typing import Any
 
 class AstrFormat:
     @staticmethod
-    def serialize_scene(nodes: list, edges: list) -> dict[str, Any]:
-        """Serializa la escena completa a formato JSON"""
-        scene_data = {
+    def serialize_scene(nodes, edges):
+        scene_data = AstrFormat._create_scene_data_template(nodes, edges)
+        AstrFormat._serialize_nodes(nodes, scene_data)
+        AstrFormat._serialize_node_parent_ids(nodes, scene_data)
+        AstrFormat._serialize_edges(edges, scene_data)
+        return scene_data
+
+    @staticmethod
+    def _create_scene_data_template(nodes, edges):
+        return {
             "version": "1.4",
             "metadata": {
                 "created_by": "Asteroid",
@@ -22,21 +29,16 @@ class AstrFormat:
             "edges": [],
         }
 
-        node_id_map = {}
-
-        # Serializar nodos
-        # Primero, identificar nodos composite para evitar duplicarlos
+    @staticmethod
+    def _serialize_nodes(nodes, scene_data):
         serialized_nodes = set()
         node_id_map = {}
         idx = 0
 
         for node in nodes:
-            # Si el nodo tiene un CompositeModelWrapper, verificar si ya fue serializado
             if hasattr(node, "model") and hasattr(node.model, "get_external_model"):
-                # Es un nodo composite
                 external_model = node.model.get_external_model()
                 if external_model in serialized_nodes:
-                    # Ya serializamos el nodo externo, saltar este interno
                     continue
 
             node_data = AstrFormat._serialize_node(node, idx)
@@ -45,27 +47,12 @@ class AstrFormat:
             scene_data["nodes"].append(node_data)
             idx += 1
 
-        # Actualizar parent_id para nodos en subcanvas
-        for node, node_id in node_id_map.items():
-            if hasattr(node, "subcanvas_parent") and node.subcanvas_parent:
-                parent_node = node.subcanvas_parent.parentItem()
-                if parent_node in node_id_map:
-                    scene_data["nodes"][node_id]["parent_id"] = node_id_map[parent_node]
-
-        # Actualizar parent_id para edges en subcanvas
+    @staticmethod
+    def _serialize_edges(edges, scene_data):
         for edge in edges:
-            edge_data = AstrFormat._serialize_edge(edge, node_id_map)
+            edge_data = AstrFormat._serialize_edge(edge, {})
             if edge_data:
-                if hasattr(edge, "parentItem") and edge.parentItem():
-                    parent_item = edge.parentItem()
-                    if hasattr(parent_item, "subnode_dropped"):
-                        parent_node = parent_item.parentItem()
-                        if parent_node in node_id_map:
-                            edge_data["parent_id"] = node_id_map[parent_node]
-
                 scene_data["edges"].append(edge_data)
-
-        return scene_data
 
     @staticmethod
     def _serialize_node(node, node_id: int) -> dict[str, Any]:

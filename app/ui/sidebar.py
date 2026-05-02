@@ -100,88 +100,89 @@ class DraggableLabel(QLabel):
             "means_end": MeansEndArrowItem,
         }
 
-        # === Caso especial: composite preview ===
-        if self.item_type.startswith("composite:"):
-            scene = QGraphicsScene()
-
-            # 1️⃣ Crear nodo centrado
-            node_key = self.item_type.split(":")[1]
-            NodeClass = node_map.get(node_key)
-            node_center_x, node_center_y = W / 2, H / 2
-
-            node = None
-            if NodeClass:
-                try:
-                    node = NodeClass(0, 0, radius=18)
-                except TypeError:
-                    node = NodeClass(0, 0)
-                node.setPos(node_center_x, node_center_y)
-                scene.addItem(node)
-
-            # Renderizar nodo
-            rect = scene.itemsBoundingRect()
-            if rect.isNull() or rect.width() == 0 or rect.height() == 0:
-                rect = QRectF(0, 0, W, H)
-            scene.render(painter, QRectF(0, 0, W, H), rect)
-
-            # 2️⃣ Calcular límites reales del nodo y dibujar líneas
-            if node:
-                node_bounds = node.boundingRect()
-                # El boundingRect es relativo al nodo →
-                # lo convertimos a coordenadas de escena
-                node_left = node_center_x + node_bounds.left()
-                node_right = node_center_x + node_bounds.right()
-
-                # Separación adicional para que la línea no toque el borde
-                margin = 4
-                y = int(H / 2)
-
-                pen = painter.pen()
-                pen.setWidth(2)
-                painter.setPen(pen)
-
-                # Línea izquierda: desde el borde hasta un poco antes del nodo
-                painter.drawLine(8, y, int(node_left - margin), y)
-                # Línea derecha: desde un poco después del nodo hasta el borde derecho
-                painter.drawLine(int(node_right + margin), y, W - 8, y)
-
-        else:
-            # === Nodos normales ===
-            if self.item_type in node_map:
-                NodeClass = node_map[self.item_type]
-                scene = QGraphicsScene()
-                try:
-                    node = NodeClass(0, 0, radius=18)
-                except TypeError:
-                    node = NodeClass(0, 0)
-                scene.addItem(node)
-
-            # === Flechas normales ===
-            elif self.item_type in arrow_map:
-                ArrowClass = arrow_map[self.item_type]
-                from PyQt6.QtWidgets import QGraphicsEllipseItem
-
-                scene = QGraphicsScene()
-                src_node = QGraphicsEllipseItem(-2, -2, 4, 4)
-                dst_node = QGraphicsEllipseItem(-2, -2, 4, 4)
-                src_node.setPos(8, H / 2)
-                dst_node.setPos(W - 8, H / 2)
-                scene.addItem(src_node)
-                scene.addItem(dst_node)
-                try:
-                    arrow = ArrowClass(src_node, dst_node)
-                    scene.addItem(arrow)
-                except Exception as e:
-                    print(f"⚠️ Sidebar preview error for {self.item_type}: {e}")
-
-            # Render general
-            rect = scene.itemsBoundingRect()
-            if rect.isNull() or rect.width() == 0 or rect.height() == 0:
-                rect = QRectF(0, 0, W, H)
-            scene.render(painter, QRectF(0, 0, W, H), rect)
+        self._render_preview(painter, W, H, node_map, arrow_map)
 
         painter.end()
         return pixmap
+
+    def _render_preview(self, painter, W, H, node_map, arrow_map):
+        if self.item_type.startswith("composite:"):
+            self._render_composite_preview(painter, W, H, node_map)
+        elif self.item_type in node_map:
+            self._render_node_preview(painter, W, H, node_map)
+        elif self.item_type in arrow_map:
+            self._render_arrow_preview(painter, W, H, arrow_map)
+
+    def _render_composite_preview(self, painter, W, H, node_map):
+        scene = QGraphicsScene()
+        node_key = self.item_type.split(":")[1]
+        NodeClass = node_map.get(node_key)
+        node_center_x, node_center_y = W / 2, H / 2
+
+        node = None
+        if NodeClass:
+            try:
+                node = NodeClass(0, 0, radius=18)
+            except TypeError:
+                node = NodeClass(0, 0)
+            node.setPos(node_center_x, node_center_y)
+            scene.addItem(node)
+
+        rect = scene.itemsBoundingRect()
+        if rect.isNull() or rect.width() == 0 or rect.height() == 0:
+            rect = QRectF(0, 0, W, H)
+        scene.render(painter, QRectF(0, 0, W, H), rect)
+
+        if node:
+            node_bounds = node.boundingRect()
+            node_left = node_center_x + node_bounds.left()
+            node_right = node_center_x + node_bounds.right()
+
+            margin = 4
+            y = int(H / 2)
+
+            pen = painter.pen()
+            pen.setWidth(2)
+            painter.setPen(pen)
+
+            painter.drawLine(8, y, int(node_left - margin), y)
+            painter.drawLine(int(node_right + margin), y, W - 8, y)
+
+    def _render_node_preview(self, painter, W, H, node_map):
+        NodeClass = node_map[self.item_type]
+        scene = QGraphicsScene()
+        try:
+            node = NodeClass(0, 0, radius=18)
+        except TypeError:
+            node = NodeClass(0, 0)
+        scene.addItem(node)
+
+        rect = scene.itemsBoundingRect()
+        if rect.isNull() or rect.width() == 0 or rect.height() == 0:
+            rect = QRectF(0, 0, W, H)
+        scene.render(painter, QRectF(0, 0, W, H), rect)
+
+    def _render_arrow_preview(self, painter, W, H, arrow_map):
+        ArrowClass = arrow_map[self.item_type]
+        from PyQt6.QtWidgets import QGraphicsEllipseItem
+
+        scene = QGraphicsScene()
+        src_node = QGraphicsEllipseItem(-2, -2, 4, 4)
+        dst_node = QGraphicsEllipseItem(-2, -2, 4, 4)
+        src_node.setPos(8, H / 2)
+        dst_node.setPos(W - 8, H / 2)
+        scene.addItem(src_node)
+        scene.addItem(dst_node)
+        try:
+            arrow = ArrowClass(src_node, dst_node)
+            scene.addItem(arrow)
+        except Exception as e:
+            print(f"⚠️ Sidebar preview error for {self.item_type}: {e}")
+
+        rect = scene.itemsBoundingRect()
+        if rect.isNull() or rect.width() == 0 or rect.height() == 0:
+            rect = QRectF(0, 0, W, H)
+        scene.render(painter, QRectF(0, 0, W, H), rect)
 
     def mousePressEvent(self, event):
         # si on_click está presente, tratar clicks como acción (ej. composites)
