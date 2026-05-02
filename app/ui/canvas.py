@@ -31,7 +31,7 @@ class Canvas(QGraphicsView):
         self.setScene(self.scene)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # ✅ Fondo blanco
+        # White background
         self.setBackgroundBrush(Qt.GlobalColor.white)
         self.scene.setBackgroundBrush(Qt.GlobalColor.white)
 
@@ -83,15 +83,10 @@ class Canvas(QGraphicsView):
                 ]:
                     # forward a subcanvas
                     it.subarrow_dropped.emit(item_type)
-                    print(f"Canvas: forwarded arrow '{item_type}' to subcanvas {it}")
                 else:
                     # forward a subcanvas node
                     it.subnode_dropped.emit(
                         item_type, float(local_pt.x()), float(local_pt.y())
-                    )
-                    print(
-                        f"Canvas: forwarded node '{item_type}' to subcanvas {it} "
-                        f"at local {local_pt}"
                     )
                 event.acceptProposedAction()
                 return
@@ -106,7 +101,6 @@ class Canvas(QGraphicsView):
             "resource",
         ]:
             self.node_dropped.emit(item_type, scene_pos.x(), scene_pos.y())
-            print(f"Canvas: node dropped globally '{item_type}' at scene {scene_pos}")
             event.acceptProposedAction()
         elif item_type in [
             "simple",
@@ -119,7 +113,6 @@ class Canvas(QGraphicsView):
             "means_end",
         ]:
             self.arrow_dropped.emit(item_type)
-            print(f"Canvas: arrow dropped globally '{item_type}'")
             event.acceptProposedAction()
 
     def mousePressEvent(self, event):
@@ -134,7 +127,7 @@ class Canvas(QGraphicsView):
                 super().mousePressEvent(event)
                 return
 
-            # ✅ Si es subcanvas, buscar el nodo padre y emitir ese
+            # If it's a subcanvas, find the parent node and emit that
             if isinstance(item, SubCanvasItem):
                 parent = item.parentItem()
                 # Buscar recursivamente hasta encontrar un nodo que no sea subcanvas
@@ -143,7 +136,6 @@ class Canvas(QGraphicsView):
 
                 # Si encontramos un nodo padre válido, usarlo
                 if parent is not None and not isinstance(parent, BaseEdgeItem):
-                    print(f"🔍 Subcanvas click - usando nodo padre: {parent}")
                     self.node_clicked.emit(parent)
                 else:
                     # Si no hay padre válido, ignorar

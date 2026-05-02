@@ -194,7 +194,7 @@ class BaseEdgeItem(QGraphicsPathItem):
         )
 
         if in_subcanvas:
-            # ✅ AMBOS nodos en el MISMO subcanvas - usar coordenadas LOCALES
+            # BOTH nodes in the SAME subcanvas - use LOCAL coordinates
             src_pos = self.source_node.pos()
             dst_pos = self.dest_node.pos()
 
@@ -206,7 +206,7 @@ class BaseEdgeItem(QGraphicsPathItem):
                 self.dest_node, src_pos, use_local_coords=True
             )
         else:
-            # ❌ Nodos en diferentes contextos - usar coordenadas de ESCENA
+            # Nodes in different contexts - use SCENE coordinates
             src_scene_pos = self.source_node.scenePos()
             dst_scene_pos = self.dest_node.scenePos()
 

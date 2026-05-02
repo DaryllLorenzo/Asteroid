@@ -104,7 +104,6 @@ class PDFGenerator:
             # Construir PDF
             doc.build(story)
 
-            print(f"✅ PDF exportado exitosamente: {filename}")
             QMessageBox.information(
                 self.canvas_controller.canvas,
                 "Exportación completada",
@@ -114,7 +113,6 @@ class PDFGenerator:
             return True
 
         except Exception as e:
-            print(f"❌ Error exportando a PDF: {e}")
             QMessageBox.critical(
                 self.canvas_controller.canvas,
                 "Error",
@@ -159,7 +157,7 @@ class PDFGenerator:
             return str(temp_path)
 
         except Exception as e:
-            print(f"❌ Error capturando imagen del canvas: {e}")
+            print(f"[ERROR] Error capturing canvas image: {e}")
             return None
 
     def _add_additional_info(self, story: list, styles):

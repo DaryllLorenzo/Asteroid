@@ -45,7 +45,7 @@ class SoftGoalNodeItem(BaseTroposItem):
         return path
 
     def boundingRect(self):
-        # ✅ Usar _independent_model si existe (para nodos composite internos)
+        # Use _independent_model if it exists (for internal composite nodes)
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
@@ -58,7 +58,7 @@ class SoftGoalNodeItem(BaseTroposItem):
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
         """Distancia aproximada al borde de la nube."""
-        # ✅ Usar _independent_model si existe
+        # Use _independent_model if it exists
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
@@ -96,13 +96,13 @@ class SoftGoalNodeItem(BaseTroposItem):
         """Actualiza el radio y recrea el path de la nube"""
         self.prepareGeometryChange()
 
-        # ✅ Usar el modelo independiente si existe
+        # Use the independent model if available
         if self._independent_model:
             self._independent_model.radius = new_r
         else:
             self.model.radius = new_r
 
-        # ✅ Recrear el path con el nuevo radio
+        # Recreate the path with the new radius
         r = (
             self._independent_model.radius
             if self._independent_model
@@ -144,7 +144,7 @@ class SoftGoalNodeItem(BaseTroposItem):
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
 
-        # ✅ Dibujar la nube usando el path actual
+        # Draw the cloud using the current path
         painter.drawPath(self.path)
 
         # DIBUJAR TEXTO MULTILÍNEA

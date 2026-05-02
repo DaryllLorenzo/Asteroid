@@ -179,7 +179,7 @@ class PropertiesPanel(QWidget):
         # --- Acciones ---
         self.actions_group = QGroupBox("Acciones")
         actions_layout = QVBoxLayout()
-        self.delete_button = QPushButton("🗑️ Eliminar Elemento")
+        self.delete_button = QPushButton(" Eliminar Elemento")
         self.delete_button.setStyleSheet(
             "background-color: #ff4444; color: white; font-weight: bold; padding: 6px;"
         )
@@ -188,7 +188,7 @@ class PropertiesPanel(QWidget):
         self.actions_group.setLayout(actions_layout)
         layout.addWidget(self.actions_group)
 
-        self.no_selection_label = QLabel("🔍 Selecciona un elemento")
+        self.no_selection_label = QLabel(" Selecciona un elemento")
         self.no_selection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.no_selection_label)
 
@@ -241,7 +241,7 @@ class PropertiesPanel(QWidget):
             if self.label_edit.toPlainText() != node.model.label:
                 self.label_edit.setPlainText(node.model.label)
 
-            # ✅ Usar _independent_model si existe (para nodos composite internos)
+            # Use _independent_model if it exists (for internal composite nodes)
             has_independent = (
                 hasattr(node, "_independent_model") and node._independent_model
             )
@@ -275,7 +275,7 @@ class PropertiesPanel(QWidget):
         if not self.current_selection or not hasattr(self.current_selection, "model"):
             return
 
-        # ✅ Para propiedades independientes, usar _independent_model si existe
+        # For independent properties, use _independent_model if available
         model_for_independent = (
             self.current_selection._independent_model
             if hasattr(self.current_selection, "_independent_model")
@@ -342,7 +342,7 @@ class PropertiesPanel(QWidget):
         if is_node:
             type_name = self.current_selection.__class__.__name__
             is_behaviour_node = type_name in ["ActorNodeItem", "AgentNodeItem"]
-            # ✅ Usar model directamente para show_subcanvas (propiedad no sincronizada)
+            # Usar model directamente para show_subcanvas (propiedad no sincronizada)
             has_subcanvas = getattr(
                 self.current_selection.model, "show_subcanvas", False
             )
@@ -357,7 +357,7 @@ class PropertiesPanel(QWidget):
     def choose_color(self, color_type):
         if not self.current_selection:
             return
-        # ✅ Colores son sincronizados, usar node.model (wrapper)
+        # Colores son sincronizados, usar node.model (wrapper)
         current = QColor(getattr(self.current_selection.model, color_type, "#ffffff"))
         color = QColorDialog.getColor(current, self)
         if color.isValid():
@@ -367,7 +367,7 @@ class PropertiesPanel(QWidget):
     def update_color_buttons(self):
         if not self.current_selection or not hasattr(self.current_selection, "model"):
             return
-        # ✅ Colores son sincronizados, usar node.model (wrapper)
+        # Colores son sincronizados, usar node.model (wrapper)
         m = self.current_selection.model
         self.color_btn.setStyleSheet(
             f"background-color: {getattr(m, 'color', '#eee')}; border: 1px solid #999;"
@@ -386,7 +386,7 @@ class PropertiesPanel(QWidget):
 
     def on_position_in_subcanvas_changed(self, x, y):
         if self.current_selection:
-            # ✅ Position es independiente, emitir como está
+            # Position es independiente, emitir como está
             self.properties_changed.emit(
                 {"position_in_subcanvas_x": x, "position_in_subcanvas_y": y}
             )

@@ -177,7 +177,7 @@ class DraggableLabel(QLabel):
             arrow = ArrowClass(src_node, dst_node)
             scene.addItem(arrow)
         except Exception as e:
-            print(f"⚠️ Sidebar preview error for {self.item_type}: {e}")
+            print(f"[ERROR] Sidebar preview error for {self.item_type}: {e}")
 
         rect = scene.itemsBoundingRect()
         if rect.isNull() or rect.width() == 0 or rect.height() == 0:
@@ -191,7 +191,7 @@ class DraggableLabel(QLabel):
             try:
                 self.on_click()
             except Exception as e:
-                print(f"⚠️ Error al ejecutar on_click de {self.item_type}: {e}")
+                print(f"[ERROR] Error executing on_click for {self.item_type}: {e}")
             return
         # si no hay callback, iniciar drag normal
         if event.button() == Qt.MouseButton.LeftButton:
@@ -361,4 +361,4 @@ class Sidebar(QWidget):
         try:
             self.controller.start_composite_dependency_mode(node_type)
         except Exception as e:
-            print(f"⚠️ Error starting composite mode for {node_type}: {e}")
+            print(f"[ERROR] Error starting composite mode for {node_type}: {e}")

@@ -93,7 +93,7 @@ class SubCanvasItem(QGraphicsObject):
         painter.setRenderHint(painter.RenderHint.Antialiasing)
         r = float(self.radius)
         painter.setBrush(self.bg_brush)
-        painter.setOpacity(0.04)  # ✅ Muy transparente para no interferir
+        painter.setOpacity(0.04)  # Very transparent to not interfere
         painter.drawEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
         painter.setOpacity(1.0)
         painter.setPen(self.border_pen)
