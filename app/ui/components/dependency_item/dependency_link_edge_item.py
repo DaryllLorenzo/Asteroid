@@ -52,9 +52,6 @@ class DependencyLinkArrowItem(BaseEdgeItem):
         # El vértice del triángulo apunta en la dirección del path
         p_tip = mid_point
         # Los otros dos vértices forman la base del triángulo
-        # Calculados perpendicularmente a la dirección del path
-        perp_x = -math.sin(mid_angle)
-        perp_y = math.cos(mid_angle)
 
         p1 = QPointF(
             p_tip.x() - size * math.cos(mid_angle - math.pi / 6),

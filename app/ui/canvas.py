@@ -181,7 +181,6 @@ class Canvas(QGraphicsView):
         """
         Cambia el cursor cuando está sobre un handle o edge.
         """
-        scene_pos = self.mapToScene(event.position().toPoint())
         items = self.items(event.position().toPoint())
 
         # Buscar si hay un handle bajo el cursor

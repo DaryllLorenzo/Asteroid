@@ -12,6 +12,7 @@ from PyQt6.QtCore import QPointF
 from PyQt6.QtCore import QRectF
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QLineF
 from PyQt6.QtGui import QPainter
 from PyQt6.QtGui import QPainterPath
 from PyQt6.QtGui import QPen
@@ -28,8 +29,10 @@ class BaseEdgeItem(QGraphicsPathItem):
     Soporta puntos de control para modificar la forma de la línea (estilo Draw.io).
     """
 
-    def __init__(self, source_node, dest_node, color=QColor(0, 0, 0), dashed=False):
+    def __init__(self, source_node, dest_node, color=None, dashed=False):
         super().__init__()
+        if color is None:
+            color = QColor(0, 0, 0)
         self.source_node = source_node
         self.dest_node = dest_node
         self.setFlag(QGraphicsPathItem.GraphicsItemFlag.ItemIsSelectable, True)
@@ -263,15 +266,6 @@ class BaseEdgeItem(QGraphicsPathItem):
 
     def _update_handles_position(self):
         """Sincroniza la posición visual de los handles con los control_points"""
-        # Determinar si estamos en subcanvas
-        in_subcanvas = (
-            hasattr(self.source_node, "subcanvas_parent")
-            and self.source_node.subcanvas_parent is not None
-            and hasattr(self.dest_node, "subcanvas_parent")
-            and self.dest_node.subcanvas_parent is not None
-            and self.source_node.subcanvas_parent == self.dest_node.subcanvas_parent
-        )
-
         is_selected = self.isSelected()
 
         # Asegurar que hay tantos handles como control points
@@ -498,10 +492,6 @@ class BaseEdgeItem(QGraphicsPathItem):
         path = self.path()
         if path.isEmpty():
             return
-
-        # Obtener el último punto del path
-        end_point = self._end_point
-        start_point = self._start_point
 
         if not self.control_points:
             # Línea recta simple

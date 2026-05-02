@@ -290,7 +290,6 @@ class CanvasController(QObject):
             node_item = node_item.source_node
 
         if self.composite_mode:
-            original_node = node_item
             while node_item is not None and not isinstance(
                 node_item, (ActorNodeItem, AgentNodeItem)
             ):
@@ -861,17 +860,25 @@ class CanvasController(QObject):
                             external_node.update()
                             internal_node.update()
 
-                            def on_external_changed(prop_name, value):
-                                external_node.update()
-                                external_node.properties_changed.emit(
-                                    external_node, {prop_name: value}
-                                )
+                            def on_external_changed(prop_name, value, node):
+                                node.update()
+                                node.properties_changed.emit(node, {prop_name: value})
 
-                            def on_internal_changed(prop_name, value):
-                                internal_node.update()
+                            def on_internal_changed(prop_name, value, node):
+                                node.update()
 
-                            wrapper.add_change_callback(on_external_changed)
-                            wrapper.add_change_callback(on_internal_changed)
+                            callback_ext = on_external_changed
+                            callback_int = on_internal_changed
+
+                            ext_n = external_node
+                            int_n = internal_node
+
+                            wrapper.add_change_callback(
+                                lambda p, v, cb=callback_ext, n=ext_n: cb(p, v, n)
+                            )
+                            wrapper.add_change_callback(
+                                lambda p, v, cb=callback_int, n=int_n: cb(p, v, n)
+                            )
                     else:
                         print(f"No internal node found in subcanvas of {target_node}")
                 else:

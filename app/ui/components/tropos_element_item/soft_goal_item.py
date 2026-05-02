@@ -125,13 +125,6 @@ class SoftGoalNodeItem(BaseTroposItem):
         default_border = QColor(0, 0, 0)
         default_text = QColor(0, 0, 0)
 
-        # ✅ Usar _independent_model si existe (para nodos composite internos)
-        model_for_props = (
-            self._independent_model
-            if hasattr(self, "_independent_model") and self._independent_model
-            else self.model
-        )
-
         # Colores son sincronizados, usar self.model (wrapper)
         fill_color = (
             QColor(self.model.color) if hasattr(self.model, "color") else default_color
