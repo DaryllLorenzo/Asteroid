@@ -9,4 +9,26 @@ dependencies = [
     "numpy>=2.3.3",
     "pyqt6>=6.9.1",
     "reportlab>=4.4.10",
+    "ruff>=0.15.12",
 ]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.9"]
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "UP", "C90"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+force-single-line = true
+combine-as-imports = true
+order-by-type = true
+lines-after-imports = -1
+known-first-party = ["sqlvc"]
+
+[tool.ruff.format]
+quote-style = "double"
