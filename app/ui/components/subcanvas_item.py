@@ -110,14 +110,15 @@ class SubCanvasItem(QGraphicsObject):
         if hasattr(self, "handle") and self.handle is not None:
             self.handle.setPos(self.radius, 0.0)
 
-    # ✅ MODIFICADO: Ahora el subcanvas NO acepta eventos de mouse, para permitir que pasen al nodo padre
+    # MODIFICADO: Ahora el subcanvas NO acepta eventos de mouse,
+    # para permitir que pasen al nodo padre
     def mousePressEvent(self, event):
         """NO aceptar eventos - permitir que pasen al nodo padre"""
-        event.ignore()  # ❌ IMPORTANTE: Ignorar para permitir que el evento llegue al nodo padre
+        event.ignore()  # IMPORTANTE: Ignorar para que llegue al nodo padre
 
     def mouseDoubleClickEvent(self, event):
         """NO aceptar eventos - permitir que pasen al nodo padre"""
-        event.ignore()  # ❌ IMPORTANTE: Ignorar para permitir que el evento llegue al nodo padre
+        event.ignore()  # IMPORTANTE: Ignorar para que llegue al nodo padre
 
     def reset_to_original_size(self):
         """Restaura el subcanvas a su tamaño original"""
@@ -139,7 +140,7 @@ class SubCanvasItem(QGraphicsObject):
             event.ignore()
 
     def dropEvent(self, event):
-        """Reconoce si se soltó un nodo o un link (arrow) y emite la señal correspondiente."""
+        """Reconoce si se soltó un nodo o un link (arrow) y emite la señal."""
         if not event.mimeData().hasText():
             event.ignore()
             return
@@ -156,7 +157,8 @@ class SubCanvasItem(QGraphicsObject):
 
         # Si no es flecha, lo tratamos como nodo tropos
         print(
-            f"SubCanvasItem: node dropped '{item_type}' at local ({pos.x():.1f}, {pos.y():.1f})"
+            f"SubCanvasItem: node dropped '{item_type}' at "
+            f"local ({pos.x():.1f}, {pos.y():.1f})"
         )
         self.subnode_dropped.emit(item_type, float(pos.x()), float(pos.y()))
         event.acceptProposedAction()

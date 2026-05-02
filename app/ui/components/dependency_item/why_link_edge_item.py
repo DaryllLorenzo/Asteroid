@@ -22,7 +22,7 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class WhyLinkArrowItem(BaseEdgeItem):
-    """Flecha tipo WHY: línea de extremo a extremo con triángulo en el medio y texto 'WHY' encima."""
+    """Flecha tipo WHY: línea de extremo a extremo con triángulo en el medio."""
 
     def __init__(self, source_node, dest_node):
         super().__init__(source_node, dest_node, color=QColor(0, 0, 0), dashed=False)

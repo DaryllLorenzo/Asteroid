@@ -127,7 +127,8 @@ class DraggableLabel(QLabel):
             # 2️⃣ Calcular límites reales del nodo y dibujar líneas
             if node:
                 node_bounds = node.boundingRect()
-                # El boundingRect es relativo al nodo → lo convertimos a coordenadas de escena
+                # El boundingRect es relativo al nodo →
+                # lo convertimos a coordenadas de escena
                 node_left = node_center_x + node_bounds.left()
                 node_right = node_center_x + node_bounds.right()
 
@@ -210,8 +211,10 @@ class Sidebar(QWidget):
     Sidebar con 3 secciones:
       - Items (nodos)
       - Links (flechas)
-      - Composite Dependencies (botones que activan modo composite en el controller)
-    Si `controller` es provisto, los composites invocan controller.start_composite_dependency_mode(tipo).
+      - Composite Dependencies (botones que activan modo composite
+        en el controller)
+    Si `controller` es provisto, los composites invocan
+    controller.start_composite_dependency_mode(tipo).
     """
 
     def __init__(self, controller=None):
@@ -311,7 +314,8 @@ class Sidebar(QWidget):
         comp_grid.setHorizontalSpacing(8)
         comp_grid.setVerticalSpacing(8)
 
-        # cuando se hace click en estos labels, llamamos al controlador para activar modo composite
+        # cuando se hace click en estos labels, llamamos al controlador
+        # para activar modo composite
         def make_onclick(node_type):
             return lambda: self._start_composite(node_type)
 

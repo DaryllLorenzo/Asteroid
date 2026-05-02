@@ -23,7 +23,7 @@ class ContributionArrowItem(BaseEdgeItem):
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
 
     def boundingRect(self):
-        """Extiende el bounding rect para incluir la cabeza de flecha y el símbolo '+'."""
+        """Extiende el bounding rect para incluir la cabeza de flecha y el '+'."""
         # Obtener boundingRect base de la línea
         base_rect = super().boundingRect()
         # Extra para la V abierta (~12px) y el símbolo '+'
@@ -91,7 +91,8 @@ class ContributionArrowItem(BaseEdgeItem):
         painter.rotate(math.degrees(mid_angle))
 
         painter.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        # Dibujar '+' centrado, ligeramente desplazado perpendicularmente para no tapar la línea
+        # Dibujar '+' centrado, ligeramente desplazado perpendicularmente
+        # para no tapar la línea
         fm = painter.fontMetrics()
         w = fm.horizontalAdvance("+")
         h = fm.height()

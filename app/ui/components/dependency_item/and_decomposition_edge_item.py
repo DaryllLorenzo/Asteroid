@@ -76,8 +76,8 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         path_points, start_point, _ = self._calculate_path_points()
 
         if len(path_points) >= 2:
-            # Si hay control points, el último segmento va del último control point al end_point
-            # Reemplazamos el último punto con line_end_point
+            # Si hay control points, el último segmento va del último control point
+            # al end_point. Reemplazamos el último punto con line_end_point
             if self.control_points:
                 modified_points = path_points[:-1] + [line_end_point]
             else:

@@ -90,7 +90,8 @@ class Canvas(QGraphicsView):
                         item_type, float(local_pt.x()), float(local_pt.y())
                     )
                     print(
-                        f"Canvas: forwarded node '{item_type}' to subcanvas {it} at local {local_pt}"
+                        f"Canvas: forwarded node '{item_type}' to subcanvas {it} "
+                        f"at local {local_pt}"
                     )
                 event.acceptProposedAction()
                 return
@@ -124,7 +125,8 @@ class Canvas(QGraphicsView):
     def mousePressEvent(self, event):
         items = self.items(event.pos())
 
-        # ✅ Prioridad: primero buscar nodos regulares (incluyendo nodos padre con subcanvas)
+        # Prioridad: primero buscar nodos regulares
+        # (incluyendo nodos padre con subcanvas)
         for item in items:
             # Si es un nodo regular (no edge, no subcanvas)
             if not isinstance(item, (BaseEdgeItem, SubCanvasItem)):

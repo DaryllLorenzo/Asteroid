@@ -105,7 +105,7 @@ class BaseEdgeItem(QGraphicsPathItem):
         """Callback cuando un nodo conectado se mueve"""
         if not self._updating_position:
             # Notificar que la geometría está a punto de cambiar
-            # Esto es CRÍTICO para que Qt sepa que debe recalcular colisiones y redibujar
+            # CRÍTICO para que Qt sepa que debe recalcular colisiones
             self.prepareGeometryChange()
             self.update_position()
             # Forzar redibujado y actualizar bounding rect
@@ -136,7 +136,7 @@ class BaseEdgeItem(QGraphicsPathItem):
         )
 
     def _get_node_border_point(self, node, target_pos, use_local_coords=False):
-        """Calcula el punto de intersección en el borde del nodo hacia el punto objetivo"""
+        """Calcula el punto de intersección en el borde del nodo."""
         if not node:
             return QPointF(0, 0)
 
@@ -287,7 +287,7 @@ class BaseEdgeItem(QGraphicsPathItem):
             )
             # El handle es hijo del edge, así que usa coordenadas locales
             handle.setParentItem(self)
-            # ✅ IMPORTANTE: Los handles solo son visibles cuando el edge está seleccionado
+            # IMPORTANTE: Los handles solo son visibles cuando el edge está seleccionado
             handle.setVisible(is_selected)
 
             self.control_handles.append(handle)
@@ -319,7 +319,7 @@ class BaseEdgeItem(QGraphicsPathItem):
         for i, h in enumerate(self.control_handles):
             if h is handle:
                 # Este es el handle que se movió
-                # new_pos está en coordenadas LOCALES del edge (porque el handle es hijo del edge)
+                # new_pos está en coordenadas LOCALES del edge
                 self.control_points[i] = new_pos
                 # Recalcular solo el path (sin actualizar handles para evitar temblor)
                 self._update_path_only()
@@ -657,7 +657,7 @@ class BaseEdgeItem(QGraphicsPathItem):
 
     def _get_tangent_at_distance(self, distance: float) -> float:
         """
-        Retorna el ángulo/tangente del path en un punto a cierta distancia desde el inicio.
+        Retorna el ángulo/tangente del path en un punto a cierta distancia.
 
         Returns:
             float: ángulo en radianes

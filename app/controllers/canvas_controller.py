@@ -299,8 +299,10 @@ class CanvasController(QObject):
             if node_item is None or not isinstance(
                 node_item, (ActorNodeItem, AgentNodeItem)
             ):
-                print("CanvasController: composite mode only accepts "
-                      "Actor/Agent; ignored.")
+                print(
+                    "CanvasController: composite mode only accepts "
+                    "Actor/Agent; ignored."
+                )
                 return
 
             if node_item not in self.selected_nodes_for_arrow:
@@ -335,8 +337,7 @@ class CanvasController(QObject):
         self.selected_arrow_type = arrow_type
         self.selected_nodes_for_arrow = []
         self._current_subcanvas = subcanvas
-        print(f"CanvasController: start subarrow mode '{arrow_type}' "
-              f"in {subcanvas}")
+        print(f"CanvasController: start subarrow mode '{arrow_type}' in {subcanvas}")
 
     def create_arrow(self):
         if len(self.selected_nodes_for_arrow) != 2:
@@ -418,8 +419,10 @@ class CanvasController(QObject):
         if hasattr(dst, "prepare_subcanvas_for_internal_use"):
             subcanvas = dst.prepare_subcanvas_for_internal_use()
         else:
-            print("Destination node does not support subcanvas; "
-                  "internal insertion skipped.")
+            print(
+                "Destination node does not support subcanvas; "
+                "internal insertion skipped."
+            )
 
         if subcanvas:
             internal_node.setParentItem(subcanvas)
@@ -435,8 +438,10 @@ class CanvasController(QObject):
                 dst.child_nodes = []
             dst.child_nodes.append(internal_node)
 
-            print(f"Composite: node '{self.composite_node_type}' added to "
-                  f"{dst} subcanvas at ({offset_x:.1f}, {offset_y:.1f})")
+            print(
+                f"Composite: node '{self.composite_node_type}' added to "
+                f"{dst} subcanvas at ({offset_x:.1f}, {offset_y:.1f})"
+            )
 
         for node in self.selected_nodes_for_arrow:
             node.setSelected(False)
@@ -510,8 +515,7 @@ class CanvasController(QObject):
         if hasattr(child, "properties_changed"):
             child.properties_changed.connect(self.on_node_properties_changed)
         else:
-            print(f"Warning: internal node {item_type} lacks "
-                  f"properties_changed signal")
+            print(f"Warning: internal node {item_type} lacks properties_changed signal")
 
         if not hasattr(parent_node_item, "child_nodes"):
             parent_node_item.child_nodes = []
@@ -590,8 +594,7 @@ class CanvasController(QObject):
 
         edges_to_remove = []
         for edge in self.edges[:]:
-            if (edge.source_node == node_to_delete or
-                    edge.dest_node == node_to_delete):
+            if edge.source_node == node_to_delete or edge.dest_node == node_to_delete:
                 edges_to_remove.append(edge)
 
         for edge in edges_to_remove:
@@ -715,8 +718,7 @@ class CanvasController(QObject):
             parent_child_map = {}
 
             for node_data in scene_data.get("nodes", []):
-                print(f"Processing node {node_data['id']} "
-                      f"of type {node_data['type']}")
+                print(f"Processing node {node_data['id']} of type {node_data['type']}")
                 node = self._create_node_from_data(node_data)
                 if node:
                     node_map[node_data["id"]] = node
@@ -729,8 +731,10 @@ class CanvasController(QObject):
             for parent_id, child_ids in parent_child_map.items():
                 parent_node = node_map.get(parent_id)
                 if parent_node and hasattr(parent_node, "subcanvas"):
-                    print(f"Moving {len(child_ids)} nodes to subcanvas "
-                          f"of node {parent_id}")
+                    print(
+                        f"Moving {len(child_ids)} nodes to subcanvas "
+                        f"of node {parent_id}"
+                    )
                     for child_id in child_ids:
                         child_node = node_map.get(child_id)
                         if child_node:
@@ -775,8 +779,7 @@ class CanvasController(QObject):
                         break
 
                 if not target_node:
-                    print(f"No outgoing edge found for composite "
-                          f"node {node_id}")
+                    print(f"No outgoing edge found for composite node {node_id}")
                     continue
 
                 if hasattr(target_node, "subcanvas") and target_node.subcanvas:
@@ -809,9 +812,11 @@ class CanvasController(QObject):
                                 min_dist = dist
                                 internal_node = candidate
                     else:
-                        print(f"No internal nodes of type "
-                              f"{type(external_node).__name__} found in "
-                              f"subcanvas of {target_node}")
+                        print(
+                            f"No internal nodes of type "
+                            f"{type(external_node).__name__} found in "
+                            f"subcanvas of {target_node}"
+                        )
 
                     if internal_node:
                         linked_internal_nodes.add(id(internal_node))
@@ -851,9 +856,7 @@ class CanvasController(QObject):
                                 "text_color", "#ffffff"
                             )
 
-                            external_model.radius = float(
-                                model_props.get("radius", 50)
-                            )
+                            external_model.radius = float(model_props.get("radius", 50))
 
                             external_node.update()
                             internal_node.update()
@@ -870,14 +873,12 @@ class CanvasController(QObject):
                             wrapper.add_change_callback(on_external_changed)
                             wrapper.add_change_callback(on_internal_changed)
                     else:
-                        print(f"No internal node found in subcanvas of "
-                              f"{target_node}")
+                        print(f"No internal node found in subcanvas of {target_node}")
                 else:
                     print(f"Target {target_node} has no subcanvas")
 
             print(f"Project loaded successfully: {filename}")
-            print(f"Summary: {len(node_map)} nodes, "
-                  f"{edge_count} edges reconstructed")
+            print(f"Summary: {len(node_map)} nodes, {edge_count} edges reconstructed")
 
             self.mark_as_saved(filename)
             return True
@@ -885,10 +886,9 @@ class CanvasController(QObject):
         except Exception as e:
             print(f"Error loading project: {e}")
             import traceback
+
             traceback.print_exc()
-            QMessageBox.critical(
-                self.canvas, "Error", f"Could not load project:\n{e}"
-            )
+            QMessageBox.critical(self.canvas, "Error", f"Could not load project:\n{e}")
             return False
 
     def _move_node_to_subcanvas(self, child_node, parent_node):
@@ -913,8 +913,7 @@ class CanvasController(QObject):
             if child_node not in parent_node.child_nodes:
                 parent_node.child_nodes.append(child_node)
 
-            print(f"Node moved to subcanvas of {parent_node} "
-                  f"at position {current_pos}")
+            print(f"Node moved to subcanvas of {parent_node} at position {current_pos}")
             return True
 
         except Exception as e:
@@ -926,8 +925,9 @@ class CanvasController(QObject):
         try:
             subcanvas = parent_node.ensure_subcanvas_visible()
             if not subcanvas:
-                print(f"Could not get subcanvas for composite internal "
-                      f"of {parent_node}")
+                print(
+                    f"Could not get subcanvas for composite internal of {parent_node}"
+                )
                 return False
 
             if not hasattr(parent_node.model, "get_internal_model"):
@@ -967,14 +967,17 @@ class CanvasController(QObject):
                 parent_node.child_nodes = []
             parent_node.child_nodes.append(internal_node)
 
-            print(f"Internal composite node '{node_type}' created in "
-                  f"subcanvas of {parent_node} at ({offset_x:.1f}, "
-                  f"{offset_y:.1f})")
+            print(
+                f"Internal composite node '{node_type}' created in "
+                f"subcanvas of {parent_node} at ({offset_x:.1f}, "
+                f"{offset_y:.1f})"
+            )
             return True
 
         except Exception as e:
             print(f"Error creating internal composite node: {e}")
             import traceback
+
             traceback.print_exc()
             return False
 
@@ -1009,9 +1012,7 @@ class CanvasController(QObject):
 
         except Exception as e:
             print(f"Error exporting image: {e}")
-            QMessageBox.critical(
-                self.canvas, "Error", f"Could not export image:\n{e}"
-            )
+            QMessageBox.critical(self.canvas, "Error", f"Could not export image:\n{e}")
             return False
 
     def clear_canvas(self):
@@ -1040,8 +1041,9 @@ class CanvasController(QObject):
         node_type = node_data["type"]
         pos_data = node_data["position"]
 
-        print(f"Creating node {node_type} at position "
-              f"({pos_data['x']}, {pos_data['y']})")
+        print(
+            f"Creating node {node_type} at position ({pos_data['x']}, {pos_data['y']})"
+        )
 
         node = self.add_node(node_type, 0, 0)
         if not node:
@@ -1065,9 +1067,7 @@ class CanvasController(QObject):
                         )
 
                         external_model = node.model
-                        wrapper = CompositeModelWrapper(
-                            external_model, internal_model
-                        )
+                        wrapper = CompositeModelWrapper(external_model, internal_model)
                         node.model = wrapper
                         node._independent_model = external_model
 
@@ -1079,12 +1079,8 @@ class CanvasController(QObject):
 
                     wrapper.label = model_props.get("label", "")
                     wrapper.color = model_props.get("color", "#3498db")
-                    wrapper.border_color = model_props.get(
-                        "border_color", "#2980b9"
-                    )
-                    wrapper.text_color = model_props.get(
-                        "text_color", "#ffffff"
-                    )
+                    wrapper.border_color = model_props.get("border_color", "#2980b9")
+                    wrapper.text_color = model_props.get("text_color", "#ffffff")
 
                     external_model = (
                         node._independent_model
@@ -1115,15 +1111,9 @@ class CanvasController(QObject):
                     node.model.radius = float(model_props.get("radius", 50))
                     node.model.label = model_props.get("label", "")
                     node.model.color = model_props.get("color", "#3498db")
-                    node.model.border_color = model_props.get(
-                        "border_color", "#2980b9"
-                    )
-                    node.model.text_color = model_props.get(
-                        "text_color", "#ffffff"
-                    )
-                    node.model.show_subcanvas = model_props.get(
-                        "show_subcanvas", False
-                    )
+                    node.model.border_color = model_props.get("border_color", "#2980b9")
+                    node.model.text_color = model_props.get("text_color", "#ffffff")
+                    node.model.show_subcanvas = model_props.get("show_subcanvas", False)
                     node.model.position_in_subcanvas_x = float(
                         model_props.get("position_in_subcanvas_x", 0.0)
                     )
@@ -1189,9 +1179,11 @@ class CanvasController(QObject):
                 node.apply_position_in_subcanvas()
 
         node.update()
-        print(f"Node {node_type} created. Subcanvas position: "
-              f"({node.model.position_in_subcanvas_x}, "
-              f"{node.model.position_in_subcanvas_y})")
+        print(
+            f"Node {node_type} created. Subcanvas position: "
+            f"({node.model.position_in_subcanvas_x}, "
+            f"{node.model.position_in_subcanvas_y})"
+        )
         return node
 
     def _create_edge_from_data(self, edge_data: dict, node_map: dict):
@@ -1204,8 +1196,10 @@ class CanvasController(QObject):
         target_node = node_map.get(target_id)
 
         if not source_node or not target_node:
-            print(f"Could not create edge: source({source_id}) or "
-                  f"target({target_id}) nodes not found")
+            print(
+                f"Could not create edge: source({source_id}) or "
+                f"target({target_id}) nodes not found"
+            )
             return None
 
         ArrowClass = _ARROW_TYPES.get(edge_type)

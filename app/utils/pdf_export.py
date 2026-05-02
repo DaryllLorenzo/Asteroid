@@ -132,9 +132,11 @@ class PDFGenerator:
         try:
             canvas = self.canvas_controller.canvas
 
-            # ✅ Obtener los límites reales de todos los items + margen para evitar cortes
+            # Obtener los límites reales de todos los items + margen
+            # para evitar cortes
             scene_rect = canvas.scene.itemsBoundingRect()
-            margin = 50.0  # Margen extra para asegurar que no se corten bordes (subcanvas, etc.)
+            margin = 50.0  # Margen extra para asegurar que no se corten bordes
+            # (subcanvas, etc.)
             expanded_rect = scene_rect.adjusted(-margin, -margin, margin, margin)
 
             # Crear pixmap del tamaño expandido
@@ -146,7 +148,7 @@ class PDFGenerator:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
-            # ✅ Renderizar usando el rect expandido para capturar todos los elementos completos
+            # Renderizar usando el rect expandido para capturar todos los elementos
             canvas.scene.render(painter, source=expanded_rect)
             painter.end()
 

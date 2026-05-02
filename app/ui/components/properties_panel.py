@@ -163,7 +163,8 @@ class PropertiesPanel(QWidget):
         )
         instructions_label.setWordWrap(True)
         instructions_label.setStyleSheet(
-            "background-color: #f5f5f5; color: #333333; padding: 8px; border-radius: 4px; margin: 4px 0;"
+            "background-color: #f5f5f5; color: #333333; "
+            "padding: 8px; border-radius: 4px; margin: 4px 0;"
         )
         edge_layout.addWidget(instructions_label)
 
@@ -372,10 +373,12 @@ class PropertiesPanel(QWidget):
             f"background-color: {getattr(m, 'color', '#eee')}; border: 1px solid #999;"
         )
         self.border_color_btn.setStyleSheet(
-            f"background-color: {getattr(m, 'border_color', '#eee')}; border: 1px solid #999;"
+            f"background-color: {getattr(m, 'border_color', '#eee')}; "
+            "border: 1px solid #999;"
         )
         self.text_color_btn.setStyleSheet(
-            f"background-color: {getattr(m, 'text_color', '#eee')}; border: 1px solid #999;"
+            f"background-color: {getattr(m, 'text_color', '#eee')}; "
+            "border: 1px solid #999;"
         )
 
     def on_delete_clicked(self):

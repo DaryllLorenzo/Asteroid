@@ -23,7 +23,8 @@ class BaseTroposItem(QGraphicsObject):
     def __init__(self, model):
         super().__init__()
         self.model = model
-        # Para nodos composite internos: modelo independiente para radius, posición, etc.
+        # Para nodos composite internos:
+        # modelo independiente para radius, posición, etc.
         self._independent_model = None
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable)
