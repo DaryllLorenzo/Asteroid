@@ -47,39 +47,65 @@ Built with **Python** and **PyQt6**, it follows a clean **MVC-inspired architect
 
 ## Project Structure
 
-```
+```text
 asteroid/
+├── .gitignore
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
 ├── app/
-│   ├── controllers/          # Canvas logic and state management
+│   ├── controllers/              # Canvas logic split by responsibility
+│   │   ├── __init__.py
 │   │   ├── canvas_controller.py
-│   │   └── __init__.py
-│   ├── core/                 # Business logic and data models
-│   │   ├── models/           # Tropos/i* element definitions
-│   │   │   ├── entity/       # Actor, Agent
-│   │   │   ├── tropos_element/ # Goal, Softgoal, Plan, Resource
-│   │   │   └── dependency/   # Edge types (contribution, means-end, etc.)
-│   ├── ui/                   # PyQt6 interface components
-│   │   ├── canvas.py         # Main drawing area
-│   │   ├── sidebar.py        # Element toolbar
-│   │   ├── components/       # Visual items for nodes and edges
-│   │   │   ├── dependency_item/  # Edge types (arrows, links)
-│   │   │   ├── entity_item/      # Actor, Agent nodes
-│   │   │   ├── tropos_element_item/ # Goals, Resources, Plans
-│   │   │   ├── base_edge_item.py   # Base class for edges
-│   │   │   ├── base_node_item.py   # Base class for nodes
-│   │   │   ├── base_tropos_item.py # Base class for Tropos elements
-│   │   │   ├── control_point_handle.py  # Flexible edge control points
-│   │   │   ├── position_controll_widget.py  # Position control UI
-│   │   │   ├── properties_panel.py   # Properties sidebar panel
-│   │   │   └── subcanvas_item.py     # Subcanvas component
-│   │   └── help/             # Markdown documentation system
-│   └── utils/                # PDF export and serialization
-│       ├── astr_format.py    # ASTR file format serialization
-│       └── pdf_export.py     # PDF export functionality
-├── images/                   # Static assets and screenshots
-├── main.py                   # Application entry point
-├── pyproject.toml            # Project dependencies
-└── README.md
+│   │   ├── canvas_deletion_controller.py
+│   │   ├── canvas_export_controller.py
+│   │   ├── canvas_import_controller.py
+│   │   ├── canvas_interaction_controller.py
+│   │   ├── canvas_node_controller.py
+│   │   ├── canvas_registry_controller.py
+│   │   └── canvas_state_controller.py
+│   ├── core/                     # Domain models and business logic
+│   │   ├── __init__.py
+│   │   └── models/
+│   │       ├── __init__.py
+│   │       ├── base_edge.py
+│   │       ├── base_node.py
+│   │       ├── composite_model_wrapper.py
+│   │       ├── dependency/
+│   │       ├── entity/
+│   │       └── tropos_element/
+│   ├── ui/                       # PyQt6 interface and widgets
+│   │   ├── __init__.py
+│   │   ├── canvas.py
+│   │   ├── main_window.py
+│   │   ├── pdf_export_dialog.py
+│   │   ├── sidebar.py
+│   │   ├── components/
+│   │   │   ├── dependency_item/
+│   │   │   ├── entity_item/
+│   │   │   ├── tropos_element_item/
+│   │   │   ├── base_edge_item.py
+│   │   │   ├── base_node_item.py
+│   │   │   ├── base_tropos_item.py
+│   │   │   ├── control_point_handle.py
+│   │   │   ├── position_controll_widget.py
+│   │   │   ├── properties_panel.py
+│   │   │   └── subcanvas_item.py
+│   │   └── help/
+│   │       ├── content/
+│   │       ├── help_modal.py
+│   │       └── markdown_viewer.py
+│   └── utils/                    # Serialization and export helpers
+│       ├── astr_format.py
+│       └── pdf_export.py
+├── images/
+│   ├── AsteroidLogo.png
+│   ├── main_interface_example1.png
+│   ├── main_interface_example2.png
+│   └── main_interface_example3.png
+├── main.py
+├── pyproject.toml
+└── uv.lock
 ```
 
 ---
