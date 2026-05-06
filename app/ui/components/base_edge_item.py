@@ -8,11 +8,11 @@
 
 import math
 
+from PyQt6.QtCore import QLineF
 from PyQt6.QtCore import QPointF
 from PyQt6.QtCore import QRectF
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
-from PyQt6.QtCore import QLineF
 from PyQt6.QtGui import QPainter
 from PyQt6.QtGui import QPainterPath
 from PyQt6.QtGui import QPen
