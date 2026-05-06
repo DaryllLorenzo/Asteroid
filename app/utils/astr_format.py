@@ -11,9 +11,9 @@ class AstrFormat:
     @staticmethod
     def serialize_scene(nodes, edges):
         scene_data = AstrFormat._create_scene_data_template(nodes, edges)
-        AstrFormat._serialize_nodes(nodes, scene_data)
-        AstrFormat._serialize_node_parent_ids(nodes, scene_data)
-        AstrFormat._serialize_edges(edges, scene_data)
+        node_id_map = AstrFormat._serialize_nodes(nodes, scene_data)
+        AstrFormat._serialize_node_parent_ids(node_id_map, scene_data)
+        AstrFormat._serialize_edges(edges, node_id_map, scene_data)
         return scene_data
 
     @staticmethod
@@ -31,27 +31,33 @@ class AstrFormat:
 
     @staticmethod
     def _serialize_nodes(nodes, scene_data):
-        serialized_nodes = set()
         node_id_map = {}
-        idx = 0
 
-        for node in nodes:
-            if hasattr(node, "model") and hasattr(node.model, "get_external_model"):
-                external_model = node.model.get_external_model()
-                if external_model in serialized_nodes:
-                    continue
-
+        for idx, node in enumerate(nodes):
             node_data = AstrFormat._serialize_node(node, idx)
             node_id_map[node] = idx
-            serialized_nodes.add(id(node.model) if hasattr(node, "model") else idx)
             scene_data["nodes"].append(node_data)
-            idx += 1
+
+        return node_id_map
 
     @staticmethod
-    def _serialize_edges(edges, scene_data):
+    def _serialize_node_parent_ids(node_id_map, scene_data):
+        for node, node_id in node_id_map.items():
+            if hasattr(node, "subcanvas_parent") and node.subcanvas_parent:
+                parent_node = node.subcanvas_parent.parentItem()
+                if parent_node in node_id_map:
+                    scene_data["nodes"][node_id]["parent_id"] = node_id_map[parent_node]
+
+    @staticmethod
+    def _serialize_edges(edges, node_id_map, scene_data):
         for edge in edges:
-            edge_data = AstrFormat._serialize_edge(edge, {})
+            edge_data = AstrFormat._serialize_edge(edge, node_id_map)
             if edge_data:
+                parent_item = edge.parentItem() if hasattr(edge, "parentItem") else None
+                if parent_item and hasattr(parent_item, "subnode_dropped"):
+                    parent_node = parent_item.parentItem()
+                    if parent_node in node_id_map:
+                        edge_data["parent_id"] = node_id_map[parent_node]
                 scene_data["edges"].append(edge_data)
 
     @staticmethod
