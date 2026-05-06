@@ -6,10 +6,15 @@
 # ---------------------------------------------------
 
 # app/ui/components/dependency_item/contribution_edge_item.py
-from PyQt6.QtGui import QPainter, QFont, QPen, QBrush, QPolygonF
-from PyQt6.QtCore import QPointF, QRectF
 import math
+
+from PyQt6.QtCore import QPointF
+from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPen
+
 from app.ui.components.base_edge_item import BaseEdgeItem
+
 
 class ContributionArrowItem(BaseEdgeItem):
     """Flecha abierta tipo V y símbolo '+' cerca del cuerpo."""
@@ -18,7 +23,7 @@ class ContributionArrowItem(BaseEdgeItem):
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
 
     def boundingRect(self):
-        """Extiende el bounding rect para incluir la cabeza de flecha y el símbolo '+'."""
+        """Extiende el bounding rect para incluir la cabeza de flecha y el '+'."""
         # Obtener boundingRect base de la línea
         base_rect = super().boundingRect()
         # Extra para la V abierta (~12px) y el símbolo '+'
@@ -65,28 +70,33 @@ class ContributionArrowItem(BaseEdgeItem):
         size = 12.0
 
         # V abierta (punta de flecha)
-        pA = QPointF(end_point.x() - ux * size + perp_x * (size * 0.4),
-                     end_point.y() - uy * size + perp_y * (size * 0.4))
-        pB = QPointF(end_point.x() - ux * size - perp_x * (size * 0.4),
-                     end_point.y() - uy * size - perp_y * (size * 0.4))
+        pA = QPointF(
+            end_point.x() - ux * size + perp_x * (size * 0.4),
+            end_point.y() - uy * size + perp_y * (size * 0.4),
+        )
+        pB = QPointF(
+            end_point.x() - ux * size - perp_x * (size * 0.4),
+            end_point.y() - uy * size - perp_y * (size * 0.4),
+        )
         painter.drawLine(end_point, pA)
         painter.drawLine(end_point, pB)
 
         # símbolo '+' en el punto medio REAL del path curvo
         # Usamos el método utilitario para obtener el punto y ángulo correctos
         mid_point, mid_angle = self._get_point_at_percentage(0.5)
-        
+
         painter.save()
         # Rotar el sistema de coordenadas para alinear el '+' con el path
         painter.translate(mid_point)
         painter.rotate(math.degrees(mid_angle))
-        
+
         painter.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        # Dibujar '+' centrado, ligeramente desplazado perpendicularmente para no tapar la línea
+        # Dibujar '+' centrado, ligeramente desplazado perpendicularmente
+        # para no tapar la línea
         fm = painter.fontMetrics()
         w = fm.horizontalAdvance("+")
         h = fm.height()
         # Pequeño offset perpendicular para que el '+' no se superponga con la línea
         offset_perp = 8.0
-        painter.drawText(QPointF(-w/2, -h/2 - offset_perp), "+")
+        painter.drawText(QPointF(-w / 2, -h / 2 - offset_perp), "+")
         painter.restore()

@@ -4,9 +4,15 @@
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QWidget, QHBoxLayout
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QDialog
+from PyQt6.QtWidgets import QHBoxLayout
+from PyQt6.QtWidgets import QPushButton
+from PyQt6.QtWidgets import QVBoxLayout
+from PyQt6.QtWidgets import QWidget
+
 from .markdown_viewer import MarkdownViewer
+
 
 class HelpModal(QDialog):
     def __init__(self, title, md_file_path, parent=None):
@@ -14,7 +20,7 @@ class HelpModal(QDialog):
         self.setWindowTitle(title)
         self.setMinimumSize(900, 650)
         self.resize(1000, 750)
-        
+
         # Configurar estilo del diálogo - PROFESIONAL
         self.setStyleSheet("""
             /* ===== DIÁLOGO PRINCIPAL ===== */
@@ -50,15 +56,15 @@ class HelpModal(QDialog):
                 outline-offset: 2px;
             }
         """)
-        
+
         # Layout principal con márgenes elegantes
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
-        
+
         # Crear visor de markdown
         self.viewer = MarkdownViewer()
-        
+
         # Aplicar estilo al QTextBrowser para bordes redondeados, etc.
         self.viewer.text_browser.setStyleSheet("""
             /* ===== QTextBrowser ===== */
@@ -117,20 +123,20 @@ class HelpModal(QDialog):
                 background: white;
             }
         """)
-        
+
         main_layout.addWidget(self.viewer, 1)  # El 1 hace que se expanda
-        
+
         # Contenedor para el botón con alineación centrada
         button_container = QWidget()
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(0, 15, 0, 0)
-        
+
         # Botón de cerrar elegante
         close_btn = QPushButton("Cerrar")
         close_btn.clicked.connect(self.accept)
         close_btn.setFixedSize(120, 42)
         close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        
+
         # Estilo adicional para el botón
         close_btn.setStyleSheet("""
             QPushButton {
@@ -139,18 +145,18 @@ class HelpModal(QDialog):
                 letter-spacing: 0.3px;
             }
         """)
-        
+
         button_layout.addStretch()
         button_layout.addWidget(close_btn)
         button_layout.addStretch()
-        
+
         main_layout.addWidget(button_container)
-        
+
         # Cargar el archivo markdown
         self.viewer.load_markdown(md_file_path)
-        
+
         # Foco en el botón por defecto
         close_btn.setFocus()
-        
+
         # Añadir sombra de ventana (efecto visual)
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.Window)

@@ -4,36 +4,44 @@
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTextBrowser
+from pathlib import Path
+
+import markdown
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
-import markdown
-from pathlib import Path
+from PyQt6.QtWidgets import QTextBrowser
+from PyQt6.QtWidgets import QVBoxLayout
+from PyQt6.QtWidgets import QWidget
+
 
 class MarkdownViewer(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setup_ui()
-    
+
     def setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        
+
         self.text_browser = QTextBrowser()
         self.text_browser.setOpenExternalLinks(True)
-        
+
         # Configurar fuente base
         font = QFont()
         font.setFamily("Segoe UI")
         font.setPointSize(13)
         self.text_browser.setFont(font)
-        
+
         # Configurar scroll
-        self.text_browser.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.text_browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        
+        self.text_browser.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.text_browser.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+
         layout.addWidget(self.text_browser)
-    
+
     def get_stylesheet(self):
         """CSS profesional y elegante para el visor de markdown"""
         return """
@@ -318,39 +326,37 @@ class MarkdownViewer(QWidget):
                 box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             }
         """
-    
+
     def load_markdown(self, file_path):
         """Carga y renderiza un archivo markdown con estilos profesionales"""
         try:
             file_path = Path(file_path)
-            
+
             if not file_path.exists():
                 self.show_error(f"Archivo no encontrado: {file_path}")
                 return
-            
-            content = file_path.read_text(encoding='utf-8')
-            
+
+            content = file_path.read_text(encoding="utf-8")
+
             if not content.strip():
                 self.show_error(f"El archivo está vacío: {file_path.name}")
                 return
-            
+
             # Convertir markdown a HTML con extensiones
             html = markdown.markdown(
-                content,
-                extensions=['extra', 'nl2br', 'toc'],
-                output_format='html5'
+                content, extensions=["extra", "nl2br", "toc"], output_format="html5"
             )
-            
+
             # Aplicar estilos CSS
             self.text_browser.document().setDefaultStyleSheet(self.get_stylesheet())
-            
+
             # Establecer el HTML
             self.text_browser.setHtml(html)
-            
+
         except Exception as e:
             print(f"Error al cargar markdown: {e}")
             self.show_error(f"Error: {str(e)}")
-    
+
     def show_error(self, message):
         """Muestra un mensaje de error estilizado"""
         error_html = f"""

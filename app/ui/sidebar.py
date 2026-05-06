@@ -5,25 +5,42 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QLabel, QGraphicsScene
-from PyQt6.QtCore import Qt, QMimeData, QRectF
-from PyQt6.QtGui import QPixmap, QPainter, QDrag
+from PyQt6.QtCore import QMimeData
+from PyQt6.QtCore import QRectF
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QDrag
+from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QGraphicsScene
+from PyQt6.QtWidgets import QGridLayout
+from PyQt6.QtWidgets import QLabel
+from PyQt6.QtWidgets import QVBoxLayout
+from PyQt6.QtWidgets import QWidget
 
-# Node items
-from app.ui.components.tropos_element_item.hard_goal_item import HardGoalNodeItem
-from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeItem
-from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
-from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
+from app.ui.components.dependency_item.and_decomposition_edge_item import (
+    AndDecompositionArrowItem,
+)
+from app.ui.components.dependency_item.contribution_edge_item import (
+    ContributionArrowItem,
+)
+
+# Arrow/link items (deben aceptar (source_node, dest_node) en su constructor)
+from app.ui.components.dependency_item.dependency_link_edge_item import (
+    DependencyLinkArrowItem,
+)
+from app.ui.components.dependency_item.means_end_edge_item import MeansEndArrowItem
+from app.ui.components.dependency_item.or_decomposition_edge_item import (
+    OrDecompositionArrowItem,
+)
+from app.ui.components.dependency_item.why_link_edge_item import WhyLinkArrowItem
 from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 
-# Arrow/link items (deben aceptar (source_node, dest_node) en su constructor)
-from app.ui.components.dependency_item.dependency_link_edge_item import DependencyLinkArrowItem
-from app.ui.components.dependency_item.why_link_edge_item import WhyLinkArrowItem
-from app.ui.components.dependency_item.or_decomposition_edge_item import OrDecompositionArrowItem
-from app.ui.components.dependency_item.and_decomposition_edge_item import AndDecompositionArrowItem
-from app.ui.components.dependency_item.contribution_edge_item import ContributionArrowItem
-from app.ui.components.dependency_item.means_end_edge_item import MeansEndArrowItem
+# Node items
+from app.ui.components.tropos_element_item.hard_goal_item import HardGoalNodeItem
+from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
+from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
+from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeItem
 
 
 class DraggableLabel(QLabel):
@@ -31,7 +48,10 @@ class DraggableLabel(QLabel):
     Label arrastrable para nodos / links o boton de composite.
     Si se proporciona `on_click` se ejecuta con click (usado para composites).
     """
-    def __init__(self, text: str, item_type: str, on_click=None, tooltip_text: str = None):
+
+    def __init__(
+        self, text: str, item_type: str, on_click=None, tooltip_text: str = None
+    ):
         super().__init__(text)
         self.item_type = item_type
         self.on_click = on_click
@@ -61,7 +81,7 @@ class DraggableLabel(QLabel):
         pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    
+
         node_map = {
             "actor": ActorNodeItem,
             "agent": AgentNodeItem,
@@ -70,7 +90,7 @@ class DraggableLabel(QLabel):
             "plan": PlanNodeItem,
             "resource": ResourceNodeItem,
         }
-    
+
         arrow_map = {
             "dependency_link": DependencyLinkArrowItem,
             "why_link": WhyLinkArrowItem,
@@ -79,89 +99,90 @@ class DraggableLabel(QLabel):
             "contribution": ContributionArrowItem,
             "means_end": MeansEndArrowItem,
         }
-    
-        # === Caso especial: composite preview ===
-        if self.item_type.startswith("composite:"):
-            scene = QGraphicsScene()
-    
-            # 1️⃣ Crear nodo centrado
-            node_key = self.item_type.split(":")[1]
-            NodeClass = node_map.get(node_key)
-            node_center_x, node_center_y = W / 2, H / 2
-    
-            node = None
-            if NodeClass:
-                try:
-                    node = NodeClass(0, 0, radius=18)
-                except TypeError:
-                    node = NodeClass(0, 0)
-                node.setPos(node_center_x, node_center_y)
-                scene.addItem(node)
-    
-            # Renderizar nodo
-            rect = scene.itemsBoundingRect()
-            if rect.isNull() or rect.width() == 0 or rect.height() == 0:
-                rect = QRectF(0, 0, W, H)
-            scene.render(painter, QRectF(0, 0, W, H), rect)
-    
-            # 2️⃣ Calcular límites reales del nodo y dibujar líneas
-            if node:
-                node_bounds = node.boundingRect()
-                # El boundingRect es relativo al nodo → lo convertimos a coordenadas de escena
-                node_left = node_center_x + node_bounds.left()
-                node_right = node_center_x + node_bounds.right()
-    
-                # Separación adicional para que la línea no toque el borde
-                margin = 4
-                y = int(H / 2)
-    
-                pen = painter.pen()
-                pen.setWidth(2)
-                painter.setPen(pen)
-    
-                # Línea izquierda: desde el borde hasta un poco antes del nodo
-                painter.drawLine(8, y, int(node_left - margin), y)
-                # Línea derecha: desde un poco después del nodo hasta el borde derecho
-                painter.drawLine(int(node_right + margin), y, W - 8, y)
-    
-        else:
-            # === Nodos normales ===
-            if self.item_type in node_map:
-                NodeClass = node_map[self.item_type]
-                scene = QGraphicsScene()
-                try:
-                    node = NodeClass(0, 0, radius=18)
-                except TypeError:
-                    node = NodeClass(0, 0)
-                scene.addItem(node)
-    
-            # === Flechas normales ===
-            elif self.item_type in arrow_map:
-                ArrowClass = arrow_map[self.item_type]
-                from PyQt6.QtWidgets import QGraphicsEllipseItem
-                scene = QGraphicsScene()
-                src_node = QGraphicsEllipseItem(-2, -2, 4, 4)
-                dst_node = QGraphicsEllipseItem(-2, -2, 4, 4)
-                src_node.setPos(8, H / 2)
-                dst_node.setPos(W - 8, H / 2)
-                scene.addItem(src_node)
-                scene.addItem(dst_node)
-                try:
-                    arrow = ArrowClass(src_node, dst_node)
-                    scene.addItem(arrow)
-                except Exception as e:
-                    print(f"⚠️ Sidebar preview error for {self.item_type}: {e}")
-    
-            # Render general
-            rect = scene.itemsBoundingRect()
-            if rect.isNull() or rect.width() == 0 or rect.height() == 0:
-                rect = QRectF(0, 0, W, H)
-            scene.render(painter, QRectF(0, 0, W, H), rect)
-    
+
+        self._render_preview(painter, W, H, node_map, arrow_map)
+
         painter.end()
         return pixmap
 
+    def _render_preview(self, painter, W, H, node_map, arrow_map):
+        if self.item_type.startswith("composite:"):
+            self._render_composite_preview(painter, W, H, node_map)
+        elif self.item_type in node_map:
+            self._render_node_preview(painter, W, H, node_map)
+        elif self.item_type in arrow_map:
+            self._render_arrow_preview(painter, W, H, arrow_map)
 
+    def _render_composite_preview(self, painter, W, H, node_map):
+        scene = QGraphicsScene()
+        node_key = self.item_type.split(":")[1]
+        NodeClass = node_map.get(node_key)
+        node_center_x, node_center_y = W / 2, H / 2
+
+        node = None
+        if NodeClass:
+            try:
+                node = NodeClass(0, 0, radius=18)
+            except TypeError:
+                node = NodeClass(0, 0)
+            node.setPos(node_center_x, node_center_y)
+            scene.addItem(node)
+
+        rect = scene.itemsBoundingRect()
+        if rect.isNull() or rect.width() == 0 or rect.height() == 0:
+            rect = QRectF(0, 0, W, H)
+        scene.render(painter, QRectF(0, 0, W, H), rect)
+
+        if node:
+            node_bounds = node.boundingRect()
+            node_left = node_center_x + node_bounds.left()
+            node_right = node_center_x + node_bounds.right()
+
+            margin = 4
+            y = int(H / 2)
+
+            pen = painter.pen()
+            pen.setWidth(2)
+            painter.setPen(pen)
+
+            painter.drawLine(8, y, int(node_left - margin), y)
+            painter.drawLine(int(node_right + margin), y, W - 8, y)
+
+    def _render_node_preview(self, painter, W, H, node_map):
+        NodeClass = node_map[self.item_type]
+        scene = QGraphicsScene()
+        try:
+            node = NodeClass(0, 0, radius=18)
+        except TypeError:
+            node = NodeClass(0, 0)
+        scene.addItem(node)
+
+        rect = scene.itemsBoundingRect()
+        if rect.isNull() or rect.width() == 0 or rect.height() == 0:
+            rect = QRectF(0, 0, W, H)
+        scene.render(painter, QRectF(0, 0, W, H), rect)
+
+    def _render_arrow_preview(self, painter, W, H, arrow_map):
+        ArrowClass = arrow_map[self.item_type]
+        from PyQt6.QtWidgets import QGraphicsEllipseItem
+
+        scene = QGraphicsScene()
+        src_node = QGraphicsEllipseItem(-2, -2, 4, 4)
+        dst_node = QGraphicsEllipseItem(-2, -2, 4, 4)
+        src_node.setPos(8, H / 2)
+        dst_node.setPos(W - 8, H / 2)
+        scene.addItem(src_node)
+        scene.addItem(dst_node)
+        try:
+            arrow = ArrowClass(src_node, dst_node)
+            scene.addItem(arrow)
+        except Exception as e:
+            print(f"[ERROR] Sidebar preview error for {self.item_type}: {e}")
+
+        rect = scene.itemsBoundingRect()
+        if rect.isNull() or rect.width() == 0 or rect.height() == 0:
+            rect = QRectF(0, 0, W, H)
+        scene.render(painter, QRectF(0, 0, W, H), rect)
 
     def mousePressEvent(self, event):
         # si on_click está presente, tratar clicks como acción (ej. composites)
@@ -170,7 +191,7 @@ class DraggableLabel(QLabel):
             try:
                 self.on_click()
             except Exception as e:
-                print(f"⚠️ Error al ejecutar on_click de {self.item_type}: {e}")
+                print(f"[ERROR] Error executing on_click for {self.item_type}: {e}")
             return
         # si no hay callback, iniciar drag normal
         if event.button() == Qt.MouseButton.LeftButton:
@@ -191,9 +212,12 @@ class Sidebar(QWidget):
     Sidebar con 3 secciones:
       - Items (nodos)
       - Links (flechas)
-      - Composite Dependencies (botones que activan modo composite en el controller)
-    Si `controller` es provisto, los composites invocan controller.start_composite_dependency_mode(tipo).
+      - Composite Dependencies (botones que activan modo composite
+        en el controller)
+    Si `controller` es provisto, los composites invocan
+    controller.start_composite_dependency_mode(tipo).
     """
+
     def __init__(self, controller=None):
         super().__init__()
         self.controller = controller
@@ -221,10 +245,16 @@ class Sidebar(QWidget):
 
         self.actor_label = DraggableLabel("Actor", "actor", tooltip_text="Actor")
         self.agent_label = DraggableLabel("Agent", "agent", tooltip_text="Agent")
-        self.hardgoal_label = DraggableLabel("HardGoal", "hard_goal", tooltip_text="HardGoal")
-        self.softgoal_label = DraggableLabel("SoftGoal", "soft_goal", tooltip_text="SoftGoal")
+        self.hardgoal_label = DraggableLabel(
+            "HardGoal", "hard_goal", tooltip_text="HardGoal"
+        )
+        self.softgoal_label = DraggableLabel(
+            "SoftGoal", "soft_goal", tooltip_text="SoftGoal"
+        )
         self.plan_label = DraggableLabel("Plan", "plan", tooltip_text="Plan")
-        self.resource_label = DraggableLabel("Resource", "resource", tooltip_text="Resource")
+        self.resource_label = DraggableLabel(
+            "Resource", "resource", tooltip_text="Resource"
+        )
 
         items_grid.addWidget(self.actor_label, 0, 0)
         items_grid.addWidget(self.agent_label, 0, 1)
@@ -238,19 +268,31 @@ class Sidebar(QWidget):
         # ===== Links =====
         links_title = QLabel("Links")
         links_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        links_title.setStyleSheet("font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;")
+        links_title.setStyleSheet(
+            "font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;"
+        )
         main_layout.addWidget(links_title)
 
         links_grid = QGridLayout()
         links_grid.setHorizontalSpacing(8)
         links_grid.setVerticalSpacing(8)
 
-        self.dependency_label = DraggableLabel("Dependency", "dependency_link", tooltip_text="Dependency Link")
+        self.dependency_label = DraggableLabel(
+            "Dependency", "dependency_link", tooltip_text="Dependency Link"
+        )
         self.why_label = DraggableLabel("Why", "why_link", tooltip_text="Why Link")
-        self.or_label = DraggableLabel("OR Decomposition", "or_decomposition", tooltip_text="OR Decomposition")
-        self.and_label = DraggableLabel("AND Decomposition", "and_decomposition", tooltip_text="AND Decomposition")
-        self.contribution_label = DraggableLabel("Contribution", "contribution", tooltip_text="Contribution")
-        self.means_label = DraggableLabel("Means-End", "means_end", tooltip_text="Means-End")
+        self.or_label = DraggableLabel(
+            "OR Decomposition", "or_decomposition", tooltip_text="OR Decomposition"
+        )
+        self.and_label = DraggableLabel(
+            "AND Decomposition", "and_decomposition", tooltip_text="AND Decomposition"
+        )
+        self.contribution_label = DraggableLabel(
+            "Contribution", "contribution", tooltip_text="Contribution"
+        )
+        self.means_label = DraggableLabel(
+            "Means-End", "means_end", tooltip_text="Means-End"
+        )
 
         links_grid.addWidget(self.dependency_label, 0, 0)
         links_grid.addWidget(self.why_label, 0, 1)
@@ -264,21 +306,44 @@ class Sidebar(QWidget):
         # ===== Composite Dependencies =====
         comp_title = QLabel("Composite Dependencies")
         comp_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        comp_title.setStyleSheet("font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;")
+        comp_title.setStyleSheet(
+            "font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;"
+        )
         main_layout.addWidget(comp_title)
 
         comp_grid = QGridLayout()
         comp_grid.setHorizontalSpacing(8)
         comp_grid.setVerticalSpacing(8)
 
-        # cuando se hace click en estos labels, llamamos al controlador para activar modo composite
+        # cuando se hace click en estos labels, llamamos al controlador
+        # para activar modo composite
         def make_onclick(node_type):
             return lambda: self._start_composite(node_type)
 
-        self.hard_comp = DraggableLabel("HardGoal Composite", "composite:hard_goal", on_click=make_onclick("hard_goal"), tooltip_text="HardGoal Composite")
-        self.soft_comp = DraggableLabel("SoftGoal Composite", "composite:soft_goal", on_click=make_onclick("soft_goal"), tooltip_text="SoftGoal Composite")
-        self.plan_comp = DraggableLabel("Plan Composite", "composite:plan", on_click=make_onclick("plan"), tooltip_text="Plan Composite")
-        self.res_comp = DraggableLabel("Resource Composite", "composite:resource", on_click=make_onclick("resource"), tooltip_text="Resource Composite")
+        self.hard_comp = DraggableLabel(
+            "HardGoal Composite",
+            "composite:hard_goal",
+            on_click=make_onclick("hard_goal"),
+            tooltip_text="HardGoal Composite",
+        )
+        self.soft_comp = DraggableLabel(
+            "SoftGoal Composite",
+            "composite:soft_goal",
+            on_click=make_onclick("soft_goal"),
+            tooltip_text="SoftGoal Composite",
+        )
+        self.plan_comp = DraggableLabel(
+            "Plan Composite",
+            "composite:plan",
+            on_click=make_onclick("plan"),
+            tooltip_text="Plan Composite",
+        )
+        self.res_comp = DraggableLabel(
+            "Resource Composite",
+            "composite:resource",
+            on_click=make_onclick("resource"),
+            tooltip_text="Resource Composite",
+        )
 
         comp_grid.addWidget(self.hard_comp, 0, 0)
         comp_grid.addWidget(self.soft_comp, 0, 1)
@@ -296,4 +361,4 @@ class Sidebar(QWidget):
         try:
             self.controller.start_composite_dependency_mode(node_type)
         except Exception as e:
-            print(f"⚠️ Error starting composite mode for {node_type}: {e}")
+            print(f"[ERROR] Error starting composite mode for {node_type}: {e}")

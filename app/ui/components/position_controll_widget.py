@@ -4,9 +4,16 @@
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import Qt
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QBrush
+from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPen
+from PyQt6.QtGui import QRadialGradient
 from PyQt6.QtWidgets import QWidget
-from PyQt6.QtCore import Qt, pyqtSignal, QPointF, QRectF
-from PyQt6.QtGui import QPainter, QBrush, QPen, QColor, QRadialGradient
+
 
 class PositionControlWidget(QWidget):
     """
@@ -14,6 +21,7 @@ class PositionControlWidget(QWidget):
     de un elemento dentro de su contenedor circular.
     Emite valores normalizados entre -1.0 y 1.0.
     """
+
     position_changed = pyqtSignal(float, float)  # x, y (normalizados -1 a 1)
 
     def __init__(self, parent=None):
@@ -41,15 +49,25 @@ class PositionControlWidget(QWidget):
         bg_gradient = QRadialGradient(center, radius)
         bg_gradient.setColorAt(0, QColor("#f0f0f0"))
         bg_gradient.setColorAt(1, QColor("#e0e0e0"))
-        
+
         painter.setPen(QPen(QColor("#cccccc"), 2))
         painter.setBrush(QBrush(bg_gradient))
         painter.drawEllipse(center, radius, radius)
 
         # 2. Dibujar ejes cruzados (guías visuales)
         painter.setPen(QPen(QColor("#dddddd"), 1, Qt.PenStyle.DashLine))
-        painter.drawLine(int(center.x()), int(center.y() - radius), int(center.x()), int(center.y() + radius))
-        painter.drawLine(int(center.x() - radius), int(center.y()), int(center.x() + radius), int(center.y()))
+        painter.drawLine(
+            int(center.x()),
+            int(center.y() - radius),
+            int(center.x()),
+            int(center.y() + radius),
+        )
+        painter.drawLine(
+            int(center.x() - radius),
+            int(center.y()),
+            int(center.x() + radius),
+            int(center.y()),
+        )
 
         # 3. Calcular posición del "handle" (la bolita)
         handle_x = center.x() + (self._x * radius)
@@ -61,7 +79,7 @@ class PositionControlWidget(QWidget):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor("#3498db"))
         painter.drawEllipse(handle_pos, handle_radius, handle_radius)
-        
+
         # Brillo del handle
         painter.setBrush(QColor(255, 255, 255, 100))
         painter.drawEllipse(QPointF(handle_x - 2, handle_y - 2), 3, 3)
@@ -88,7 +106,7 @@ class PositionControlWidget(QWidget):
         dy = pos.y() - center_y
 
         # Distancia actual
-        dist = (dx**2 + dy**2)**0.5
+        dist = (dx**2 + dy**2) ** 0.5
 
         # Normalizar si se sale del círculo
         if dist > max_radius:
@@ -99,6 +117,6 @@ class PositionControlWidget(QWidget):
         # Convertir a rango -1 a 1
         self._x = dx / max_radius
         self._y = dy / max_radius
-        
+
         self.update()
         self.position_changed.emit(self._x, self._y)

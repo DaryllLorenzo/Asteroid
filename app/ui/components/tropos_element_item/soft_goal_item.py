@@ -5,11 +5,19 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from app.ui.components.base_tropos_item import BaseTroposItem
-from app.core.models.tropos_element.soft_goal import SoftGoal
-from PyQt6.QtGui import QBrush, QPen, QColor, QPainterPath, QFont
-from PyQt6.QtCore import QRectF, QPointF, Qt
 import math
+
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import QRectF
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QBrush
+from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QPainterPath
+from PyQt6.QtGui import QPen
+
+from app.core.models.tropos_element.soft_goal import SoftGoal
+from app.ui.components.base_tropos_item import BaseTroposItem
+
 
 class SoftGoalNodeItem(BaseTroposItem):
     def __init__(self, x=0, y=0, radius=30):
@@ -30,28 +38,37 @@ class SoftGoalNodeItem(BaseTroposItem):
         path.cubicTo(-w * 1.05, -h * 0.8, -w * 0.75, -h * 1.3, -w * 0.35, -h * 0.85)
         path.cubicTo(-w * 0.15, -h * 1.25, w * 0.15, -h * 1.25, w * 0.35, -h * 0.85)
         path.cubicTo(w * 0.75, -h * 1.3, w * 1.05, -h * 0.8, w * 0.85, 0)
-        path.cubicTo(w * 1.05,  h * 0.8, w * 0.75,  h * 1.3, w * 0.35,  h * 0.85)
-        path.cubicTo(w * 0.15,  h * 1.25, -w * 0.15,  h * 1.25, -w * 0.35,  h * 0.85)
-        path.cubicTo(-w * 0.75,  h * 1.3, -w * 1.05,  h * 0.8, -w * 0.85,  0)
+        path.cubicTo(w * 1.05, h * 0.8, w * 0.75, h * 1.3, w * 0.35, h * 0.85)
+        path.cubicTo(w * 0.15, h * 1.25, -w * 0.15, h * 1.25, -w * 0.35, h * 0.85)
+        path.cubicTo(-w * 0.75, h * 1.3, -w * 1.05, h * 0.8, -w * 0.85, 0)
         path.closeSubpath()
         return path
 
     def boundingRect(self):
-        # ✅ Usar _independent_model si existe (para nodos composite internos)
-        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
+        # Use _independent_model if it exists (for internal composite nodes)
+        model_for_props = (
+            self._independent_model
+            if hasattr(self, "_independent_model") and self._independent_model
+            else self.model
+        )
         r = model_for_props.radius
         if not hasattr(self, "path") or self.path.isEmpty():
-            return QRectF(-r, -r, r*2, r*2)
+            return QRectF(-r, -r, r * 2, r * 2)
         return self.path.boundingRect().adjusted(-2, -2, 2, 2)
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
         """Distancia aproximada al borde de la nube."""
-        # ✅ Usar _independent_model si existe
-        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
+        # Use _independent_model if it exists
+        model_for_props = (
+            self._independent_model
+            if hasattr(self, "_independent_model") and self._independent_model
+            else self.model
+        )
 
-        if hasattr(self, 'path') and not self.path.isEmpty():
+        if hasattr(self, "path") and not self.path.isEmpty():
             # Crear un stroker para simular el borde
-            from PyQt6.QtGui import QPen, QPainterPathStroker
+            from PyQt6.QtGui import QPainterPathStroker
+
             stroker = QPainterPathStroker()
             stroker.setWidth(10)  # Ancho del área de detección
 
@@ -65,31 +82,41 @@ class SoftGoalNodeItem(BaseTroposItem):
                 # Calcular distancia al bounding rect como aproximación
                 br = self.path.boundingRect()
                 center = br.center()
-                dist_to_center = math.sqrt((pos.x() - center.x())**2 + (pos.y() - center.y())**2)
+                dist_to_center = math.sqrt(
+                    (pos.x() - center.x()) ** 2 + (pos.y() - center.y()) ** 2
+                )
                 # Aproximación simple
                 return abs(dist_to_center - model_for_props.radius)
         return super()._get_distance_to_border(pos)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
-        return max((pos.x()**2 + pos.y()**2) ** 0.5, 15.0)
+        return max((pos.x() ** 2 + pos.y() ** 2) ** 0.5, 15.0)
 
     def set_radius(self, new_r: float):
         """Actualiza el radio y recrea el path de la nube"""
         self.prepareGeometryChange()
-        
-        # ✅ Usar el modelo independiente si existe
+
+        # Use the independent model if available
         if self._independent_model:
             self._independent_model.radius = new_r
         else:
             self.model.radius = new_r
-        
-        # ✅ Recrear el path con el nuevo radio
-        r = self._independent_model.radius if self._independent_model else self.model.radius
+
+        # Recreate the path with the new radius
+        r = (
+            self._independent_model.radius
+            if self._independent_model
+            else self.model.radius
+        )
         self.path = self._create_cloud_path_for_radius(r)
-        
+
         self.update()
-        
-        old_r = self._independent_model.radius if self._independent_model else self.model.radius
+
+        old_r = (
+            self._independent_model.radius
+            if self._independent_model
+            else self.model.radius
+        )
         if old_r != new_r:
             self.properties_changed.emit(self, {"radius": new_r})
 
@@ -98,19 +125,26 @@ class SoftGoalNodeItem(BaseTroposItem):
         default_border = QColor(0, 0, 0)
         default_text = QColor(0, 0, 0)
 
-        # ✅ Usar _independent_model si existe (para nodos composite internos)
-        model_for_props = self._independent_model if hasattr(self, '_independent_model') and self._independent_model else self.model
-
         # Colores son sincronizados, usar self.model (wrapper)
-        fill_color = QColor(self.model.color) if hasattr(self.model, 'color') else default_color
-        border_color = QColor(self.model.border_color) if hasattr(self.model, 'border_color') else default_border
-        text_color = QColor(self.model.text_color) if hasattr(self.model, 'text_color') else default_text
+        fill_color = (
+            QColor(self.model.color) if hasattr(self.model, "color") else default_color
+        )
+        border_color = (
+            QColor(self.model.border_color)
+            if hasattr(self.model, "border_color")
+            else default_border
+        )
+        text_color = (
+            QColor(self.model.text_color)
+            if hasattr(self.model, "text_color")
+            else default_text
+        )
 
         painter.setRenderHint(painter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
 
-        # ✅ Dibujar la nube usando el path actual
+        # Draw the cloud using the current path
         painter.drawPath(self.path)
 
         # DIBUJAR TEXTO MULTILÍNEA
@@ -124,7 +158,7 @@ class SoftGoalNodeItem(BaseTroposItem):
 
     def get_serializable_properties(self):
         base_properties = super().get_serializable_properties()
-        base_properties['node_type'] = 'soft_goal'
+        base_properties["node_type"] = "soft_goal"
         return base_properties
 
     def update_properties(self, properties: dict):

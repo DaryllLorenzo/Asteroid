@@ -6,11 +6,14 @@
 # ---------------------------------------------------
 
 # app/ui/components/dependency_item/means_end_edge_item.py
-from PyQt6.QtGui import QPainter, QPen
-from PyQt6.QtCore import QPointF, QRectF
 import math
 
+from PyQt6.QtCore import QPointF
+from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPen
+
 from app.ui.components.base_edge_item import BaseEdgeItem
+
 
 class MeansEndArrowItem(BaseEdgeItem):
     """Flecha abierta tipo V sin símbolo (means-end)."""
@@ -61,9 +64,13 @@ class MeansEndArrowItem(BaseEdgeItem):
 
         size = 12.0
 
-        pA = QPointF(end_point.x() - ux * size + perp_x * (size * 0.4),
-                     end_point.y() - uy * size + perp_y * (size * 0.4))
-        pB = QPointF(end_point.x() - ux * size - perp_x * (size * 0.4),
-                     end_point.y() - uy * size - perp_y * (size * 0.4))
+        pA = QPointF(
+            end_point.x() - ux * size + perp_x * (size * 0.4),
+            end_point.y() - uy * size + perp_y * (size * 0.4),
+        )
+        pB = QPointF(
+            end_point.x() - ux * size - perp_x * (size * 0.4),
+            end_point.y() - uy * size - perp_y * (size * 0.4),
+        )
         painter.drawLine(end_point, pA)
         painter.drawLine(end_point, pB)

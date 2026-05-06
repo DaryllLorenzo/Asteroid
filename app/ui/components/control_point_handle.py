@@ -5,10 +5,15 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
-from PyQt6.QtWidgets import QGraphicsEllipseItem, QGraphicsItem
-from PyQt6.QtGui import QBrush, QPen, QColor, QCursor
-from PyQt6.QtCore import QPointF, Qt, QPoint
-from typing import Callable, Optional
+from collections.abc import Callable
+
+from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QBrush
+from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QPen
+from PyQt6.QtWidgets import QGraphicsEllipseItem
+from PyQt6.QtWidgets import QGraphicsItem
 
 
 class ControlPointHandle(QGraphicsEllipseItem):
@@ -20,15 +25,25 @@ class ControlPointHandle(QGraphicsEllipseItem):
 
     HANDLE_SIZE = 10.0  # Tamaño del handle en píxeles
 
-    def __init__(self, parent_edge, position: QPointF, on_position_changed: Optional[Callable] = None, on_release: Optional[Callable] = None):
-        super().__init__(-self.HANDLE_SIZE/2, -self.HANDLE_SIZE/2,
-                         self.HANDLE_SIZE, self.HANDLE_SIZE)
+    def __init__(
+        self,
+        parent_edge,
+        position: QPointF,
+        on_position_changed: Callable | None = None,
+        on_release: Callable | None = None,
+    ):
+        super().__init__(
+            -self.HANDLE_SIZE / 2,
+            -self.HANDLE_SIZE / 2,
+            self.HANDLE_SIZE,
+            self.HANDLE_SIZE,
+        )
 
         self.parent_edge = parent_edge
         self.on_position_changed = on_position_changed
         self.on_release = on_release
         self.setPos(position)
-        
+
         # Punto donde se hizo click inicial (para calcular offset)
         self._click_offset = QPointF(0, 0)
 
