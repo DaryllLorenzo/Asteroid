@@ -275,28 +275,16 @@ class PropertiesPanel(QWidget):
         if not self.current_selection or not hasattr(self.current_selection, "model"):
             return
 
-        # For independent properties, use _independent_model if available
-        model_for_independent = (
-            self.current_selection._independent_model
-            if hasattr(self.current_selection, "_independent_model")
-            and self.current_selection._independent_model
-            else self.current_selection.model
-        )
-
         props = {
-            "label": self.label_edit.toPlainText(),  # Sincronizado
-            "radius": model_for_independent.radius,  # Independiente
-            "font_size": getattr(
-                model_for_independent, "font_size", 10
-            ),  # Independiente
-            "text_width": getattr(
-                model_for_independent, "text_width", 150
-            ),  # Independiente
+            "label": self.label_edit.toPlainText(),
+            "radius": self.radius_spin.value(),
+            "font_size": self.font_size_spin.value(),
+            "text_width": self.text_width_spin.value(),
             "text_align": "left"
             if self.btn_align_left.isChecked()
             else "right"
             if self.btn_align_right.isChecked()
-            else "center",  # Independiente
+            else "center",
         }
         self.properties_changed.emit(props)
 
