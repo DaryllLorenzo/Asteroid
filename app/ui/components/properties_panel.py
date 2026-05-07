@@ -275,14 +275,6 @@ class PropertiesPanel(QWidget):
         if not self.current_selection or not hasattr(self.current_selection, "model"):
             return
 
-        # For independent properties, use _independent_model if available
-        model_for_independent = (
-            self.current_selection._independent_model
-            if hasattr(self.current_selection, "_independent_model")
-            and self.current_selection._independent_model
-            else self.current_selection.model
-        )
-
         props = {
             "label": self.label_edit.toPlainText(),
             "radius": self.radius_spin.value(),
