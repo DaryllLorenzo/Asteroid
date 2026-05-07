@@ -284,19 +284,15 @@ class PropertiesPanel(QWidget):
         )
 
         props = {
-            "label": self.label_edit.toPlainText(),  # Sincronizado
-            "radius": model_for_independent.radius,  # Independiente
-            "font_size": getattr(
-                model_for_independent, "font_size", 10
-            ),  # Independiente
-            "text_width": getattr(
-                model_for_independent, "text_width", 150
-            ),  # Independiente
+            "label": self.label_edit.toPlainText(),
+            "radius": self.radius_spin.value(),
+            "font_size": self.font_size_spin.value(),
+            "text_width": self.text_width_spin.value(),
             "text_align": "left"
             if self.btn_align_left.isChecked()
             else "right"
             if self.btn_align_right.isChecked()
-            else "center",  # Independiente
+            else "center",
         }
         self.properties_changed.emit(props)
 
