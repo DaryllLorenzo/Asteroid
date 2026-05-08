@@ -40,7 +40,7 @@ class ResourceNodeItem(BaseTroposItem):
         else:
             dx = max(rect.left() - pos.x(), 0, pos.x() - rect.right())
             dy = max(rect.top() - pos.y(), 0, pos.y() - rect.bottom())
-            return math.sqrt(dx * dx + dy * dy)
+            return float(math.sqrt(dx * dx + dy * dy))
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
         new_r = abs(pos.x())
