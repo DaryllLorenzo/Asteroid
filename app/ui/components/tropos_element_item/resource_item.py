@@ -36,7 +36,7 @@ class ResourceNodeItem(BaseTroposItem):
             dist_right = abs(pos.x() - rect.right())
             dist_top = abs(pos.y() - rect.top())
             dist_bottom = abs(pos.y() - rect.bottom())
-            return min(dist_left, dist_right, dist_top, dist_bottom)
+            return float(min(dist_left, dist_right, dist_top, dist_bottom))
         else:
             dx = max(rect.left() - pos.x(), 0, pos.x() - rect.right())
             dy = max(rect.top() - pos.y(), 0, pos.y() - rect.bottom())
