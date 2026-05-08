@@ -19,6 +19,8 @@ from PyQt6.QtGui import QPen
 from PyQt6.QtGui import QPolygonF
 from PyQt6.QtWidgets import QGraphicsItem
 from PyQt6.QtWidgets import QGraphicsPathItem
+from PyQt6.QtWidgets import QStyleOptionGraphicsItem
+from PyQt6.QtWidgets import QWidget
 
 from app.ui.components.control_point_handle import ControlPointHandle
 
@@ -470,9 +472,16 @@ class BaseEdgeItem(QGraphicsPathItem):
 
         return super().itemChange(change, value)
 
-    def paint(self, painter: QPainter, option, widget=None):
+    def paint(
+        self,
+        painter: QPainter | None,
+        option: QStyleOptionGraphicsItem | None,
+        widget: QWidget | None = None,
+    ) -> None:
         """Dibuja la arista con su punta de flecha"""
-        if not self.source_node or not self.dest_node:
+        del option, widget
+
+        if painter is None or not self.source_node or not self.dest_node:
             return
 
         # NO llamar a update_position() aquí para evitar temblor

@@ -14,6 +14,7 @@ from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QGraphicsItem
 from PyQt6.QtWidgets import QGraphicsObject
 
+from app.model_types import NodeModelLike
 from app.ui.components.subcanvas_item import SubCanvasItem
 
 
@@ -23,15 +24,18 @@ class BaseNodeItem(QGraphicsObject):
     properties_changed = pyqtSignal(object, dict)
     positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
 
-    def __init__(self, model):
+    def __init__(self, model: NodeModelLike) -> None:
         super().__init__()
-        self.model = model
+        self.model: NodeModelLike = model
+        self._independent_model: NodeModelLike | None = None
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable)
         self.setAcceptHoverEvents(True)
-        self._resizing = False
-        self.subcanvas = None
-        self._subcanvas_visible = False
+        self._resizing: bool = False
+        self.subcanvas: SubCanvasItem | None = None
+        self.subcanvas_parent: SubCanvasItem | None = None
+        self.child_nodes: list[object] = []
+        self._subcanvas_visible: bool = False
         self.setZValue(10)
 
         if not hasattr(self.model, "font_size"):
@@ -42,17 +46,17 @@ class BaseNodeItem(QGraphicsObject):
             self.model.text_align = "center"
 
     def boundingRect(self) -> QRectF:
-        r = getattr(self.model, "radius", 50)
+        r = float(self.model.radius)
         return QRectF(-r, -r, 2 * r, 2 * r)
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        r = getattr(self.model, "radius", 50)
+        r = float(self.model.radius)
         center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
-        return abs(center_dist - r)
+        return float(abs(center_dist - r))
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
         center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
-        return max(center_dist, 10.0)
+        return float(max(center_dist, 10.0))
 
     def hoverMoveEvent(self, event):
         dist = self._get_distance_to_border(event.pos())
@@ -329,7 +333,7 @@ class BaseNodeItem(QGraphicsObject):
         self.update()
         self.properties_changed.emit(self, properties)
 
-    def is_subcanvas_visible(self):
+    def is_subcanvas_visible(self) -> bool:
         return (
             self.subcanvas is not None
             and self.subcanvas.isVisible()

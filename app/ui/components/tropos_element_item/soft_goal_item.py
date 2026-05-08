@@ -23,12 +23,12 @@ class SoftGoalNodeItem(BaseTroposItem):
     def __init__(self, x=0, y=0, radius=30):
         super().__init__(SoftGoal(x, y, radius))
         self.model.radius = radius
-        self.path = self._create_cloud_path()
+        self.path: QPainterPath = self._create_cloud_path()
 
-    def _create_cloud_path(self):
+    def _create_cloud_path(self) -> QPainterPath:
         return self._create_cloud_path_for_radius(float(self.model.radius))
 
-    def _create_cloud_path_for_radius(self, r: float):
+    def _create_cloud_path_for_radius(self, r: float) -> QPainterPath:
         """Crea un path de nube para un radio específico"""
         path = QPainterPath()
         w = r * 2.8
@@ -44,14 +44,14 @@ class SoftGoalNodeItem(BaseTroposItem):
         path.closeSubpath()
         return path
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
         # Use _independent_model if it exists (for internal composite nodes)
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
             else self.model
         )
-        r = model_for_props.radius
+        r = float(model_for_props.radius)
         if not hasattr(self, "path") or self.path.isEmpty():
             return QRectF(-r, -r, r * 2, r * 2)
         return self.path.boundingRect().adjusted(-2, -2, 2, 2)
@@ -86,15 +86,20 @@ class SoftGoalNodeItem(BaseTroposItem):
                     (pos.x() - center.x()) ** 2 + (pos.y() - center.y()) ** 2
                 )
                 # Aproximación simple
-                return abs(dist_to_center - model_for_props.radius)
+                return abs(dist_to_center - float(model_for_props.radius))
         return super()._get_distance_to_border(pos)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
-        return max((pos.x() ** 2 + pos.y() ** 2) ** 0.5, 15.0)
+        return float(max((pos.x() ** 2 + pos.y() ** 2) ** 0.5, 15.0))
 
-    def set_radius(self, new_r: float):
+    def set_radius(self, new_r: float) -> None:
         """Actualiza el radio y recrea el path de la nube"""
         self.prepareGeometryChange()
+        old_r = (
+            self._independent_model.radius
+            if self._independent_model
+            else self.model.radius
+        )
 
         # Use the independent model if available
         if self._independent_model:
@@ -112,11 +117,6 @@ class SoftGoalNodeItem(BaseTroposItem):
 
         self.update()
 
-        old_r = (
-            self._independent_model.radius
-            if self._independent_model
-            else self.model.radius
-        )
         if old_r != new_r:
             self.properties_changed.emit(self, {"radius": new_r})
 

@@ -4,15 +4,24 @@
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
+from app.controller_types import CanvasNodeItem
+from app.controllers._canvas_mixin import CanvasControllerMixin
+from app.ui.components.base_edge_item import BaseEdgeItem
+from app.ui.components.base_node_item import BaseNodeItem
+from app.ui.components.base_tropos_item import BaseTroposItem
 from app.ui.components.control_point_handle import ControlPointHandle
 
 
-class CanvasDeletionController:
-    def delete_selected_item(self):
+class CanvasDeletionController(CanvasControllerMixin):
+    def delete_selected_item(self) -> None:
         """Delete currently selected item (node, edge, or control point).
         Priority: control point > edge > node.
         """
-        selected_items = self.canvas.scene.selectedItems()
+        scene = self.canvas.scene()
+        if scene is None:
+            return
+
+        selected_items = scene.selectedItems()
         for item in selected_items:
             if isinstance(item, ControlPointHandle):
                 self._delete_selected_control_point(item)
@@ -25,7 +34,10 @@ class CanvasDeletionController:
         else:
             print("No element selected for deletion")
 
-    def _delete_selected_control_point(self, handle: ControlPointHandle):
+    def _delete_selected_control_point(
+        self,
+        handle: ControlPointHandle,
+    ) -> None:
         """Delete a specific control point from an edge"""
         if not handle.parent_edge:
             return
@@ -39,7 +51,7 @@ class CanvasDeletionController:
         except ValueError:
             pass
 
-    def delete_selected_node(self):
+    def delete_selected_node(self) -> None:
         """Delete currently selected node"""
         if not self.selected_node:
             print("No node selected for deletion")
@@ -48,7 +60,7 @@ class CanvasDeletionController:
         print(f"Deleting node: {self.selected_node}")
         self.delete_node(self.selected_node)
 
-    def delete_selected_edge(self):
+    def delete_selected_edge(self) -> None:
         """Delete currently selected edge"""
         if not self.selected_edge:
             print("No edge selected for deletion")
@@ -57,7 +69,10 @@ class CanvasDeletionController:
         print(f"Deleting edge: {self.selected_edge}")
         self.delete_edge(self.selected_edge)
 
-    def delete_node(self, node_to_delete):
+    def delete_node(
+        self,
+        node_to_delete: CanvasNodeItem,
+    ) -> None:
         """Delete a specific node and all its connections"""
         if node_to_delete not in self.nodes:
             if node_to_delete.scene():
@@ -81,11 +96,14 @@ class CanvasDeletionController:
             print(f"Deleting {len(node_to_delete.child_nodes)} child nodes...")
             child_nodes_copy = node_to_delete.child_nodes.copy()
             for child_node in child_nodes_copy:
-                self.delete_node(child_node)
+                if isinstance(child_node, (BaseNodeItem, BaseTroposItem)):
+                    self.delete_node(child_node)
 
         if hasattr(node_to_delete, "subcanvas") and node_to_delete.subcanvas:
-            if node_to_delete.subcanvas.scene():
-                node_to_delete.scene().removeItem(node_to_delete.subcanvas)
+            subcanvas_scene = node_to_delete.subcanvas.scene()
+            node_scene = node_to_delete.scene()
+            if subcanvas_scene is not None and node_scene is not None:
+                node_scene.removeItem(node_to_delete.subcanvas)
             node_to_delete.subcanvas = None
 
         self._remove_node_from_scene(node_to_delete)
@@ -103,14 +121,18 @@ class CanvasDeletionController:
         self.mark_as_modified()
         print(f"Node successfully deleted: {node_to_delete}")
 
-    def delete_edge(self, edge_to_delete):
+    def delete_edge(
+        self,
+        edge_to_delete: BaseEdgeItem,
+    ) -> None:
         """Delete a specific edge"""
         if edge_to_delete in self.edges:
             if hasattr(edge_to_delete, "cleanup"):
                 edge_to_delete.cleanup()
 
-            if edge_to_delete.scene():
-                edge_to_delete.scene().removeItem(edge_to_delete)
+            edge_scene = edge_to_delete.scene()
+            if edge_scene is not None:
+                edge_scene.removeItem(edge_to_delete)
             self.edges.remove(edge_to_delete)
 
             if edge_to_delete == self.selected_edge:
@@ -125,35 +147,47 @@ class CanvasDeletionController:
         else:
             print(f"Edge not found in list: {edge_to_delete}")
 
-    def straighten_edge(self, edge):
+    def straighten_edge(
+        self,
+        edge: BaseEdgeItem,
+    ) -> None:
         """Straighten an edge by removing all control points."""
         if edge and hasattr(edge, "clear_control_points"):
             edge.clear_control_points()
             self.mark_as_modified()
             print(f"Edge straightened: {edge}")
 
-    def _remove_node_from_scene(self, node):
+    def _remove_node_from_scene(
+        self,
+        node: CanvasNodeItem,
+    ) -> None:
         """Safely remove a node from the scene"""
         if node.scene():
-            node.scene().removeItem(node)
+            scene = node.scene()
+            if scene is not None:
+                scene.removeItem(node)
 
-    def clear_canvas(self):
+    def clear_canvas(self) -> None:
         """Clear canvas completely"""
         self.selected_node = None
         self.selected_edge = None
         self.current_selection = None
 
         for edge in self.edges[:]:
-            if edge.scene():
-                edge.scene().removeItem(edge)
+            scene = edge.scene()
+            if scene is not None:
+                scene.removeItem(edge)
         self.edges.clear()
 
         for node in self.nodes[:]:
-            if node.scene():
-                node.scene().removeItem(node)
+            scene = node.scene()
+            if scene is not None:
+                scene.removeItem(node)
         self.nodes.clear()
 
-        self.canvas.scene.clearSelection()
+        scene = self.canvas.scene()
+        if scene is not None:
+            scene.clearSelection()
         self.is_modified = False
         self._current_file_path = None
         print("Canvas cleared")

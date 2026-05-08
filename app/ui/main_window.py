@@ -255,7 +255,7 @@ class MainWindow(QMainWindow):
         success = self.canvas_controller.export_to_astr()
         if success:
             self.update_window_title()
-        return success
+        return bool(success)
 
     def export_image(self):
         """Exporta el canvas como imagen"""

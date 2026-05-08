@@ -50,8 +50,12 @@ class DraggableLabel(QLabel):
     """
 
     def __init__(
-        self, text: str, item_type: str, on_click=None, tooltip_text: str = None
-    ):
+        self,
+        text: str,
+        item_type: str,
+        on_click=None,
+        tooltip_text: str | None = None,
+    ) -> None:
         super().__init__(text)
         self.item_type = item_type
         self.on_click = on_click

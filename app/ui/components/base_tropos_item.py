@@ -14,18 +14,23 @@ from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QGraphicsItem
 from PyQt6.QtWidgets import QGraphicsObject
 
+from app.model_types import NodeModelLike
+from app.ui.components.subcanvas_item import SubCanvasItem
+
 
 class BaseTroposItem(QGraphicsObject):
     nodeDoubleClicked = pyqtSignal(object)
     properties_changed = pyqtSignal(object, dict)
     positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
 
-    def __init__(self, model):
+    def __init__(self, model: NodeModelLike) -> None:
         super().__init__()
-        self.model = model
+        self.model: NodeModelLike = model
         # Para nodos composite internos:
         # modelo independiente para radius, posición, etc.
-        self._independent_model = None
+        self._independent_model: NodeModelLike | None = None
+        self.subcanvas_parent: SubCanvasItem | None = None
+        self.child_nodes: list[object] = []
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable)
         self.setAcceptHoverEvents(True)
@@ -34,7 +39,11 @@ class BaseTroposItem(QGraphicsObject):
         if not hasattr(self.model, "font_size"):
             self.model.font_size = 10
 
-    def _get_model_for_independent_prop(self, prop_name, default=None):
+    def _get_model_for_independent_prop(
+        self,
+        prop_name: str,
+        default: object = None,
+    ) -> object:
         """
         Obtiene una propiedad independiente (radius, x, y, etc.)
         Si es un nodo composite interno, usa el modelo interno.
@@ -45,17 +54,25 @@ class BaseTroposItem(QGraphicsObject):
         return getattr(self.model, prop_name, default)
 
     def boundingRect(self) -> QRectF:
-        r = self._get_model_for_independent_prop("radius", 50)
+        r = (
+            float(self._independent_model.radius)
+            if self._independent_model
+            else float(self.model.radius)
+        )
         return QRectF(-r, -r, 2 * r, 2 * r)
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        r = self._get_model_for_independent_prop("radius", 50)
+        r = (
+            float(self._independent_model.radius)
+            if self._independent_model
+            else float(self.model.radius)
+        )
         center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
-        return abs(center_dist - r)
+        return float(abs(center_dist - r))
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
         center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
-        return max(center_dist, 10.0)
+        return float(max(center_dist, 10.0))
 
     def hoverMoveEvent(self, event):
         dist = self._get_distance_to_border(event.pos())

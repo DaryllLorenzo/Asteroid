@@ -47,7 +47,12 @@ class PlanNodeItem(BaseTroposItem):
             min_dist = min(min_dist, dist)
         return min_dist
 
-    def _point_to_segment_distance(self, p, a, b):
+    def _point_to_segment_distance(
+        self,
+        p: QPointF,
+        a: QPointF,
+        b: QPointF,
+    ) -> float:
         ap = QPointF(p.x() - a.x(), p.y() - a.y())
         ab = QPointF(b.x() - a.x(), b.y() - a.y())
         ab2 = ab.x() * ab.x() + ab.y() * ab.y()
@@ -61,7 +66,7 @@ class PlanNodeItem(BaseTroposItem):
         return math.sqrt(dx * dx + dy * dy)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
-        return max((pos.x() ** 2 + pos.y() ** 2) ** 0.5, 15.0)
+        return float(max((pos.x() ** 2 + pos.y() ** 2) ** 0.5, 15.0))
 
     def paint(self, painter, option, widget=None):
         default_color = QColor(150, 180, 250)
