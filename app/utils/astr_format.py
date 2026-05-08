@@ -6,10 +6,16 @@
 # ---------------------------------------------------
 from typing import Any
 
+from app.controller_types import CanvasNodeItem
+from app.ui.components.base_edge_item import BaseEdgeItem
+
 
 class AstrFormat:
     @staticmethod
-    def serialize_scene(nodes, edges):
+    def serialize_scene(
+        nodes: list[CanvasNodeItem],
+        edges: list[BaseEdgeItem],
+    ) -> dict[str, Any]:
         scene_data = AstrFormat._create_scene_data_template(nodes, edges)
         node_id_map = AstrFormat._serialize_nodes(nodes, scene_data)
         AstrFormat._serialize_node_parent_ids(node_id_map, scene_data)
@@ -17,7 +23,10 @@ class AstrFormat:
         return scene_data
 
     @staticmethod
-    def _create_scene_data_template(nodes, edges):
+    def _create_scene_data_template(
+        nodes: list[CanvasNodeItem],
+        edges: list[BaseEdgeItem],
+    ) -> dict[str, Any]:
         return {
             "version": "1.4",
             "metadata": {
@@ -30,8 +39,11 @@ class AstrFormat:
         }
 
     @staticmethod
-    def _serialize_nodes(nodes, scene_data):
-        node_id_map = {}
+    def _serialize_nodes(
+        nodes: list[CanvasNodeItem],
+        scene_data: dict[str, Any],
+    ) -> dict[CanvasNodeItem, int]:
+        node_id_map: dict[CanvasNodeItem, int] = {}
 
         for idx, node in enumerate(nodes):
             node_data = AstrFormat._serialize_node(node, idx)
@@ -41,7 +53,10 @@ class AstrFormat:
         return node_id_map
 
     @staticmethod
-    def _serialize_node_parent_ids(node_id_map, scene_data):
+    def _serialize_node_parent_ids(
+        node_id_map: dict[CanvasNodeItem, int],
+        scene_data: dict[str, Any],
+    ) -> None:
         for node, node_id in node_id_map.items():
             if hasattr(node, "subcanvas_parent") and node.subcanvas_parent:
                 parent_node = node.subcanvas_parent.parentItem()
@@ -49,7 +64,11 @@ class AstrFormat:
                     scene_data["nodes"][node_id]["parent_id"] = node_id_map[parent_node]
 
     @staticmethod
-    def _serialize_edges(edges, node_id_map, scene_data):
+    def _serialize_edges(
+        edges: list[BaseEdgeItem],
+        node_id_map: dict[CanvasNodeItem, int],
+        scene_data: dict[str, Any],
+    ) -> None:
         for edge in edges:
             edge_data = AstrFormat._serialize_edge(edge, node_id_map)
             if edge_data:
@@ -170,12 +189,15 @@ class AstrFormat:
         return node_data
 
     @staticmethod
-    def _serialize_edge(edge, node_id_map: dict) -> dict[str, Any]:
+    def _serialize_edge(
+        edge: BaseEdgeItem,
+        node_id_map: dict[CanvasNodeItem, int],
+    ) -> dict[str, Any] | None:
         """Serializa una edge individual"""
         if edge.source_node not in node_id_map or edge.dest_node not in node_id_map:
             return None
 
-        edge_data = {
+        edge_data: dict[str, Any] = {
             "type": AstrFormat._get_edge_type(edge),
             "source_id": node_id_map.get(edge.source_node, -1),
             "target_id": node_id_map.get(edge.dest_node, -1),

@@ -14,6 +14,8 @@ from PyQt6.QtGui import QPainter
 from PyQt6.QtGui import QPainterPath
 from PyQt6.QtGui import QPen
 from PyQt6.QtGui import QPolygonF
+from PyQt6.QtWidgets import QStyleOptionGraphicsItem
+from PyQt6.QtWidgets import QWidget
 
 from app.ui.components.base_edge_item import BaseEdgeItem
 
@@ -32,8 +34,15 @@ class OrDecompositionArrowItem(BaseEdgeItem):
         extra = 15
         return base_rect.adjusted(-extra, -extra, extra, extra)
 
-    def paint(self, painter: QPainter, option, widget=None):
-        if not self.source_node or not self.dest_node:
+    def paint(
+        self,
+        painter: QPainter | None,
+        option: QStyleOptionGraphicsItem | None,
+        widget: QWidget | None = None,
+    ) -> None:
+        del option, widget
+
+        if painter is None or not self.source_node or not self.dest_node:
             return
 
         # NO llamar a update_position() aquí para evitar temblor

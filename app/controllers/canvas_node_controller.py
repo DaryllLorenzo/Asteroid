@@ -6,11 +6,18 @@
 # ---------------------------------------------------
 from functools import partial
 
+from app.controller_types import CanvasNodeItem
+from app.controllers._canvas_mixin import CanvasControllerMixin
 from app.controllers.canvas_registry_controller import _NODE_MAP
 
 
-class CanvasNodeController:
-    def add_node(self, node_type: str, x: float, y: float):
+class CanvasNodeController(CanvasControllerMixin):
+    def add_node(
+        self,
+        node_type: str,
+        x: float,
+        y: float,
+    ) -> CanvasNodeItem | None:
         NodeClass = _NODE_MAP.get(node_type)
         if NodeClass is None:
             return None
@@ -22,7 +29,11 @@ class CanvasNodeController:
             node_item.model.x = x
             node_item.model.y = y
 
-        self.canvas.scene.addItem(node_item)
+        scene = self.canvas.scene()
+        if scene is None:
+            return None
+
+        scene.addItem(node_item)
         self.nodes.append(node_item)
 
         if hasattr(node_item, "properties_changed"):
@@ -36,7 +47,11 @@ class CanvasNodeController:
         self.mark_as_modified()
         return node_item
 
-    def on_node_properties_changed(self, node_item, properties):
+    def on_node_properties_changed(
+        self,
+        node_item: CanvasNodeItem,
+        properties: dict[str, object],
+    ) -> None:
         """Handle property changes emitted by nodes"""
         if node_item == self.selected_node:
             self.selected_node_properties_changed.emit(properties)
@@ -48,7 +63,11 @@ class CanvasNodeController:
 
         self.mark_as_modified()
 
-    def _on_subcanvas_toggled(self, parent_node_item, subcanvas):
+    def _on_subcanvas_toggled(
+        self,
+        parent_node_item: CanvasNodeItem,
+        subcanvas,
+    ) -> None:
         if subcanvas is None:
             stored = self._subcanvas_handlers.pop(parent_node_item, None)
             if stored:
@@ -89,19 +108,21 @@ class CanvasNodeController:
 
     def _add_to_subcanvas(
         self,
-        parent_node_item,
+        parent_node_item: CanvasNodeItem,
         subcanvas,
         item_type: str,
         local_x: float,
         local_y: float,
-    ):
+    ) -> CanvasNodeItem | None:
         NodeClass = _NODE_MAP.get(item_type)
         if NodeClass is None:
             return None
 
         child = NodeClass(0, 0, radius=20)
         if child.scene() is not None and child.parentItem() is None:
-            child.scene().removeItem(child)
+            scene = child.scene()
+            if scene is not None:
+                scene.removeItem(child)
 
         child.setParentItem(subcanvas)
         child.setPos(local_x, local_y)

@@ -4,10 +4,13 @@
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
+from app.controller_types import NodeItemFactory
 from app.core.models.tropos_element.hard_goal import HardGoal
 from app.core.models.tropos_element.plan import Plan
 from app.core.models.tropos_element.resource import Resource
 from app.core.models.tropos_element.soft_goal import SoftGoal
+from app.model_types import ModelFactory
+from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.dependency_item.and_decomposition_edge_item import (
     AndDecompositionArrowItem,
 )
@@ -31,7 +34,7 @@ from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
 from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
 from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeItem
 
-_NODE_MAP = {
+_NODE_MAP: dict[str, NodeItemFactory] = {
     "actor": ActorNodeItem,
     "agent": AgentNodeItem,
     "hard_goal": HardGoalNodeItem,
@@ -40,14 +43,14 @@ _NODE_MAP = {
     "resource": ResourceNodeItem,
 }
 
-_MODEL_MAP = {
+_MODEL_MAP: dict[str, ModelFactory] = {
     "hard_goal": HardGoal,
     "soft_goal": SoftGoal,
     "plan": Plan,
     "resource": Resource,
 }
 
-_ARROW_TYPES = {
+_ARROW_TYPES: dict[str, type[BaseEdgeItem]] = {
     "simple": SimpleArrowItem,
     "dashed": DashedArrowItem,
     "dependency_link": DependencyLinkArrowItem,

@@ -22,7 +22,7 @@ class PDFExportDialog(QDialog):
         self.setModal(True)
         self.resize(400, 250)
 
-        self.export_with_info = True  # Default: con información adicional
+        self.export_with_info: bool = True
 
         self._setup_ui()
 
@@ -74,7 +74,7 @@ class PDFExportDialog(QDialog):
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
 
-    def _on_option_changed(self):
+    def _on_option_changed(self) -> None:
         self.export_with_info = self.radio_with_info.isChecked()
 
     def should_export_with_info(self) -> bool:

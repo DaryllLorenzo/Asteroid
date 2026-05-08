@@ -20,9 +20,9 @@ class AgentNodeItem(BaseNodeItem):
         super().__init__(Agent(x, y, radius))
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        r = getattr(self.model, "radius", 50)
+        r = float(self.model.radius)
         center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
-        return abs(center_dist - r)
+        return float(abs(center_dist - r))
 
     def paint(self, painter, option, widget=None):
         # 1. Colores

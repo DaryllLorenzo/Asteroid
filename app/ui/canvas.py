@@ -27,13 +27,13 @@ class Canvas(QGraphicsView):
 
     def __init__(self):
         super().__init__()
-        self.scene = QGraphicsScene()
-        self.setScene(self.scene)
+        self._scene = QGraphicsScene()
+        self.setScene(self._scene)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # White background
         self.setBackgroundBrush(Qt.GlobalColor.white)
-        self.scene.setBackgroundBrush(Qt.GlobalColor.white)
+        self._scene.setBackgroundBrush(Qt.GlobalColor.white)
 
         # Drag & Drop
         self.setAcceptDrops(True)
@@ -202,7 +202,10 @@ class Canvas(QGraphicsView):
     # ---------------------
     # Zoom
     # ---------------------
-    def wheelEvent(self, event: QWheelEvent):
+    def wheelEvent(self, event: QWheelEvent | None) -> None:
+        if event is None:
+            return
+
         if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             angle = event.angleDelta().y()
             factor = 1.1 if angle > 0 else 0.9

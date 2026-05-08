@@ -35,7 +35,9 @@ class PDFGenerator:
         self.canvas_controller = canvas_controller
 
     def export_to_pdf(
-        self, with_additional_info: bool = True, filename: str = None
+        self,
+        with_additional_info: bool = True,
+        filename: str | None = None,
     ) -> bool:
         """
         Exporta el diagrama actual a PDF
@@ -132,7 +134,11 @@ class PDFGenerator:
 
             # Obtener los límites reales de todos los items + margen
             # para evitar cortes
-            scene_rect = canvas.scene.itemsBoundingRect()
+            scene = canvas.scene()
+            if scene is None:
+                return None
+
+            scene_rect = scene.itemsBoundingRect()
             margin = 50.0  # Margen extra para asegurar que no se corten bordes
             # (subcanvas, etc.)
             expanded_rect = scene_rect.adjusted(-margin, -margin, margin, margin)
@@ -147,7 +153,7 @@ class PDFGenerator:
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
             # Renderizar usando el rect expandido para capturar todos los elementos
-            canvas.scene.render(painter, source=expanded_rect)
+            scene.render(painter, source=expanded_rect)
             painter.end()
 
             # Guardar como PNG temporal
@@ -315,9 +321,9 @@ class PDFGenerator:
             String con el label del nodo
         """
         if hasattr(node, "model") and hasattr(node.model, "label"):
-            return node.model.label
+            return str(node.model.label)
         elif hasattr(node, "label"):
-            return node.label
+            return str(node.label)
         return "Sin nombre"
 
     def _get_edge_type_display(self, edge) -> str:

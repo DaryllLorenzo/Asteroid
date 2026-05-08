@@ -5,6 +5,9 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
+from app.model_types import ChangeCallback
+from app.model_types import NodeModelLike
+
 
 class CompositeModelWrapper:
     """
@@ -28,8 +31,15 @@ class CompositeModelWrapper:
 
     # Lista de propiedades que se sincronizan entre ambos modelos
     SYNCED_PROPERTIES = {"label", "color", "border_color", "text_color"}
+    _external_model: NodeModelLike
+    _internal_model: NodeModelLike
+    _on_change_callbacks: list[ChangeCallback]
 
-    def __init__(self, external_model, internal_model):
+    def __init__(
+        self,
+        external_model: NodeModelLike,
+        internal_model: NodeModelLike,
+    ) -> None:
         """
         Args:
             external_model: El modelo del nodo en el canvas principal
@@ -40,57 +50,58 @@ class CompositeModelWrapper:
         # Callbacks para notificar cambios (opcional)
         object.__setattr__(self, "_on_change_callbacks", [])
 
-    def _notify_change(self, prop_name, value):
+    def _notify_change(self, prop_name: str, value: object) -> None:
         """Notifica a los callbacks que una propiedad cambió"""
-        for callback in self._on_change_callbacks:
+        callbacks: list[ChangeCallback] = self._on_change_callbacks
+        for callback in callbacks:
             try:
                 callback(prop_name, value)
             except Exception:
                 pass
 
-    def add_change_callback(self, callback):
+    def add_change_callback(self, callback: ChangeCallback) -> None:
         """Agrega un callback que se llama cuando una propiedad sincronizada cambia"""
         self._on_change_callbacks.append(callback)
 
     # ==================== PROPIEDADES SINCRONIZADAS ====================
 
     @property
-    def label(self):
+    def label(self) -> str:
         return self._external_model.label
 
     @label.setter
-    def label(self, value):
+    def label(self, value: str) -> None:
         # Sincronizar en AMBOS modelos
         self._external_model.label = value
         self._internal_model.label = value
         self._notify_change("label", value)
 
     @property
-    def color(self):
+    def color(self) -> str:
         return self._external_model.color
 
     @color.setter
-    def color(self, value):
+    def color(self, value: str) -> None:
         self._external_model.color = value
         self._internal_model.color = value
         self._notify_change("color", value)
 
     @property
-    def border_color(self):
+    def border_color(self) -> str:
         return self._external_model.border_color
 
     @border_color.setter
-    def border_color(self, value):
+    def border_color(self, value: str) -> None:
         self._external_model.border_color = value
         self._internal_model.border_color = value
         self._notify_change("border_color", value)
 
     @property
-    def text_color(self):
+    def text_color(self) -> str:
         return self._external_model.text_color
 
     @text_color.setter
-    def text_color(self, value):
+    def text_color(self, value: str) -> None:
         self._external_model.text_color = value
         self._internal_model.text_color = value
         self._notify_change("text_color", value)
@@ -99,104 +110,104 @@ class CompositeModelWrapper:
     # Se delegan al modelo externo por defecto (el del canvas principal)
 
     @property
-    def x(self):
+    def x(self) -> float:
         return self._external_model.x
 
     @x.setter
-    def x(self, value):
+    def x(self, value: float) -> None:
         self._external_model.x = value
 
     @property
-    def y(self):
+    def y(self) -> float:
         return self._external_model.y
 
     @y.setter
-    def y(self, value):
+    def y(self, value: float) -> None:
         self._external_model.y = value
 
     @property
-    def radius(self):
+    def radius(self) -> float:
         return self._external_model.radius
 
     @radius.setter
-    def radius(self, value):
+    def radius(self, value: float) -> None:
         self._external_model.radius = value
 
     @property
-    def text_align(self):
+    def text_align(self) -> str:
         return self._external_model.text_align
 
     @text_align.setter
-    def text_align(self, value):
+    def text_align(self, value: str) -> None:
         self._external_model.text_align = value
 
     @property
-    def text_width(self):
+    def text_width(self) -> float:
         return self._external_model.text_width
 
     @text_width.setter
-    def text_width(self, value):
+    def text_width(self, value: float) -> None:
         self._external_model.text_width = value
 
     @property
-    def font_size(self):
+    def font_size(self) -> float:
         return self._external_model.font_size
 
     @font_size.setter
-    def font_size(self, value):
+    def font_size(self, value: float) -> None:
         self._external_model.font_size = value
 
     @property
-    def content_offset_x(self):
+    def content_offset_x(self) -> float:
         return self._external_model.content_offset_x
 
     @content_offset_x.setter
-    def content_offset_x(self, value):
+    def content_offset_x(self, value: float) -> None:
         self._external_model.content_offset_x = value
 
     @property
-    def content_offset_y(self):
+    def content_offset_y(self) -> float:
         return self._external_model.content_offset_y
 
     @content_offset_y.setter
-    def content_offset_y(self, value):
+    def content_offset_y(self, value: float) -> None:
         self._external_model.content_offset_y = value
 
     @property
-    def position_in_subcanvas_x(self):
+    def position_in_subcanvas_x(self) -> float:
         return self._external_model.position_in_subcanvas_x
 
     @position_in_subcanvas_x.setter
-    def position_in_subcanvas_x(self, value):
+    def position_in_subcanvas_x(self, value: float) -> None:
         self._external_model.position_in_subcanvas_x = value
 
     @property
-    def position_in_subcanvas_y(self):
+    def position_in_subcanvas_y(self) -> float:
         return self._external_model.position_in_subcanvas_y
 
     @position_in_subcanvas_y.setter
-    def position_in_subcanvas_y(self, value):
+    def position_in_subcanvas_y(self, value: float) -> None:
         self._external_model.position_in_subcanvas_y = value
 
     @property
-    def show_subcanvas(self):
+    def show_subcanvas(self) -> bool:
         return self._external_model.show_subcanvas
 
     @show_subcanvas.setter
-    def show_subcanvas(self, value):
+    def show_subcanvas(self, value: bool) -> None:
         self._external_model.show_subcanvas = value
 
     @property
-    def child_nodes(self):
+    def child_nodes(self) -> list[object]:
         return self._external_model.child_nodes
 
     @child_nodes.setter
-    def child_nodes(self, value):
+    def child_nodes(self, value: list[object]) -> None:
         self._external_model.child_nodes = value
 
     # ==================== MÉTODOS ====================
 
-    def toggle_subcanvas(self):
+    def toggle_subcanvas(self) -> bool:
         return self._external_model.toggle_subcanvas()
 
     def node_type(self) -> str:
@@ -204,18 +215,18 @@ class CompositeModelWrapper:
 
     # ==================== ACCESO A MODELOS INTERNOS ====================
 
-    def get_external_model(self):
+    def get_external_model(self) -> NodeModelLike:
         """Retorna el modelo externo (canvas principal)"""
         return self._external_model
 
-    def get_internal_model(self):
+    def get_internal_model(self) -> NodeModelLike:
         """Retorna el modelo interno (subcanvas)"""
         return self._internal_model
 
     # ==================== DELEGACIÓN GENÉRICA ====================
     # Para cualquier otra propiedad no definida, delegar al externo
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> object:
         """Delega propiedades no definidas al modelo externo"""
         # Evitar recursión infinita para atributos privados
         if name.startswith("_"):
@@ -224,7 +235,7 @@ class CompositeModelWrapper:
             )
         return getattr(self._external_model, name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: object) -> None:
         """Intercepta asignaciones para sincronizar solo label/color"""
         # Si es una propiedad sincronizada, actualizar ambos modelos
         if name in self.SYNCED_PROPERTIES:
