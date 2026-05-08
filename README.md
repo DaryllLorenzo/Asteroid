@@ -34,9 +34,10 @@ Built with **Python** and **PyQt6**, it follows a clean **MVC-inspired architect
 
 ### Architecture
 - **Logical models decoupled** from graphical representation (`Actor` ≠ `ActorNodeItem`)
-- **Controller layer** managing interactions between UI and domain logic
+- **Controller layer** managing interactions between UI and domain logic (MVC pattern)
 - **Extensible design**: Easily add new node types, edge styles, or behaviors
 - **Built for collaboration**: Clear separation enables team development and testing
+- **Type safety**: Full type annotations with mypy validation (0 errors, strict mode compatible)
 
 ### Cross-Platform
 - Windows 10/11 executable
@@ -54,50 +55,93 @@ asteroid/
 ├── LICENSE
 ├── README.md
 ├── app/
-│   ├── controllers/              # Canvas logic split by responsibility
+│   ├── __init__.py
+│   ├── model_types.py                  # Type definitions for models
+│   ├── controller_types.py             # Type definitions for controllers
+│   ├── controllers/                    # Canvas logic (MVC pattern)
 │   │   ├── __init__.py
-│   │   ├── canvas_controller.py
-│   │   ├── canvas_deletion_controller.py
-│   │   ├── canvas_export_controller.py
-│   │   ├── canvas_import_controller.py
-│   │   ├── canvas_interaction_controller.py
-│   │   ├── canvas_node_controller.py
-│   │   ├── canvas_registry_controller.py
-│   │   └── canvas_state_controller.py
-│   ├── core/                     # Domain models and business logic
+│   │   ├── _canvas_mixin.py            # Mixin for shared controller logic
+│   │   ├── canvas_controller.py        # Orchestrator: combines all controllers
+│   │   ├── canvas_deletion_controller.py   # Delete nodes/edges/selection
+│   │   ├── canvas_export_controller.py     # Export to .astr or image
+│   │   ├── canvas_import_controller.py     # Import from .astr
+│   │   ├── canvas_interaction_controller.py  # Node and arrow interaction
+│   │   ├── canvas_node_controller.py      # Add/move nodes
+│   │   ├── canvas_registry_controller.py  # Node/edge type registration
+│   │   └── canvas_state_controller.py    # Project state (modified/saved)
+│   ├── core/                           # Domain models (business logic)
 │   │   ├── __init__.py
 │   │   └── models/
 │   │       ├── __init__.py
-│   │       ├── base_edge.py
-│   │       ├── base_node.py
-│   │       ├── composite_model_wrapper.py
-│   │       ├── dependency/
-│   │       ├── entity/
-│   │       └── tropos_element/
-│   ├── ui/                       # PyQt6 interface and widgets
+│   │       ├── base_node.py            # Base class for all nodes
+│   │       ├── base_edge.py            # Base class for all edges
+│   │       ├── composite_model_wrapper.py  # Syncs external/internal models
+│   │       ├── dependency/             # Dependency models
+│   │       │   ├── __init__.py
+│   │       │   ├── simple_edge.py
+│   │       │   ├── dashed_edge.py
+│   │       │   ├── dependency_link_edge.py
+│   │       │   ├── why_link_edge.py
+│   │       │   ├── means_end_edge.py
+│   │       │   ├── or_decomposition_edge.py
+│   │       │   ├── and_decomposition_edge.py
+│   │       │   └── contribution_edge.py
+│   │       ├── entity/                 # Entity models
+│   │       │   ├── __init__.py
+│   │       │   ├── actor.py
+│   │       │   └── agent.py
+│   │       └── tropos_element/         # Tropos element models
+│   │           ├── __init__.py
+│   │           ├── hard_goal.py
+│   │           ├── soft_goal.py
+│   │           ├── plan.py
+│   │           └── resource.py
+│   ├── ui/                             # PyQt6 interface (View)
 │   │   ├── __init__.py
-│   │   ├── canvas.py
-│   │   ├── main_window.py
-│   │   ├── pdf_export_dialog.py
-│   │   ├── sidebar.py
+│   │   ├── canvas.py                  # Main QGraphicsView
+│   │   ├── main_window.py             # Main window
+│   │   ├── pdf_export_dialog.py      # PDF export dialog
+│   │   ├── sidebar.py                 # Sidebar with draggable elements
 │   │   ├── components/
-│   │   │   ├── dependency_item/
-│   │   │   ├── entity_item/
-│   │   │   ├── tropos_element_item/
-│   │   │   ├── base_edge_item.py
-│   │   │   ├── base_node_item.py
-│   │   │   ├── base_tropos_item.py
-│   │   │   ├── control_point_handle.py
-│   │   │   ├── position_controll_widget.py
-│   │   │   ├── properties_panel.py
-│   │   │   └── subcanvas_item.py
-│   │   └── help/
-│   │       ├── content/
-│   │       ├── help_modal.py
-│   │       └── markdown_viewer.py
-│   └── utils/                    # Serialization and export helpers
-│       ├── astr_format.py
-│       └── pdf_export.py
+│   │   │   ├── __init__.py
+│   │   │   ├── base_node_item.py             # Base for node items
+│   │   │   ├── base_edge_item.py             # Base for edge items
+│   │   │   ├── base_tropos_item.py           # Base for Tropos items
+│   │   │   ├── control_point_handle.py       # Control point handle
+│   │   │   ├── subcanvas_item.py             # Subcanvas item
+│   │   │   ├── position_controll_widget.py   # Position control widget
+│   │   │   ├── properties_panel.py           # Properties panel
+│   │   │   ├── dependency_item/             # Edge items
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── simple_edge_item.py
+│   │   │   │   ├── dashed_edge_item.py
+│   │   │   │   ├── dependency_link_edge_item.py
+│   │   │   │   ├── why_link_edge_item.py
+│   │   │   │   ├── means_end_edge_item.py
+│   │   │   │   ├── or_decomposition_edge_item.py
+│   │   │   │   ├── and_decomposition_edge_item.py
+│   │   │   │   └── contribution_edge_item.py
+│   │   │   ├── entity_item/                 # Entity items
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── actor_node_item.py
+│   │   │   │   └── agent_node_item.py
+│   │   │   └── tropos_element_item/        # Tropos element items
+│   │   │       ├── __init__.py
+│   │   │       ├── hard_goal_item.py
+│   │   │       ├── soft_goal_item.py
+│   │   │       ├── plan_item.py
+│   │   │       └── resource_item.py
+│   │   └── help/                       # Help system
+│   │       ├── help_modal.py           
+│   │       ├── markdown_viewer.py
+│   │       └── content/
+│   │           ├── about.md
+│   │           ├── elements.md
+│   │           ├── examples.md
+│   │           └── quick_help.md
+│   └── utils/                    # Utils (serialization, export)
+│       ├── astr_format.py       # .astr serializer
+│       └── pdf_export.py        # PDFs generator
 ├── images/
 │   ├── AsteroidLogo.png
 │   ├── main_interface_example1.png
