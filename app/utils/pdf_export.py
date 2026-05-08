@@ -5,6 +5,7 @@
 # Licencia: MIT License
 # ---------------------------------------------------
 
+import os
 from pathlib import Path
 
 from PyQt6.QtGui import QColor
@@ -111,6 +112,8 @@ class PDFGenerator:
                 "Exportación completada",
                 f"PDF exportado exitosamente:\n{filename}",
             )
+            if diagram_image:
+                os.remove(diagram_image)  # Eliminar el archivo temporal
 
             return True
 
