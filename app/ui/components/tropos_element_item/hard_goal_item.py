@@ -23,7 +23,7 @@ class HardGoalNodeItem(BaseTroposItem):
         super().__init__(HardGoal(x, y, radius))
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        # ✅ Usar _independent_model si existe
+        # Usar _independent_model si existe
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
@@ -44,14 +44,14 @@ class HardGoalNodeItem(BaseTroposItem):
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
         new_r = abs(pos.x())
-        return max(new_r, 20.0)
+        return float(max(new_r, 20.0))
 
     def paint(self, painter, option, widget=None):
         default_color = QColor(150, 200, 150)
         default_border = QColor(0, 0, 0)
         default_text = QColor(255, 255, 255)
 
-        # ✅ Usar _independent_model si existe (para nodos composite internos)
+        # Usar _independent_model si existe (para nodos composite internos)
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
@@ -77,7 +77,7 @@ class HardGoalNodeItem(BaseTroposItem):
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
 
-        # ✅ Usar radio del modelo independiente
+        # Usar radio del modelo independiente
         r = model_for_props.radius
         rect = QRectF(-r, -r / 2, 2 * r, r)
         path = QPainterPath()
