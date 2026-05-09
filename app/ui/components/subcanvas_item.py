@@ -15,7 +15,6 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QBrush
 from PyQt6.QtGui import QPainterPath
 from PyQt6.QtGui import QPen
-from PyQt6.QtWidgets import QGraphicsItem
 from PyQt6.QtWidgets import QGraphicsObject
 from PyQt6.QtWidgets import QGraphicsRectItem
 
@@ -88,27 +87,27 @@ class SubCanvasItem(QGraphicsObject):
 
     def paint(self, painter, option, widget=None):
         painter.save()
-    
+
         r = float(self.radius)
-    
+
         clip_path = QPainterPath()
         clip_path.addEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
-    
+
         # Clipping SOLO visual
         painter.setClipPath(clip_path)
-    
+
         painter.setBrush(self.bg_brush)
         painter.setOpacity(0.04)
         painter.setPen(Qt.PenStyle.NoPen)
-    
+
         painter.drawEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
-    
+
         painter.restore()
-    
+
         # Dibujar borde fuera del clipping
         painter.setPen(self.border_pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
-    
+
         painter.drawEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
 
     def set_radius(self, new_r: float):

@@ -15,6 +15,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 from PyQt6.QtGui import QPainter
 from PyQt6.QtGui import QPainterPath
+from PyQt6.QtGui import QPainterPathStroker
 from PyQt6.QtGui import QPen
 from PyQt6.QtGui import QPolygonF
 from PyQt6.QtWidgets import QGraphicsItem
@@ -22,7 +23,6 @@ from PyQt6.QtWidgets import QGraphicsPathItem
 from PyQt6.QtWidgets import QStyleOptionGraphicsItem
 from PyQt6.QtWidgets import QWidget
 
-from PyQt6.QtGui import QPainterPathStroker
 from app.ui.components.control_point_handle import ControlPointHandle
 
 
@@ -140,7 +140,7 @@ class BaseEdgeItem(QGraphicsPathItem):
             max_x - min_x + extra * 2,
             max_y - min_y + extra * 2,
         )
-    
+
     def shape(self):
         """Shape real para hit-testing: banda estrecha sobre el path dibujado.
 
@@ -404,7 +404,7 @@ class BaseEdgeItem(QGraphicsPathItem):
             if dist < min_dist:
                 min_dist = dist
                 insert_index = i + 1
-        
+
         self.prepareGeometryChange()
 
         # Insertar el nuevo control point en coordenadas locales

@@ -40,6 +40,8 @@ class WhyLinkArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
+        if painter is None:
+            return
         del option, widget
 
         clipped = self.apply_subcanvas_clipping(painter)
