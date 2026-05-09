@@ -15,7 +15,6 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QBrush
 from PyQt6.QtGui import QPainterPath
 from PyQt6.QtGui import QPen
-from PyQt6.QtWidgets import QGraphicsItem
 from PyQt6.QtWidgets import QGraphicsObject
 from PyQt6.QtWidgets import QGraphicsRectItem
 
@@ -61,9 +60,6 @@ class SubCanvasItem(QGraphicsObject):
         self.radius = float(radius)
         self.original_radius = float(radius)
 
-        # Clip children visually to the circular shape
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemClipsChildrenToShape, True)
-
         # no movible por separado; se mueve con el nodo padre
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable, False)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable, False)
@@ -90,14 +86,28 @@ class SubCanvasItem(QGraphicsObject):
         return path
 
     def paint(self, painter, option, widget=None):
-        painter.setRenderHint(painter.RenderHint.Antialiasing)
+        painter.save()
+
         r = float(self.radius)
+
+        clip_path = QPainterPath()
+        clip_path.addEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
+
+        # Clipping SOLO visual
+        painter.setClipPath(clip_path)
+
         painter.setBrush(self.bg_brush)
-        painter.setOpacity(0.04)  # Very transparent to not interfere
+        painter.setOpacity(0.04)
+        painter.setPen(Qt.PenStyle.NoPen)
+
         painter.drawEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
-        painter.setOpacity(1.0)
+
+        painter.restore()
+
+        # Dibujar borde fuera del clipping
         painter.setPen(self.border_pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
+
         painter.drawEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
 
     def set_radius(self, new_r: float):

@@ -18,6 +18,8 @@ class ActorNodeItem(BaseNodeItem):
         super().__init__(Actor(x, y, radius))
 
     def paint(self, painter, option, widget=None):
+        clipped = self.apply_subcanvas_clipping(painter)
+
         # 1. Configuración de colores
         default_color = QColor(100, 150, 250)
         default_border = QColor(0, 0, 0)
@@ -51,6 +53,9 @@ class ActorNodeItem(BaseNodeItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawEllipse(self.boundingRect())
+
+        if clipped:
+            painter.restore()
 
     def get_serializable_properties(self):
         base_properties = super().get_serializable_properties()

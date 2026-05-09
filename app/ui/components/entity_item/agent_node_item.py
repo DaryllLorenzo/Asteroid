@@ -25,6 +25,9 @@ class AgentNodeItem(BaseNodeItem):
         return float(abs(center_dist - r))
 
     def paint(self, painter, option, widget=None):
+        # Aplicar clipping si es nodo interno de subcanvas
+        clipped = self.apply_subcanvas_clipping(painter)
+
         # 1. Colores
         default_color = QColor(250, 150, 100)
         default_border = QColor(0, 0, 0)
@@ -75,6 +78,9 @@ class AgentNodeItem(BaseNodeItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawEllipse(self.boundingRect())
+
+        if clipped:
+            painter.restore()
 
     def get_serializable_properties(self):
         base_properties = super().get_serializable_properties()

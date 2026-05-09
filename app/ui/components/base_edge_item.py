@@ -15,6 +15,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 from PyQt6.QtGui import QPainter
 from PyQt6.QtGui import QPainterPath
+from PyQt6.QtGui import QPainterPathStroker
 from PyQt6.QtGui import QPen
 from PyQt6.QtGui import QPolygonF
 from PyQt6.QtWidgets import QGraphicsItem
@@ -139,6 +140,23 @@ class BaseEdgeItem(QGraphicsPathItem):
             max_x - min_x + extra * 2,
             max_y - min_y + extra * 2,
         )
+
+    def shape(self):
+        """Shape real para hit-testing: banda estrecha sobre el path dibujado.
+
+        Sin esto, PyQt6 puede caer al shape() de QGraphicsItem base, que
+        devuelve el boundingRect() completo como rectángulo — el "recuadro
+        invisible" que captura clicks lejos de la línea.
+        """
+        path = self.path()
+        if path.isEmpty():
+            return QPainterPath()
+
+        stroker = QPainterPathStroker()
+        stroker.setWidth(max(self.pen().widthF() + 6, 8))  # ~8px de área clickeable
+        stroker.setCapStyle(Qt.PenCapStyle.RoundCap)
+        stroker.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        return stroker.createStroke(path)
 
     def _get_node_border_point(self, node, target_pos, use_local_coords=False):
         """Calcula el punto de intersección en el borde del nodo."""
@@ -387,6 +405,8 @@ class BaseEdgeItem(QGraphicsPathItem):
                 min_dist = dist
                 insert_index = i + 1
 
+        self.prepareGeometryChange()
+
         # Insertar el nuevo control point en coordenadas locales
         self.control_points.insert(insert_index, local_pos)
 
@@ -431,12 +451,14 @@ class BaseEdgeItem(QGraphicsPathItem):
             index = len(self.control_points) - 1
 
         if 0 <= index < len(self.control_points):
+            self.prepareGeometryChange()
             self.control_points.pop(index)
             self._update_handles_position()
             self.update_position()
 
     def clear_control_points(self):
         """Elimina todos los puntos de control, volviendo a línea recta"""
+        self.prepareGeometryChange()
         self.control_points.clear()
         self._update_handles_position()
         self.update_position()
@@ -685,3 +707,38 @@ class BaseEdgeItem(QGraphicsPathItem):
 
         target_distance = total_length * percentage
         return self._get_point_at_distance(target_distance)
+
+    def apply_subcanvas_clipping(self, painter):
+        """Aplica clipping visual si el edge está dentro de un SubCanvasItem.
+        Retorna True si aplicó clipping (el caller debe hacer restore()),
+        False si no hay clipping necesario."""
+        if not self.source_node or not self.dest_node:
+            return False
+
+        subcanvas = None
+        if (
+            hasattr(self.source_node, "subcanvas_parent")
+            and self.source_node.subcanvas_parent is not None
+            and hasattr(self.dest_node, "subcanvas_parent")
+            and self.dest_node.subcanvas_parent is not None
+            and self.source_node.subcanvas_parent == self.dest_node.subcanvas_parent
+        ):
+            subcanvas = self.source_node.subcanvas_parent
+
+        if not subcanvas:
+            return False
+
+        from app.ui.components.subcanvas_item import SubCanvasItem
+
+        if not isinstance(subcanvas, SubCanvasItem):
+            return False
+
+        painter.save()
+
+        clip = QPainterPath()
+        r = subcanvas.radius
+        clip.addEllipse(QRectF(-r, -r, 2 * r, 2 * r))
+
+        clip_local = self.mapFromItem(subcanvas, clip)
+        painter.setClipPath(clip_local)
+        return True

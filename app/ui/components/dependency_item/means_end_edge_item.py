@@ -37,14 +37,22 @@ class MeansEndArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
+        if painter is None:
+            return
         del option, widget
 
+        clipped = self.apply_subcanvas_clipping(painter)
+
         if painter is None or not self.source_node or not self.dest_node:
+            if clipped:
+                painter.restore()
             return
 
         # NO llamar a update_position() aquí para evitar temblor
         path = self.path()
         if path.isEmpty():
+            if clipped:
+                painter.restore()
             return
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -83,3 +91,6 @@ class MeansEndArrowItem(BaseEdgeItem):
         )
         painter.drawLine(end_point, pA)
         painter.drawLine(end_point, pB)
+
+        if clipped:
+            painter.restore()

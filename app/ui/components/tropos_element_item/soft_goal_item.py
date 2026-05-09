@@ -121,6 +121,8 @@ class SoftGoalNodeItem(BaseTroposItem):
             self.properties_changed.emit(self, {"radius": new_r})
 
     def paint(self, painter, option, widget=None):
+        clipped = self.apply_subcanvas_clipping(painter)
+
         default_color = QColor(220, 220, 180)
         default_border = QColor(0, 0, 0)
         default_text = QColor(0, 0, 0)
@@ -155,6 +157,9 @@ class SoftGoalNodeItem(BaseTroposItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPath(self.path)
+
+        if clipped:
+            painter.restore()
 
     def get_serializable_properties(self):
         base_properties = super().get_serializable_properties()
