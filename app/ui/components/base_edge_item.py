@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import QGraphicsPathItem
 from PyQt6.QtWidgets import QStyleOptionGraphicsItem
 from PyQt6.QtWidgets import QWidget
 
+from PyQt6.QtGui import QPainterPathStroker
 from app.ui.components.control_point_handle import ControlPointHandle
 
 
@@ -139,6 +140,23 @@ class BaseEdgeItem(QGraphicsPathItem):
             max_x - min_x + extra * 2,
             max_y - min_y + extra * 2,
         )
+    
+    def shape(self):
+        """Shape real para hit-testing: banda estrecha sobre el path dibujado.
+
+        Sin esto, PyQt6 puede caer al shape() de QGraphicsItem base, que
+        devuelve el boundingRect() completo como rectángulo — el "recuadro
+        invisible" que captura clicks lejos de la línea.
+        """
+        path = self.path()
+        if path.isEmpty():
+            return QPainterPath()
+
+        stroker = QPainterPathStroker()
+        stroker.setWidth(max(self.pen().widthF() + 6, 8))  # ~8px de área clickeable
+        stroker.setCapStyle(Qt.PenCapStyle.RoundCap)
+        stroker.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        return stroker.createStroke(path)
 
     def _get_node_border_point(self, node, target_pos, use_local_coords=False):
         """Calcula el punto de intersección en el borde del nodo."""
@@ -386,6 +404,8 @@ class BaseEdgeItem(QGraphicsPathItem):
             if dist < min_dist:
                 min_dist = dist
                 insert_index = i + 1
+        
+        self.prepareGeometryChange()
 
         # Insertar el nuevo control point en coordenadas locales
         self.control_points.insert(insert_index, local_pos)
@@ -431,12 +451,14 @@ class BaseEdgeItem(QGraphicsPathItem):
             index = len(self.control_points) - 1
 
         if 0 <= index < len(self.control_points):
+            self.prepareGeometryChange()
             self.control_points.pop(index)
             self._update_handles_position()
             self.update_position()
 
     def clear_control_points(self):
         """Elimina todos los puntos de control, volviendo a línea recta"""
+        self.prepareGeometryChange()
         self.control_points.clear()
         self._update_handles_position()
         self.update_position()
