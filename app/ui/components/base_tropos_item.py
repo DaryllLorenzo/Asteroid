@@ -11,6 +11,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QColor
 from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QPainterPath
 from PyQt6.QtWidgets import QGraphicsItem
 from PyQt6.QtWidgets import QGraphicsObject
 
@@ -220,3 +221,21 @@ class BaseTroposItem(QGraphicsObject):
             self.update()
 
         self.properties_changed.emit(self, properties)
+
+    def apply_subcanvas_clipping(self, painter):
+        """Aplica clipping visual si el nodo es hijo de un SubCanvasItem.
+        Retorna True si aplicó clipping (el caller debe hacer restore()),
+        False si no hay clipping necesario."""
+        subcanvas = getattr(self, "subcanvas_parent", None)
+        if not subcanvas or not isinstance(subcanvas, SubCanvasItem):
+            return False
+
+        painter.save()
+
+        clip = QPainterPath()
+        r = subcanvas.radius
+        clip.addEllipse(QRectF(-r, -r, 2 * r, 2 * r))
+
+        clip_local = self.mapFromItem(subcanvas, clip)
+        painter.setClipPath(clip_local)
+        return True

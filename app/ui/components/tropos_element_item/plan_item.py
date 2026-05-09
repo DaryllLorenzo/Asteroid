@@ -69,6 +69,8 @@ class PlanNodeItem(BaseTroposItem):
         return float(max((pos.x() ** 2 + pos.y() ** 2) ** 0.5, 15.0))
 
     def paint(self, painter, option, widget=None):
+        clipped = self.apply_subcanvas_clipping(painter)
+
         default_color = QColor(150, 180, 250)
         default_border = QColor(0, 0, 0)
         default_text = QColor(255, 255, 255)
@@ -117,6 +119,9 @@ class PlanNodeItem(BaseTroposItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPolygon(QPolygonF(points))
+
+        if clipped:
+            painter.restore()
 
     def get_serializable_properties(self):
         base_properties = super().get_serializable_properties()

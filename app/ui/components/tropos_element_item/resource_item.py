@@ -47,6 +47,8 @@ class ResourceNodeItem(BaseTroposItem):
         return float(max(new_r, 20.0))
 
     def paint(self, painter, option, widget=None):
+        clipped = self.apply_subcanvas_clipping(painter)
+
         default_color = QColor(200, 150, 250)
         default_border = QColor(0, 0, 0)
         default_text = QColor(255, 255, 255)
@@ -89,6 +91,9 @@ class ResourceNodeItem(BaseTroposItem):
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawRect(rect)
+
+        if clipped:
+            painter.restore()
 
     def get_serializable_properties(self):
         base_properties = super().get_serializable_properties()

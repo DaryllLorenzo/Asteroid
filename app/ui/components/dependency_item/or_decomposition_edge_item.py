@@ -42,12 +42,18 @@ class OrDecompositionArrowItem(BaseEdgeItem):
     ) -> None:
         del option, widget
 
+        clipped = self.apply_subcanvas_clipping(painter)
+
         if painter is None or not self.source_node or not self.dest_node:
+            if clipped:
+                painter.restore()
             return
 
         # NO llamar a update_position() aquí para evitar temblor
         path = self.path()
         if path.isEmpty():
+            if clipped:
+                painter.restore()
             return
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -115,3 +121,6 @@ class OrDecompositionArrowItem(BaseEdgeItem):
         poly = QPolygonF([p_tip, p1, p2])
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPolygon(poly)
+
+        if clipped:
+            painter.restore()

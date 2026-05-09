@@ -17,7 +17,6 @@ from app.ui.components.dependency_item.and_decomposition_edge_item import (
 from app.ui.components.dependency_item.contribution_edge_item import (
     ContributionArrowItem,
 )
-from app.ui.components.dependency_item.dashed_edge_item import DashedArrowItem
 from app.ui.components.dependency_item.dependency_link_edge_item import (
     DependencyLinkArrowItem,
 )
@@ -25,7 +24,6 @@ from app.ui.components.dependency_item.means_end_edge_item import MeansEndArrowI
 from app.ui.components.dependency_item.or_decomposition_edge_item import (
     OrDecompositionArrowItem,
 )
-from app.ui.components.dependency_item.simple_edge_item import SimpleArrowItem
 from app.ui.components.dependency_item.why_link_edge_item import WhyLinkArrowItem
 from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem
@@ -51,8 +49,6 @@ _MODEL_MAP: dict[str, ModelFactory] = {
 }
 
 _ARROW_TYPES: dict[str, type[BaseEdgeItem]] = {
-    "simple": SimpleArrowItem,
-    "dashed": DashedArrowItem,
     "dependency_link": DependencyLinkArrowItem,
     "why_link": WhyLinkArrowItem,
     "or_decomposition": OrDecompositionArrowItem,

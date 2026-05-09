@@ -78,8 +78,6 @@ asteroid/
 │   │       ├── composite_model_wrapper.py  # Syncs external/internal models
 │   │       ├── dependency/             # Dependency models
 │   │       │   ├── __init__.py
-│   │       │   ├── simple_edge.py
-│   │       │   ├── dashed_edge.py
 │   │       │   ├── dependency_link_edge.py
 │   │       │   ├── why_link_edge.py
 │   │       │   ├── means_end_edge.py
@@ -113,8 +111,6 @@ asteroid/
 │   │   │   ├── properties_panel.py           # Properties panel
 │   │   │   ├── dependency_item/             # Edge items
 │   │   │   │   ├── __init__.py
-│   │   │   │   ├── simple_edge_item.py
-│   │   │   │   ├── dashed_edge_item.py
 │   │   │   │   ├── dependency_link_edge_item.py
 │   │   │   │   ├── why_link_edge_item.py
 │   │   │   │   ├── means_end_edge_item.py

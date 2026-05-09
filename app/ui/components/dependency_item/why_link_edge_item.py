@@ -42,12 +42,18 @@ class WhyLinkArrowItem(BaseEdgeItem):
     ) -> None:
         del option, widget
 
+        clipped = self.apply_subcanvas_clipping(painter)
+
         if painter is None or not self.source_node or not self.dest_node:
+            if clipped:
+                painter.restore()
             return
 
         # NO llamar a update_position() aquí para evitar temblor
         path = self.path()
         if path.isEmpty():
+            if clipped:
+                painter.restore()
             return
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -98,3 +104,6 @@ class WhyLinkArrowItem(BaseEdgeItem):
         painter.setPen(self.pen().color())
         painter.drawText(text_rect, int(Qt.AlignmentFlag.AlignCenter), txt)
         painter.restore()
+
+        if clipped:
+            painter.restore()

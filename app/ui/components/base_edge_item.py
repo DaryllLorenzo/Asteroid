@@ -707,3 +707,38 @@ class BaseEdgeItem(QGraphicsPathItem):
 
         target_distance = total_length * percentage
         return self._get_point_at_distance(target_distance)
+
+    def apply_subcanvas_clipping(self, painter):
+        """Aplica clipping visual si el edge está dentro de un SubCanvasItem.
+        Retorna True si aplicó clipping (el caller debe hacer restore()),
+        False si no hay clipping necesario."""
+        if not self.source_node or not self.dest_node:
+            return False
+
+        subcanvas = None
+        if (
+            hasattr(self.source_node, "subcanvas_parent")
+            and self.source_node.subcanvas_parent is not None
+            and hasattr(self.dest_node, "subcanvas_parent")
+            and self.dest_node.subcanvas_parent is not None
+            and self.source_node.subcanvas_parent == self.dest_node.subcanvas_parent
+        ):
+            subcanvas = self.source_node.subcanvas_parent
+
+        if not subcanvas:
+            return False
+
+        from app.ui.components.subcanvas_item import SubCanvasItem
+
+        if not isinstance(subcanvas, SubCanvasItem):
+            return False
+
+        painter.save()
+
+        clip = QPainterPath()
+        r = subcanvas.radius
+        clip.addEllipse(QRectF(-r, -r, 2 * r, 2 * r))
+
+        clip_local = self.mapFromItem(subcanvas, clip)
+        painter.setClipPath(clip_local)
+        return True
