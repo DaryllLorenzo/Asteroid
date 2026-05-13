@@ -31,6 +31,7 @@ class ControlPointHandle(QGraphicsEllipseItem):
         position: QPointF,
         on_position_changed: Callable | None = None,
         on_release: Callable | None = None,
+        on_drag_start: Callable | None = None,
     ):
         super().__init__(
             -self.HANDLE_SIZE / 2,
@@ -42,6 +43,7 @@ class ControlPointHandle(QGraphicsEllipseItem):
         self.parent_edge = parent_edge
         self.on_position_changed = on_position_changed
         self.on_release = on_release
+        self.on_drag_start = on_drag_start
         self.setPos(position)
 
         # Punto donde se hizo click inicial (para calcular offset)
@@ -69,8 +71,9 @@ class ControlPointHandle(QGraphicsEllipseItem):
         """Iniciar arrastre del handle"""
         if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
-            # Seleccionar el handle para indicar que está activo
             self.setSelected(True)
+            if self.on_drag_start:
+                self.on_drag_start()
             event.accept()
             return
         super().mousePressEvent(event)

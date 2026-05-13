@@ -32,6 +32,8 @@ class AddEdgeCommand(QUndoCommand):
             self._controller.edges.append(self._edge)
         if hasattr(self._edge, "_connect_to_nodes"):
             self._edge._connect_to_nodes()
+        if hasattr(self._controller, "_connect_edge_undo_tracking"):
+            self._controller._connect_edge_undo_tracking(self._edge)
         self._edge.update_position()
 
     def undo(self) -> None:

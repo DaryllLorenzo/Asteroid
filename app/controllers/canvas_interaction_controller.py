@@ -218,6 +218,8 @@ class CanvasInteractionController(CanvasControllerMixin):
         scene.addItem(e1)
         scene.addItem(e2)
         self.edges.extend([e1, e2])
+        self._connect_edge_undo_tracking(e1)
+        self._connect_edge_undo_tracking(e2)
 
         subcanvas = None
         if hasattr(dst, "prepare_subcanvas_for_internal_use"):

@@ -118,6 +118,26 @@ class CanvasStateController(CanvasControllerMixin):
 
         self.undo_stack.push(ToggleSubcanvasCommand(self, node_item))
 
+    def _connect_edge_undo_tracking(self, edge: object) -> None:
+        """Connect control point change tracking for an edge."""
+        if hasattr(edge, "cp_changed_callback"):
+            edge.cp_changed_callback = lambda: self._on_edge_cp_changed(edge)
+
+    def _on_edge_cp_changed(
+        self,
+        edge: object,
+    ) -> None:
+        """Handle control point changes: push a ChangeControlPointsCommand."""
+        saved = getattr(edge, "_saved_control_points", None)
+        current = getattr(edge, "control_points", [])
+        if saved is not None and saved != current:
+            from app.commands.change_control_points_command import (
+                ChangeControlPointsCommand,
+            )
+            self.undo_stack.push(
+                ChangeControlPointsCommand(self, edge, list(saved), list(current))
+            )
+
     def set_selection_mode(
         self,
         enabled: bool,

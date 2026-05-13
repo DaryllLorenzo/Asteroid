@@ -64,6 +64,11 @@ class BaseEdgeItem(QGraphicsPathItem):
         self._start_point = QPointF(0, 0)
         self._end_point = QPointF(0, 0)
 
+        # Estado guardado de control_points para tracking de drag
+        self._saved_control_points: list[QPointF] = []
+        # Callback para notificar cambios de control points (undo tracking)
+        self.cp_changed_callback = None
+
         self.update_position()
 
         # Conectar a los cambios de posición de los nodos
@@ -296,6 +301,7 @@ class BaseEdgeItem(QGraphicsPathItem):
                 local_pos,  # Pasar posición en coordenadas locales del edge
                 self._on_handle_position_changed,
                 self._on_handle_released,
+                self._on_handle_drag_start,
             )
             # El handle es hijo del edge, así que usa coordenadas locales
             handle.setParentItem(self)
@@ -321,6 +327,12 @@ class BaseEdgeItem(QGraphicsPathItem):
     def _on_handle_released(self):
         """Callback cuando se suelta un handle"""
         self._dragging_handle = None
+        if self.cp_changed_callback:
+            self.cp_changed_callback()
+
+    def _on_handle_drag_start(self):
+        """Callback cuando empieza un arrastre de handle"""
+        self._saved_control_points = [QPointF(p) for p in self.control_points]
 
     def _on_handle_position_changed(self, handle, new_pos):
         """Callback cuando un handle es arrastrado"""
@@ -374,6 +386,10 @@ class BaseEdgeItem(QGraphicsPathItem):
         for handle in self.control_handles:
             handle.setVisible(visible)
 
+    def _save_cp_state(self):
+        """Save current control_points state for undo tracking."""
+        self._saved_control_points = [QPointF(p) for p in self.control_points]
+
     def add_control_point(self, scene_pos: QPointF):
         """
         Agrega un punto de control en la posición dada.
@@ -403,6 +419,7 @@ class BaseEdgeItem(QGraphicsPathItem):
                 min_dist = dist
                 insert_index = i + 1
 
+        self._save_cp_state()
         self.prepareGeometryChange()
 
         # Insertar el nuevo control point en coordenadas locales
@@ -413,6 +430,8 @@ class BaseEdgeItem(QGraphicsPathItem):
 
         # Recalcular ruta
         self.update_position()
+        if self.cp_changed_callback:
+            self.cp_changed_callback()
 
     def _point_to_segment_distance(
         self, point: QPointF, line_start: QPointF, line_end: QPointF
@@ -449,17 +468,23 @@ class BaseEdgeItem(QGraphicsPathItem):
             index = len(self.control_points) - 1
 
         if 0 <= index < len(self.control_points):
+            self._save_cp_state()
             self.prepareGeometryChange()
             self.control_points.pop(index)
             self._update_handles_position()
             self.update_position()
+            if self.cp_changed_callback:
+                self.cp_changed_callback()
 
     def clear_control_points(self):
         """Elimina todos los puntos de control, volviendo a línea recta"""
+        self._save_cp_state()
         self.prepareGeometryChange()
         self.control_points.clear()
         self._update_handles_position()
         self.update_position()
+        if self.cp_changed_callback:
+            self.cp_changed_callback()
 
     def get_control_point_at(self, scene_pos: QPointF, tolerance: float = 10.0) -> int:
         """

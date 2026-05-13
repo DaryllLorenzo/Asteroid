@@ -150,6 +150,9 @@ class CanvasControllerMixin:
     ) -> None:
         raise NotImplementedError
 
+    def _connect_edge_undo_tracking(self, edge: object) -> None:
+        raise NotImplementedError
+
     def _collect_edges_for_node(
         self,
         node_item: CanvasNodeItem,

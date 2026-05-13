@@ -56,6 +56,8 @@ class AddCompositeDependencyCommand(QUndoCommand):
                 ctrl.edges.append(edge)
             if hasattr(edge, "_connect_to_nodes"):
                 edge._connect_to_nodes()
+            if hasattr(self._controller, "_connect_edge_undo_tracking"):
+                self._controller._connect_edge_undo_tracking(edge)
             edge.update_position()
 
     def undo(self) -> None:
