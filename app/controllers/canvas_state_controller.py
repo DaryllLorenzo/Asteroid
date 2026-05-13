@@ -134,6 +134,7 @@ class CanvasStateController(CanvasControllerMixin):
             from app.commands.change_control_points_command import (
                 ChangeControlPointsCommand,
             )
+
             self.undo_stack.push(
                 ChangeControlPointsCommand(self, edge, list(saved), list(current))
             )
