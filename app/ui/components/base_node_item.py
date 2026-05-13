@@ -246,8 +246,11 @@ class BaseNodeItem(QGraphicsObject):
             return
 
         if self.is_subcanvas_visible() and self.subcanvas:
-            offset_x = self.model.position_in_subcanvas_x * self.subcanvas.radius
-            offset_y = self.model.position_in_subcanvas_y * self.subcanvas.radius
+            body_radius = float(self.model.radius)
+            max_offset = self.subcanvas.radius + body_radius
+
+            offset_x = self.model.position_in_subcanvas_x * max_offset
+            offset_y = self.model.position_in_subcanvas_y * max_offset
 
             if not hasattr(self, "_subcanvas_original_pos"):
                 self._subcanvas_original_pos = QPointF(0, 0)
