@@ -25,8 +25,11 @@ class AddSubcanvasNodeCommand(QUndoCommand):
     def redo(self) -> None:
         if self._child_node is None:
             self._child_node = self._controller._add_to_subcanvas(
-                self._parent_node_item, self._subcanvas,
-                self._item_type, self._local_x, self._local_y,
+                self._parent_node_item,
+                self._subcanvas,
+                self._item_type,
+                self._local_x,
+                self._local_y,
             )
         else:
             self._restore_child()
@@ -58,13 +61,9 @@ class AddSubcanvasNodeCommand(QUndoCommand):
                 self._controller.on_node_properties_changed
             )
         if hasattr(child, "drag_finished"):
-            child.drag_finished.connect(
-                self._controller._on_node_drag_finished
-            )
+            child.drag_finished.connect(self._controller._on_node_drag_finished)
         if hasattr(child, "resize_finished"):
-            child.resize_finished.connect(
-                self._controller._on_node_resize_finished
-            )
+            child.resize_finished.connect(self._controller._on_node_resize_finished)
         if hasattr(child, "subcanvas_toggle_requested"):
             child.subcanvas_toggle_requested.connect(
                 self._controller._on_subcanvas_toggle_requested

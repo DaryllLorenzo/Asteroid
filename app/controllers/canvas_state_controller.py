@@ -68,7 +68,8 @@ class CanvasStateController(CanvasControllerMixin):
         node_item: CanvasNodeItem,
         key: str,
     ) -> object:
-        """Read a property value from a node item, matching update_properties lookup order."""
+        """Read a property value from a node item,
+        matching update_properties lookup order."""
         if hasattr(node_item, "_independent_model") and node_item._independent_model:
             if hasattr(node_item._independent_model, key):
                 return getattr(node_item._independent_model, key)
@@ -90,9 +91,7 @@ class CanvasStateController(CanvasControllerMixin):
             return
         end_pos = node_item.pos()
         if start_pos != end_pos:
-            self.undo_stack.push(
-                MoveNodeCommand(self, node_item, start_pos, end_pos)
-            )
+            self.undo_stack.push(MoveNodeCommand(self, node_item, start_pos, end_pos))
 
     def _on_node_resize_finished(
         self,
@@ -105,6 +104,7 @@ class CanvasStateController(CanvasControllerMixin):
             current_radius = float(node_item.model.radius)
         if abs(old_radius - current_radius) > 0.5:
             from app.commands.resize_node_command import ResizeNodeCommand
+
             self.undo_stack.push(
                 ResizeNodeCommand(self, node_item, old_radius, current_radius)
             )
@@ -115,6 +115,7 @@ class CanvasStateController(CanvasControllerMixin):
     ) -> None:
         """Handle subcanvas toggle: push a ToggleSubcanvasCommand."""
         from app.commands.toggle_subcanvas_command import ToggleSubcanvasCommand
+
         self.undo_stack.push(ToggleSubcanvasCommand(self, node_item))
 
     def set_selection_mode(

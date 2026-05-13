@@ -118,9 +118,11 @@ class BaseTroposItem(QGraphicsObject):
         if self._resizing and event.button() == Qt.MouseButton.LeftButton:
             self._resizing = False
             self.setCursor(Qt.CursorShape.ArrowCursor)
-            old_r = getattr(self, "_resize_start_radius", float(
-                self._get_model_for_independent_prop("radius", 50)
-            ))
+            old_r = getattr(
+                self,
+                "_resize_start_radius",
+                float(self._get_model_for_independent_prop("radius", 50)),
+            )
             current_r = float(self._get_model_for_independent_prop("radius", 50))
             if old_r != current_r:
                 self.resize_finished.emit(self, old_r)

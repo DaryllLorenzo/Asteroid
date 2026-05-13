@@ -205,9 +205,14 @@ class CanvasNodeController(CanvasControllerMixin):
     ) -> None:
         """Handle subcanvas node drop: push an AddSubcanvasNodeCommand."""
         from app.commands.add_subcanvas_node_command import AddSubcanvasNodeCommand
+
         self.undo_stack.push(
             AddSubcanvasNodeCommand(
-                self, parent_node_item, subcanvas,
-                item_type, local_x, local_y,
+                self,
+                parent_node_item,
+                subcanvas,
+                item_type,
+                local_x,
+                local_y,
             )
         )

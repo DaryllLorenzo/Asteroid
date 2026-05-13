@@ -76,9 +76,7 @@ class CanvasController(
 
         # Connect signals
         self.canvas.node_dropped.connect(
-            lambda t, x, y: self.undo_stack.push(
-                AddNodeCommand(self, t, x, y)
-            )
+            lambda t, x, y: self.undo_stack.push(AddNodeCommand(self, t, x, y))
         )
         self.canvas.arrow_dropped.connect(self.start_arrow_mode)
         self.canvas.node_clicked.connect(self.handle_node_click)

@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Protocol
 
 from PyQt6.QtGui import QShortcut
-
 from PyQt6.QtGui import QUndoStack
 
 from app.controller_types import CanvasNodeItem

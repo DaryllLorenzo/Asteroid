@@ -186,8 +186,8 @@ class MainWindow(QMainWindow):
         """Update text of undo/redo to show next command description"""
         undo_text = self.canvas_controller.undo_stack.undoText()
         redo_text = self.canvas_controller.undo_stack.redoText()
-        self.undo_action.setText(f"&Deshacer{ ' ' + undo_text if undo_text else ''}")
-        self.redo_action.setText(f"&Rehacer{ ' ' + redo_text if redo_text else ''}")
+        self.undo_action.setText(f"&Deshacer{' ' + undo_text if undo_text else ''}")
+        self.redo_action.setText(f"&Rehacer{' ' + redo_text if redo_text else ''}")
 
     def update_window_title(self):
         """Actualiza el título de la ventana con el estado del proyecto"""

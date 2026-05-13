@@ -1,12 +1,9 @@
 from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
-
-from app.controller_types import CanvasNodeItem
-from app.ui.components.base_edge_item import BaseEdgeItem
-
-
 from PyQt6.QtWidgets import QGraphicsItem
+
+from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class AddEdgeCommand(QUndoCommand):

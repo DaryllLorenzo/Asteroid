@@ -49,9 +49,14 @@ class DeleteNodeCommand(QUndoCommand):
             if not hasattr(other, "model") or not hasattr(self._node_item, "model"):
                 continue
             if other.model is self._node_item.model:
-                if hasattr(other, "subcanvas_parent") and other.subcanvas_parent is not None:
+                if (
+                    hasattr(other, "subcanvas_parent")
+                    and other.subcanvas_parent is not None
+                ):
                     self._composite_internal_node = other
-                    self._composite_internal_parent = other.subcanvas_parent.parentItem()
+                    self._composite_internal_parent = (
+                        other.subcanvas_parent.parentItem()
+                    )
                     self._composite_internal_data = other.get_serializable_properties()
                     self._collect_edges_recursive(other)
                     return
@@ -59,17 +64,16 @@ class DeleteNodeCommand(QUndoCommand):
     def _collect_edges_recursive(self, node_item) -> None:
         """Collect all edges connected to this node and its descendants."""
         for edge in list(self._controller.edges):
-            if (
-                edge.source_node is node_item
-                or edge.dest_node is node_item
-            ):
+            if edge.source_node is node_item or edge.dest_node is node_item:
                 if not any(d["edge"] is edge for d in self._edges_data):
-                    self._edges_data.append({
-                        "edge": edge,
-                        "source": edge.source_node,
-                        "dest": edge.dest_node,
-                        "parent_item": edge.parentItem(),
-                    })
+                    self._edges_data.append(
+                        {
+                            "edge": edge,
+                            "source": edge.source_node,
+                            "dest": edge.dest_node,
+                            "parent_item": edge.parentItem(),
+                        }
+                    )
         for child in getattr(node_item, "child_nodes", []):
             self._collect_edges_recursive(child)
 
@@ -124,13 +128,9 @@ class DeleteNodeCommand(QUndoCommand):
                     self._controller.on_node_properties_changed
                 )
             if hasattr(child, "drag_finished"):
-                child.drag_finished.connect(
-                    self._controller._on_node_drag_finished
-                )
+                child.drag_finished.connect(self._controller._on_node_drag_finished)
             if hasattr(child, "resize_finished"):
-                child.resize_finished.connect(
-                    self._controller._on_node_resize_finished
-                )
+                child.resize_finished.connect(self._controller._on_node_resize_finished)
             if hasattr(child, "subcanvas_toggle_requested"):
                 child.subcanvas_toggle_requested.connect(
                     self._controller._on_subcanvas_toggle_requested
@@ -194,7 +194,10 @@ class DeleteNodeCommand(QUndoCommand):
 
         self._restore_child_nodes(self._node_item, self._child_nodes_data)
 
-        if self._composite_internal_node is not None and self._composite_internal_data is not None:
+        if (
+            self._composite_internal_node is not None
+            and self._composite_internal_data is not None
+        ):
             internal = self._composite_internal_node
             internal_parent = self._composite_internal_parent
             if scene is not None and internal.scene() is None:
@@ -206,9 +209,7 @@ class DeleteNodeCommand(QUndoCommand):
                     self._controller.on_node_properties_changed
                 )
             if hasattr(internal, "drag_finished"):
-                internal.drag_finished.connect(
-                    self._controller._on_node_drag_finished
-                )
+                internal.drag_finished.connect(self._controller._on_node_drag_finished)
             if hasattr(internal, "resize_finished"):
                 internal.resize_finished.connect(
                     self._controller._on_node_resize_finished

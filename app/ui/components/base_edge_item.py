@@ -276,7 +276,7 @@ class BaseEdgeItem(QGraphicsPathItem):
 
                 self.setPath(path)
 
-                # Actualizar posición de los handles (solo si no se está arrastrando uno)
+                # Actualizar posición de los handles (solo si no se está arrastrando)
                 if self._dragging_handle is None:
                     self._update_handles_position()
         finally:

@@ -24,7 +24,9 @@ class AddNodeCommand(QUndoCommand):
 
     def redo(self) -> None:
         if self._node_item is None:
-            self._node_item = self._controller.add_node(self._node_type, self._x, self._y)
+            self._node_item = self._controller.add_node(
+                self._node_type, self._x, self._y
+            )
             if self._node_item and hasattr(self._node_item, "drag_finished"):
                 self._node_item.drag_finished.connect(
                     self._controller._on_node_drag_finished
@@ -74,9 +76,7 @@ class AddNodeCommand(QUndoCommand):
                         self._controller.on_node_properties_changed
                     )
                 if hasattr(child, "drag_finished"):
-                    child.drag_finished.connect(
-                        self._controller._on_node_drag_finished
-                    )
+                    child.drag_finished.connect(self._controller._on_node_drag_finished)
                 if hasattr(child, "resize_finished"):
                     child.resize_finished.connect(
                         self._controller._on_node_resize_finished
@@ -96,15 +96,14 @@ class AddNodeCommand(QUndoCommand):
 
         self._edges_data = []
         for edge in list(self._controller.edges):
-            if (
-                edge.source_node is self._node_item
-                or edge.dest_node is self._node_item
-            ):
+            if edge.source_node is self._node_item or edge.dest_node is self._node_item:
                 edge.cleanup()
-                self._edges_data.append({
-                    "edge": edge,
-                    "parent_item": edge.parentItem(),
-                })
+                self._edges_data.append(
+                    {
+                        "edge": edge,
+                        "parent_item": edge.parentItem(),
+                    }
+                )
                 edge_scene = edge.scene()
                 if edge_scene is not None:
                     edge_scene.removeItem(edge)

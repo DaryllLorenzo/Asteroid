@@ -182,11 +182,13 @@ class CanvasDeletionController(CanvasControllerMixin):
         edges_data = []
         for edge in list(self.edges):
             if edge.source_node is node_item or edge.dest_node is node_item:
-                edges_data.append({
-                    "edge": edge,
-                    "source": edge.source_node,
-                    "dest": edge.dest_node,
-                })
+                edges_data.append(
+                    {
+                        "edge": edge,
+                        "source": edge.source_node,
+                        "dest": edge.dest_node,
+                    }
+                )
         return edges_data
 
     def _remove_node_from_scene(
