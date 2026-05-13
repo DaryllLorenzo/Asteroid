@@ -157,6 +157,38 @@ class CanvasDeletionController(CanvasControllerMixin):
             self.mark_as_modified()
             print(f"Edge straightened: {edge}")
 
+    def _remove_node_clean(
+        self,
+        node: CanvasNodeItem,
+    ) -> None:
+        """Remove node from scene and lists WITHOUT deleting edges."""
+        node_scene = node.scene()
+        if node_scene is not None:
+            node_scene.removeItem(node)
+        if node in self.nodes:
+            self.nodes.remove(node)
+
+        if node == self.selected_node:
+            self.selected_node = None
+            self.current_selection = None
+            self.node_selected.emit(None)
+            self.selection_changed.emit(None)
+
+    def _collect_edges_for_node(
+        self,
+        node_item: CanvasNodeItem,
+    ) -> list[dict]:
+        """Find all edges connected to a node and return their data."""
+        edges_data = []
+        for edge in list(self.edges):
+            if edge.source_node is node_item or edge.dest_node is node_item:
+                edges_data.append({
+                    "edge": edge,
+                    "source": edge.source_node,
+                    "dest": edge.dest_node,
+                })
+        return edges_data
+
     def _remove_node_from_scene(
         self,
         node: CanvasNodeItem,
@@ -169,6 +201,8 @@ class CanvasDeletionController(CanvasControllerMixin):
 
     def clear_canvas(self) -> None:
         """Clear canvas completely"""
+        if hasattr(self, "undo_stack"):
+            self.undo_stack.clear()
         self.selected_node = None
         self.selected_edge = None
         self.current_selection = None

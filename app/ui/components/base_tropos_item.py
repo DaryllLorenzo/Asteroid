@@ -23,6 +23,7 @@ class BaseTroposItem(QGraphicsObject):
     nodeDoubleClicked = pyqtSignal(object)
     properties_changed = pyqtSignal(object, dict)
     positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
+    drag_finished = pyqtSignal(object, QPointF)  # Nodo, posición inicial
 
     def __init__(self, model: NodeModelLike) -> None:
         super().__init__()
@@ -34,6 +35,7 @@ class BaseTroposItem(QGraphicsObject):
         self.child_nodes: list[object] = []
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable)
+        self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemSendsGeometryChanges)
         self.setAcceptHoverEvents(True)
         self.setZValue(10)
         self._resizing = False
@@ -95,6 +97,7 @@ class BaseTroposItem(QGraphicsObject):
                 self.setSelected(True)
                 event.accept()
                 return
+            self._drag_start_pos = self.pos()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -114,6 +117,10 @@ class BaseTroposItem(QGraphicsObject):
             event.accept()
             return
         super().mouseReleaseEvent(event)
+        if hasattr(self, "_drag_start_pos") and self._drag_start_pos is not None:
+            if self._drag_start_pos != self.pos():
+                self.drag_finished.emit(self, self._drag_start_pos)
+            self._drag_start_pos = None
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
         """Emite señal cuando la posición cambia"""

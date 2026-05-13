@@ -267,20 +267,18 @@ class BaseEdgeItem(QGraphicsPathItem):
         try:
             path_points, start_point, end_point = self._calculate_path_points()
 
-            if not path_points:
-                return
+            if path_points:
+                # _calculate_path_points ya retorna puntos en coordenadas LOCALES
+                # Crear el path en coordenadas locales directamente
+                path = QPainterPath(path_points[0])
+                for point in path_points[1:]:
+                    path.lineTo(point)
 
-            # _calculate_path_points ya retorna puntos en coordenadas LOCALES
-            # Crear el path en coordenadas locales directamente
-            path = QPainterPath(path_points[0])
-            for point in path_points[1:]:
-                path.lineTo(point)
+                self.setPath(path)
 
-            self.setPath(path)
-
-            # Actualizar posición de los handles (solo si no se está arrastrando uno)
-            if self._dragging_handle is None:
-                self._update_handles_position()
+                # Actualizar posición de los handles (solo si no se está arrastrando uno)
+                if self._dragging_handle is None:
+                    self._update_handles_position()
         finally:
             self._updating_position = False
 

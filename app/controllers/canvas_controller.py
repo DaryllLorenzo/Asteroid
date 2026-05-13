@@ -6,7 +6,11 @@
 # ---------------------------------------------------
 from PyQt6.QtCore import QObject
 from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QUndoStack
 
+from app.commands.add_node_command import AddNodeCommand
+from app.commands.delete_edge_command import DeleteEdgeCommand
+from app.commands.delete_node_command import DeleteNodeCommand
 from app.controller_types import CanvasNodeItem
 from app.controller_types import SubcanvasHandler
 from app.controllers.canvas_deletion_controller import CanvasDeletionController
@@ -17,6 +21,7 @@ from app.controllers.canvas_node_controller import CanvasNodeController
 from app.controllers.canvas_state_controller import CanvasStateController
 from app.ui.canvas import Canvas
 from app.ui.components.base_edge_item import BaseEdgeItem
+from app.ui.components.control_point_handle import ControlPointHandle
 
 
 class CanvasController(
@@ -65,8 +70,16 @@ class CanvasController(
         self._current_file_path: str | None = None
         self._is_modified: bool = False
 
+        # Undo stack
+        self.undo_stack = QUndoStack(self)
+        self.undo_stack.cleanChanged.connect(self._on_clean_changed)
+
         # Connect signals
-        self.canvas.node_dropped.connect(self.add_node)
+        self.canvas.node_dropped.connect(
+            lambda t, x, y: self.undo_stack.push(
+                AddNodeCommand(self, t, x, y)
+            )
+        )
         self.canvas.arrow_dropped.connect(self.start_arrow_mode)
         self.canvas.node_clicked.connect(self.handle_node_click)
         scene = self.canvas.scene()
@@ -75,3 +88,27 @@ class CanvasController(
 
         # Setup keyboard shortcuts for deletion
         self._setup_delete_shortcut()
+
+    def _on_clean_changed(self, clean: bool) -> None:
+        """Sync undo stack clean state with project modified state."""
+        self._is_modified = not clean
+        self.project_modified.emit(not clean)
+
+    def delete_selected_item(self) -> None:
+        """Override: push DeleteNodeCommand when deleting a node."""
+        scene = self.canvas.scene()
+        if scene is None:
+            return
+
+        selected_items = scene.selectedItems()
+        for item in selected_items:
+            if isinstance(item, ControlPointHandle):
+                self._delete_selected_control_point(item)
+                return
+
+        if self.selected_edge:
+            self.undo_stack.push(DeleteEdgeCommand(self, self.selected_edge))
+        elif self.selected_node:
+            self.undo_stack.push(DeleteNodeCommand(self, self.selected_node))
+        else:
+            print("No element selected for deletion")

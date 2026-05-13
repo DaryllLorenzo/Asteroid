@@ -154,6 +154,17 @@ class MainWindow(QMainWindow):
         # Crear barra de menú
         self.create_menu_bar()
 
+        # Conectar signals de undo stack para actualizar menú
+        self.canvas_controller.undo_stack.canUndoChanged.connect(
+            self._update_undo_redo_actions
+        )
+        self.canvas_controller.undo_stack.canRedoChanged.connect(
+            self._update_undo_redo_actions
+        )
+        self.canvas_controller.undo_stack.indexChanged.connect(
+            self._update_undo_redo_texts
+        )
+
         # Actualizar título inicial
         self.update_window_title()
 
@@ -165,6 +176,18 @@ class MainWindow(QMainWindow):
     def on_project_modified(self, modified):
         """Se llama cuando el estado de modificación del proyecto cambia"""
         self.update_window_title()
+
+    def _update_undo_redo_actions(self):
+        """Update enabled state of undo/redo menu items"""
+        self.undo_action.setEnabled(self.canvas_controller.undo_stack.canUndo())
+        self.redo_action.setEnabled(self.canvas_controller.undo_stack.canRedo())
+
+    def _update_undo_redo_texts(self):
+        """Update text of undo/redo to show next command description"""
+        undo_text = self.canvas_controller.undo_stack.undoText()
+        redo_text = self.canvas_controller.undo_stack.redoText()
+        self.undo_action.setText(f"&Deshacer{ ' ' + undo_text if undo_text else ''}")
+        self.redo_action.setText(f"&Rehacer{ ' ' + redo_text if redo_text else ''}")
 
     def update_window_title(self):
         """Actualiza el título de la ventana con el estado del proyecto"""
@@ -201,6 +224,21 @@ class MainWindow(QMainWindow):
         save_action = file_menu.addAction("&Guardar proyecto...")
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_project)
+
+        # ---------------------------
+        # Menú Editar
+        # ---------------------------
+        edit_menu = menubar.addMenu("&Editar")
+
+        self.undo_action = edit_menu.addAction("&Deshacer")
+        self.undo_action.setShortcut("Ctrl+Z")
+        self.undo_action.triggered.connect(self.canvas_controller.undo_stack.undo)
+        self.undo_action.setEnabled(False)
+
+        self.redo_action = edit_menu.addAction("&Rehacer")
+        self.redo_action.setShortcuts(["Ctrl+Y", "Ctrl+Shift+Z"])
+        self.redo_action.triggered.connect(self.canvas_controller.undo_stack.redo)
+        self.redo_action.setEnabled(False)
 
         # Separador
         file_menu.addSeparator()

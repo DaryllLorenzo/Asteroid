@@ -47,6 +47,26 @@ class CanvasNodeController(CanvasControllerMixin):
         self.mark_as_modified()
         return node_item
 
+    def _restore_node(
+        self,
+        node_item: CanvasNodeItem,
+    ) -> None:
+        """Re-add a previously removed node to scene + lists + signals."""
+        scene = self.canvas.scene()
+        if scene is not None and node_item.scene() is None:
+            scene.addItem(node_item)
+        if node_item not in self.nodes:
+            self.nodes.append(node_item)
+
+        if hasattr(node_item, "properties_changed"):
+            node_item.properties_changed.connect(self.on_node_properties_changed)
+
+        if hasattr(node_item, "subcanvas_toggled"):
+            node_item.subcanvas_toggled.connect(self._on_subcanvas_toggled)
+
+        if hasattr(node_item, "drag_finished"):
+            node_item.drag_finished.connect(self._on_node_drag_finished)
+
     def on_node_properties_changed(
         self,
         node_item: CanvasNodeItem,

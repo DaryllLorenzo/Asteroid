@@ -111,3 +111,22 @@ class CanvasControllerMixin:
 
     def update_node_properties(self, properties: PropertyMap) -> None:
         raise NotImplementedError
+
+    def _remove_node_clean(self, node: CanvasNodeItem) -> None:
+        raise NotImplementedError
+
+    def _restore_node(self, node_item: CanvasNodeItem) -> None:
+        raise NotImplementedError
+
+    def _on_node_drag_finished(
+        self,
+        node_item: CanvasNodeItem,
+        start_pos: object,
+    ) -> None:
+        raise NotImplementedError
+
+    def _collect_edges_for_node(
+        self,
+        node_item: CanvasNodeItem,
+    ) -> list[dict]:
+        raise NotImplementedError

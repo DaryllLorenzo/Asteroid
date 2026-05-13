@@ -6,6 +6,7 @@
 # ---------------------------------------------------
 from PyQt6.QtWidgets import QGraphicsItem
 
+from app.commands.add_edge_command import AddEdgeCommand
 from app.controller_types import CanvasNodeItem
 from app.controllers._canvas_mixin import CanvasControllerMixin
 from app.controllers.canvas_registry_controller import _ARROW_TYPES
@@ -150,22 +151,14 @@ class CanvasInteractionController(CanvasControllerMixin):
 
         edge_item = ArrowClass(src, dst)
 
-        if self._current_subcanvas:
-            edge_item.setParentItem(self._current_subcanvas)
-            edge_item.update_position()
-            print(f"Edge created inside subcanvas: {self._current_subcanvas}")
-        else:
-            scene = self.canvas.scene()
-            if scene is None:
-                return None
-            scene.addItem(edge_item)
+        parent = self._current_subcanvas if self._current_subcanvas else None
 
-        self.edges.append(edge_item)
+        self.undo_stack.push(AddEdgeCommand(self, edge_item, parent))
+
         self._reset_modes()
         for node in self.nodes:
             node.setSelected(False)
 
-        self.mark_as_modified()
         return edge_item
 
     def create_composite_dependency(self):
