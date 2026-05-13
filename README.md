@@ -252,8 +252,6 @@ python main.py
     - Subcanvas open/close
     - Composite dependency creation/deletion
     - Control point add/move/remove/clear
-
-### Completed
 - [x] Model validation (Tropos methodology consistency)
     - Toggleable validator mode (Validation menu)
     - Pluggable rule system with auto-discovery
