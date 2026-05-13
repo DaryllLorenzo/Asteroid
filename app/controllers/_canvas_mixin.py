@@ -12,6 +12,7 @@ from app.model_types import PropertyMap
 from app.ui.canvas import Canvas
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.subcanvas_item import SubCanvasItem
+from app.validation.validator import Validator
 
 
 class SignalLike(Protocol):
@@ -38,6 +39,7 @@ class CanvasControllerMixin:
     delete_shortcut: QShortcut
     delete_shortcut2: QShortcut
     undo_stack: QUndoStack
+    validator: Validator
     node_selected: SignalLike
     selected_node_properties_changed: SignalLike
     node_deleted: SignalLike
@@ -148,6 +150,9 @@ class CanvasControllerMixin:
         local_x: float,
         local_y: float,
     ) -> None:
+        raise NotImplementedError
+
+    def _show_validation_errors(self, errors: list[str]) -> None:
         raise NotImplementedError
 
     def _connect_edge_undo_tracking(self, edge: object) -> None:

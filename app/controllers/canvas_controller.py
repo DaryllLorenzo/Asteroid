@@ -7,6 +7,9 @@
 from PyQt6.QtCore import QObject
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QUndoStack
+from PyQt6.QtWidgets import QMessageBox
+
+from app.validation.validator import Validator
 
 from app.commands.add_node_command import AddNodeCommand
 from app.commands.delete_edge_command import DeleteEdgeCommand
@@ -70,6 +73,9 @@ class CanvasController(
         self._current_file_path: str | None = None
         self._is_modified: bool = False
 
+        # Validator
+        self.validator = Validator()
+
         # Undo stack
         self.undo_stack = QUndoStack(self)
         self.undo_stack.cleanChanged.connect(self._on_clean_changed)
@@ -91,6 +97,13 @@ class CanvasController(
         """Sync undo stack clean state with project modified state."""
         self._is_modified = not clean
         self.project_modified.emit(not clean)
+
+    def _show_validation_errors(self, errors: list[str]) -> None:
+        msg = QMessageBox(self.canvas.window() if self.canvas.window() else self.canvas)
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setWindowTitle("Error de validación")
+        msg.setText("\n\n".join(errors))
+        msg.exec()
 
     def delete_selected_item(self) -> None:
         """Override: push DeleteNodeCommand when deleting a node."""

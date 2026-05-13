@@ -153,6 +153,21 @@ class CanvasInteractionController(CanvasControllerMixin):
         if ArrowClass is None:
             return None
 
+        errors = self.validator.validate(
+            "create_edge",
+            {
+                "source_is_entity": isinstance(src, (ActorNodeItem, AgentNodeItem)),
+                "dest_is_entity": isinstance(dst, (ActorNodeItem, AgentNodeItem)),
+                "arrow_type": self.selected_arrow_type,
+            },
+        )
+        if errors:
+            self._show_validation_errors(errors)
+            self._reset_modes()
+            for node in self.nodes:
+                node.setSelected(False)
+            return None
+
         edge_item = ArrowClass(src, dst)
 
         parent = self._current_subcanvas if self._current_subcanvas else None
