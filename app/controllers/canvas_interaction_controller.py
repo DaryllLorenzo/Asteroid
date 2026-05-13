@@ -97,7 +97,10 @@ class CanvasInteractionController(CanvasControllerMixin):
             node.setSelected(True)
 
         if len(self.selected_nodes_for_arrow) == 2:
-            self.create_composite_dependency()
+            from app.commands.add_composite_dependency_command import (
+                AddCompositeDependencyCommand,
+            )
+            self.undo_stack.push(AddCompositeDependencyCommand(self))
 
     def _find_parent_actor_agent(
         self,
@@ -234,6 +237,19 @@ class CanvasInteractionController(CanvasControllerMixin):
 
             self.nodes.append(internal_node)
 
+            if hasattr(internal_node, "properties_changed"):
+                internal_node.properties_changed.connect(
+                    self.on_node_properties_changed
+                )
+            if hasattr(internal_node, "drag_finished"):
+                internal_node.drag_finished.connect(
+                    self._on_node_drag_finished
+                )
+            if hasattr(internal_node, "resize_finished"):
+                internal_node.resize_finished.connect(
+                    self._on_node_resize_finished
+                )
+
             if not hasattr(dst, "child_nodes"):
                 dst.child_nodes = []
             dst.child_nodes.append(internal_node)
@@ -248,4 +264,4 @@ class CanvasInteractionController(CanvasControllerMixin):
 
         self._reset_modes()
         self.mark_as_modified()
-        return (mid_node, e1, e2)
+        return (mid_node, internal_node, e1, e2)
