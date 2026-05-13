@@ -58,6 +58,18 @@ asteroid/
 │   ├── __init__.py
 │   ├── model_types.py                  # Type definitions for models
 │   ├── controller_types.py             # Type definitions for controllers
+│   ├── commands/                       # Undo/redo command pattern
+│   │   ├── add_node_command.py         # Undoable node creation
+│   │   ├── delete_node_command.py      # Undoable node deletion (recursive)
+│   │   ├── add_edge_command.py         # Undoable edge creation
+│   │   ├── delete_edge_command.py      # Undoable edge deletion
+│   │   ├── add_subcanvas_node_command.py  # Undoable subcanvas child creation
+│   │   ├── add_composite_dependency_command.py  # Undoable composite dependency
+│   │   ├── toggle_subcanvas_command.py # Undoable subcanvas open/close
+│   │   ├── move_node_command.py        # Undoable node movement (with merge)
+│   │   ├── resize_node_command.py      # Undoable node resize
+│   │   ├── change_property_command.py  # Undoable property changes (with merge)
+│   │   └── change_control_points_command.py  # Undoable control point edits
 │   ├── controllers/                    # Canvas logic (MVC pattern)
 │   │   ├── __init__.py
 │   │   ├── _canvas_mixin.py            # Mixin for shared controller logic
@@ -219,11 +231,17 @@ python main.py
 - [x] Cross-platform packaging (Windows, Linux, macOS)
 - [x] Keyboard shortcuts system
 - [x] Flexible link shapes (user-draggable control points for edges)
+- [x] Full undo/redo history (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z)
+    - Node creation, deletion, movement, resize
+    - Edge creation, deletion
+    - Property changes (with rapid-change merging)
+    - Subcanvas open/close
+    - Composite dependency creation/deletion
+    - Control point add/move/remove/clear
 
 ### In Progress / Planned
 - [ ] Visual themes (light/dark mode)
 - [ ] Model validation (Tropos methodology consistency)
-- [ ] Undo/redo history for all actions
 - [ ] Diagram templates for common Tropos patterns
 - [ ] Multi-language support (English, Spanish) with language switcher
 
