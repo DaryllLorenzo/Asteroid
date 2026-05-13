@@ -9,8 +9,6 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QUndoStack
 from PyQt6.QtWidgets import QMessageBox
 
-from app.validation.validator import Validator
-
 from app.commands.add_node_command import AddNodeCommand
 from app.commands.delete_edge_command import DeleteEdgeCommand
 from app.commands.delete_node_command import DeleteNodeCommand
@@ -25,6 +23,7 @@ from app.controllers.canvas_state_controller import CanvasStateController
 from app.ui.canvas import Canvas
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.control_point_handle import ControlPointHandle
+from app.validation.validator import Validator
 
 
 class CanvasController(
