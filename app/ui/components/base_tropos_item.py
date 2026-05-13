@@ -23,6 +23,8 @@ class BaseTroposItem(QGraphicsObject):
     nodeDoubleClicked = pyqtSignal(object)
     properties_changed = pyqtSignal(object, dict)
     positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
+    drag_finished = pyqtSignal(object, QPointF)  # Nodo, posición inicial
+    resize_finished = pyqtSignal(object, float)  # Nodo, radio inicial
 
     def __init__(self, model: NodeModelLike) -> None:
         super().__init__()
@@ -34,6 +36,7 @@ class BaseTroposItem(QGraphicsObject):
         self.child_nodes: list[object] = []
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable)
+        self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemSendsGeometryChanges)
         self.setAcceptHoverEvents(True)
         self.setZValue(10)
         self._resizing = False
@@ -92,9 +95,13 @@ class BaseTroposItem(QGraphicsObject):
             dist = self._get_distance_to_border(event.pos())
             if dist < 8:
                 self._resizing = True
+                self._resize_start_radius = float(
+                    self._get_model_for_independent_prop("radius", 50)
+                )
                 self.setSelected(True)
                 event.accept()
                 return
+            self._drag_start_pos = self.pos()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -111,9 +118,22 @@ class BaseTroposItem(QGraphicsObject):
         if self._resizing and event.button() == Qt.MouseButton.LeftButton:
             self._resizing = False
             self.setCursor(Qt.CursorShape.ArrowCursor)
+            old_r = getattr(
+                self,
+                "_resize_start_radius",
+                float(self._get_model_for_independent_prop("radius", 50)),
+            )
+            current_r = float(self._get_model_for_independent_prop("radius", 50))
+            if old_r != current_r:
+                self.resize_finished.emit(self, old_r)
+            self._resize_start_radius = None
             event.accept()
             return
         super().mouseReleaseEvent(event)
+        if hasattr(self, "_drag_start_pos") and self._drag_start_pos is not None:
+            if self._drag_start_pos != self.pos():
+                self.drag_finished.emit(self, self._drag_start_pos)
+            self._drag_start_pos = None
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
         """Emite señal cuando la posición cambia"""

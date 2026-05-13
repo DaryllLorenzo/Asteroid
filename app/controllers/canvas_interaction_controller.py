@@ -6,6 +6,7 @@
 # ---------------------------------------------------
 from PyQt6.QtWidgets import QGraphicsItem
 
+from app.commands.add_edge_command import AddEdgeCommand
 from app.controller_types import CanvasNodeItem
 from app.controllers._canvas_mixin import CanvasControllerMixin
 from app.controllers.canvas_registry_controller import _ARROW_TYPES
@@ -96,7 +97,11 @@ class CanvasInteractionController(CanvasControllerMixin):
             node.setSelected(True)
 
         if len(self.selected_nodes_for_arrow) == 2:
-            self.create_composite_dependency()
+            from app.commands.add_composite_dependency_command import (
+                AddCompositeDependencyCommand,
+            )
+
+            self.undo_stack.push(AddCompositeDependencyCommand(self))
 
     def _find_parent_actor_agent(
         self,
@@ -150,22 +155,14 @@ class CanvasInteractionController(CanvasControllerMixin):
 
         edge_item = ArrowClass(src, dst)
 
-        if self._current_subcanvas:
-            edge_item.setParentItem(self._current_subcanvas)
-            edge_item.update_position()
-            print(f"Edge created inside subcanvas: {self._current_subcanvas}")
-        else:
-            scene = self.canvas.scene()
-            if scene is None:
-                return None
-            scene.addItem(edge_item)
+        parent = self._current_subcanvas if self._current_subcanvas else None
 
-        self.edges.append(edge_item)
+        self.undo_stack.push(AddEdgeCommand(self, edge_item, parent))
+
         self._reset_modes()
         for node in self.nodes:
             node.setSelected(False)
 
-        self.mark_as_modified()
         return edge_item
 
     def create_composite_dependency(self):
@@ -221,6 +218,8 @@ class CanvasInteractionController(CanvasControllerMixin):
         scene.addItem(e1)
         scene.addItem(e2)
         self.edges.extend([e1, e2])
+        self._connect_edge_undo_tracking(e1)
+        self._connect_edge_undo_tracking(e2)
 
         subcanvas = None
         if hasattr(dst, "prepare_subcanvas_for_internal_use"):
@@ -241,6 +240,15 @@ class CanvasInteractionController(CanvasControllerMixin):
 
             self.nodes.append(internal_node)
 
+            if hasattr(internal_node, "properties_changed"):
+                internal_node.properties_changed.connect(
+                    self.on_node_properties_changed
+                )
+            if hasattr(internal_node, "drag_finished"):
+                internal_node.drag_finished.connect(self._on_node_drag_finished)
+            if hasattr(internal_node, "resize_finished"):
+                internal_node.resize_finished.connect(self._on_node_resize_finished)
+
             if not hasattr(dst, "child_nodes"):
                 dst.child_nodes = []
             dst.child_nodes.append(internal_node)
@@ -255,4 +263,4 @@ class CanvasInteractionController(CanvasControllerMixin):
 
         self._reset_modes()
         self.mark_as_modified()
-        return (mid_node, e1, e2)
+        return (mid_node, internal_node, e1, e2)

@@ -24,6 +24,9 @@ class BaseNodeItem(QGraphicsObject):
     subcanvas_toggled = pyqtSignal(object, object)
     properties_changed = pyqtSignal(object, dict)
     positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
+    drag_finished = pyqtSignal(object, QPointF)  # Nodo, posición inicial
+    resize_finished = pyqtSignal(object, float)  # Nodo, radio inicial
+    subcanvas_toggle_requested = pyqtSignal(object)  # Nodo
 
     def __init__(self, model: NodeModelLike) -> None:
         super().__init__()
@@ -31,6 +34,7 @@ class BaseNodeItem(QGraphicsObject):
         self._independent_model: NodeModelLike | None = None
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable)
+        self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemSendsGeometryChanges)
         self.setAcceptHoverEvents(True)
         self._resizing: bool = False
         self.subcanvas: SubCanvasItem | None = None
@@ -76,9 +80,11 @@ class BaseNodeItem(QGraphicsObject):
             dist = self._get_distance_to_border(event.pos())
             if dist < 8:
                 self._resizing = True
+                self._resize_start_radius = float(self.model.radius)
                 self.setSelected(True)
                 event.accept()
                 return
+            self._drag_start_pos = self.pos()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -95,9 +101,17 @@ class BaseNodeItem(QGraphicsObject):
         if self._resizing and event.button() == Qt.MouseButton.LeftButton:
             self._resizing = False
             self.setCursor(Qt.CursorShape.ArrowCursor)
+            old_r = getattr(self, "_resize_start_radius", float(self.model.radius))
+            if old_r != float(self.model.radius):
+                self.resize_finished.emit(self, old_r)
+            self._resize_start_radius = None
             event.accept()
             return
         super().mouseReleaseEvent(event)
+        if hasattr(self, "_drag_start_pos") and self._drag_start_pos is not None:
+            if self._drag_start_pos != self.pos():
+                self.drag_finished.emit(self, self._drag_start_pos)
+            self._drag_start_pos = None
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
         """Emite señal cuando la posición cambia"""
@@ -115,8 +129,7 @@ class BaseNodeItem(QGraphicsObject):
             self.properties_changed.emit(self, {"radius": new_r})
 
     def mouseDoubleClickEvent(self, event):
-        self._toggle_subcanvas()
-        self.nodeDoubleClicked.emit(self.model)
+        self.subcanvas_toggle_requested.emit(self)
         event.accept()
 
     def _toggle_subcanvas(self):

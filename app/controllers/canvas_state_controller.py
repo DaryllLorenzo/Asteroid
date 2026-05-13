@@ -4,9 +4,13 @@
 # Año: 2025
 # Licencia: MIT License
 # ---------------------------------------------------
+from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtGui import QShortcut
+from PyQt6.QtGui import QUndoStack
 
+from app.commands.change_property_command import ChangePropertyCommand
+from app.commands.move_node_command import MoveNodeCommand
 from app.controller_types import CanvasNodeItem
 from app.controllers._canvas_mixin import CanvasControllerMixin
 from app.model_types import PropertyMap
@@ -24,6 +28,7 @@ class CanvasStateController(CanvasControllerMixin):
     _is_modified: bool
     delete_shortcut: QShortcut
     delete_shortcut2: QShortcut
+    undo_stack: QUndoStack  # Set by CanvasController
 
     @property
     def is_modified(self) -> bool:
@@ -44,6 +49,8 @@ class CanvasStateController(CanvasControllerMixin):
         file_path: str | None = None,
     ) -> None:
         """Mark project as saved"""
+        if hasattr(self, "undo_stack"):
+            self.undo_stack.setClean()
         self.is_modified = False
         if file_path:
             self._current_file_path = file_path
@@ -55,6 +62,82 @@ class CanvasStateController(CanvasControllerMixin):
 
         self.delete_shortcut2 = QShortcut(QKeySequence("Ctrl+D"), self.canvas)
         self.delete_shortcut2.activated.connect(self.delete_selected_item)
+
+    def _get_node_property(
+        self,
+        node_item: CanvasNodeItem,
+        key: str,
+    ) -> object:
+        """Read a property value from a node item,
+        matching update_properties lookup order."""
+        if hasattr(node_item, "_independent_model") and node_item._independent_model:
+            if hasattr(node_item._independent_model, key):
+                return getattr(node_item._independent_model, key)
+        if hasattr(node_item, "model") and hasattr(node_item.model, key):
+            return getattr(node_item.model, key)
+        if key == "x":
+            return node_item.pos().x()
+        if key == "y":
+            return node_item.pos().y()
+        return None
+
+    def _on_node_drag_finished(
+        self,
+        node_item: CanvasNodeItem,
+        start_pos: object,
+    ) -> None:
+        """Handle drag finish: push a MoveNodeCommand."""
+        if not isinstance(start_pos, QPointF):
+            return
+        end_pos = node_item.pos()
+        if start_pos != end_pos:
+            self.undo_stack.push(MoveNodeCommand(self, node_item, start_pos, end_pos))
+
+    def _on_node_resize_finished(
+        self,
+        node_item: object,
+        old_radius: float,
+    ) -> None:
+        """Handle resize finish: push a ResizeNodeCommand."""
+        current_radius = float(getattr(node_item, "radius", 0))
+        if hasattr(node_item, "model") and hasattr(node_item.model, "radius"):
+            current_radius = float(node_item.model.radius)
+        if abs(old_radius - current_radius) > 0.5:
+            from app.commands.resize_node_command import ResizeNodeCommand
+
+            self.undo_stack.push(
+                ResizeNodeCommand(self, node_item, old_radius, current_radius)
+            )
+
+    def _on_subcanvas_toggle_requested(
+        self,
+        node_item: object,
+    ) -> None:
+        """Handle subcanvas toggle: push a ToggleSubcanvasCommand."""
+        from app.commands.toggle_subcanvas_command import ToggleSubcanvasCommand
+
+        self.undo_stack.push(ToggleSubcanvasCommand(self, node_item))
+
+    def _connect_edge_undo_tracking(self, edge: object) -> None:
+        """Connect control point change tracking for an edge."""
+        if hasattr(edge, "cp_changed_callback"):
+            edge.cp_changed_callback = lambda: self._on_edge_cp_changed(edge)
+
+    def _on_edge_cp_changed(
+        self,
+        edge: object,
+    ) -> None:
+        """Handle control point changes: push a ChangeControlPointsCommand."""
+        saved = getattr(edge, "_saved_control_points", None)
+        current = getattr(edge, "control_points", [])
+        if saved is not None and saved != current:
+            from app.commands.change_control_points_command import (
+                ChangeControlPointsCommand,
+            )
+
+            self.undo_stack.push(
+                ChangeControlPointsCommand(self, edge, list(saved), list(current))
+            )
 
     def set_selection_mode(
         self,
@@ -128,14 +211,22 @@ class CanvasStateController(CanvasControllerMixin):
         self,
         properties: PropertyMap,
     ) -> None:
-        """Update properties of the selected node"""
-        if self.current_selection and hasattr(
-            self.current_selection, "update_properties"
-        ):
-            self.current_selection.update_properties(properties)
-            self.current_selection.update()
-            self.selected_node_properties_changed.emit(properties)
-            self.mark_as_modified()
+        """Update properties of the selected node via undo command"""
+        selection = self.current_selection
+        if isinstance(selection, (BaseNodeItem, BaseTroposItem)):
+            old_properties: PropertyMap = {}
+            for key in properties:
+                val = self._get_node_property(selection, key)
+                if val is not None:
+                    old_properties[key] = val
+
+            cmd = ChangePropertyCommand(
+                self,
+                selection,
+                old_properties,
+                dict(properties),
+            )
+            self.undo_stack.push(cmd)
 
     def find_node_by_ui(
         self,
