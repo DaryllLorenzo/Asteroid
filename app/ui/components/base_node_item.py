@@ -26,6 +26,7 @@ class BaseNodeItem(QGraphicsObject):
     positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
     drag_finished = pyqtSignal(object, QPointF)  # Nodo, posición inicial
     resize_finished = pyqtSignal(object, float)  # Nodo, radio inicial
+    subcanvas_toggle_requested = pyqtSignal(object)  # Nodo
 
     def __init__(self, model: NodeModelLike) -> None:
         super().__init__()
@@ -128,8 +129,7 @@ class BaseNodeItem(QGraphicsObject):
             self.properties_changed.emit(self, {"radius": new_r})
 
     def mouseDoubleClickEvent(self, event):
-        self._toggle_subcanvas()
-        self.nodeDoubleClicked.emit(self.model)
+        self.subcanvas_toggle_requested.emit(self)
         event.accept()
 
     def _toggle_subcanvas(self):

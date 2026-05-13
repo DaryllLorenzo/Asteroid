@@ -109,6 +109,14 @@ class CanvasStateController(CanvasControllerMixin):
                 ResizeNodeCommand(self, node_item, old_radius, current_radius)
             )
 
+    def _on_subcanvas_toggle_requested(
+        self,
+        node_item: object,
+    ) -> None:
+        """Handle subcanvas toggle: push a ToggleSubcanvasCommand."""
+        from app.commands.toggle_subcanvas_command import ToggleSubcanvasCommand
+        self.undo_stack.push(ToggleSubcanvasCommand(self, node_item))
+
     def set_selection_mode(
         self,
         enabled: bool,

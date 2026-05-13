@@ -4,6 +4,8 @@ from typing import Protocol
 
 from PyQt6.QtGui import QShortcut
 
+from PyQt6.QtGui import QUndoStack
+
 from app.controller_types import CanvasNodeItem
 from app.controller_types import CanvasSelection
 from app.controller_types import SubcanvasHandler
@@ -36,6 +38,7 @@ class CanvasControllerMixin:
     _is_modified: bool
     delete_shortcut: QShortcut
     delete_shortcut2: QShortcut
+    undo_stack: QUndoStack
     node_selected: SignalLike
     selected_node_properties_changed: SignalLike
     node_deleted: SignalLike
@@ -129,6 +132,22 @@ class CanvasControllerMixin:
         self,
         node_item: object,
         old_radius: float,
+    ) -> None:
+        raise NotImplementedError
+
+    def _on_subcanvas_toggle_requested(
+        self,
+        node_item: object,
+    ) -> None:
+        raise NotImplementedError
+
+    def _on_subcanvas_node_dropped(
+        self,
+        parent_node_item: CanvasNodeItem,
+        subcanvas: object,
+        item_type: str,
+        local_x: float,
+        local_y: float,
     ) -> None:
         raise NotImplementedError
 

@@ -81,6 +81,10 @@ class AddNodeCommand(QUndoCommand):
                     child.resize_finished.connect(
                         self._controller._on_node_resize_finished
                     )
+                if hasattr(child, "subcanvas_toggle_requested"):
+                    child.subcanvas_toggle_requested.connect(
+                        self._controller._on_subcanvas_toggle_requested
+                    )
                 self._restore_children(child, child_data)
 
     def undo(self) -> None:

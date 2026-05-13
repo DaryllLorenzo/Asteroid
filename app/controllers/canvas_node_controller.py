@@ -50,6 +50,11 @@ class CanvasNodeController(CanvasControllerMixin):
         if hasattr(node_item, "resize_finished"):
             node_item.resize_finished.connect(self._on_node_resize_finished)
 
+        if hasattr(node_item, "subcanvas_toggle_requested"):
+            node_item.subcanvas_toggle_requested.connect(
+                self._on_subcanvas_toggle_requested
+            )
+
         self.mark_as_modified()
         return node_item
 
@@ -75,6 +80,11 @@ class CanvasNodeController(CanvasControllerMixin):
 
         if hasattr(node_item, "resize_finished"):
             node_item.resize_finished.connect(self._on_node_resize_finished)
+
+        if hasattr(node_item, "subcanvas_toggle_requested"):
+            node_item.subcanvas_toggle_requested.connect(
+                self._on_subcanvas_toggle_requested
+            )
 
     def on_node_properties_changed(
         self,
@@ -119,7 +129,9 @@ class CanvasNodeController(CanvasControllerMixin):
             except Exception:
                 pass
 
-        handler_node = partial(self._add_to_subcanvas, parent_node_item, subcanvas)
+        handler_node = partial(
+            self._on_subcanvas_node_dropped, parent_node_item, subcanvas
+        )
         handler_arrow = partial(self._start_subarrow_mode, parent_node_item, subcanvas)
 
         subcanvas.subnode_dropped.connect(handler_node)
@@ -165,9 +177,37 @@ class CanvasNodeController(CanvasControllerMixin):
         else:
             print(f"Warning: internal node {item_type} lacks properties_changed signal")
 
+        if hasattr(child, "drag_finished"):
+            child.drag_finished.connect(self._on_node_drag_finished)
+
+        if hasattr(child, "resize_finished"):
+            child.resize_finished.connect(self._on_node_resize_finished)
+
+        if hasattr(child, "subcanvas_toggle_requested"):
+            child.subcanvas_toggle_requested.connect(
+                self._on_subcanvas_toggle_requested
+            )
+
         if not hasattr(parent_node_item, "child_nodes"):
             parent_node_item.child_nodes = []
         parent_node_item.child_nodes.append(child)
 
         self.mark_as_modified()
         return child
+
+    def _on_subcanvas_node_dropped(
+        self,
+        parent_node_item: CanvasNodeItem,
+        subcanvas,
+        item_type: str,
+        local_x: float,
+        local_y: float,
+    ) -> None:
+        """Handle subcanvas node drop: push an AddSubcanvasNodeCommand."""
+        from app.commands.add_subcanvas_node_command import AddSubcanvasNodeCommand
+        self.undo_stack.push(
+            AddSubcanvasNodeCommand(
+                self, parent_node_item, subcanvas,
+                item_type, local_x, local_y,
+            )
+        )

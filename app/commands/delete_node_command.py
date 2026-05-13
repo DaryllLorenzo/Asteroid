@@ -131,6 +131,10 @@ class DeleteNodeCommand(QUndoCommand):
                 child.resize_finished.connect(
                     self._controller._on_node_resize_finished
                 )
+            if hasattr(child, "subcanvas_toggle_requested"):
+                child.subcanvas_toggle_requested.connect(
+                    self._controller._on_subcanvas_toggle_requested
+                )
             if not hasattr(parent_item, "child_nodes"):
                 parent_item.child_nodes = []
             if child not in parent_item.child_nodes:
@@ -180,6 +184,10 @@ class DeleteNodeCommand(QUndoCommand):
             self._node_item.resize_finished.connect(
                 self._controller._on_node_resize_finished
             )
+        if hasattr(self._node_item, "subcanvas_toggle_requested"):
+            self._node_item.subcanvas_toggle_requested.connect(
+                self._controller._on_subcanvas_toggle_requested
+            )
 
         if self._node_data:
             self._node_item.update_properties(self._node_data)
@@ -204,6 +212,10 @@ class DeleteNodeCommand(QUndoCommand):
             if hasattr(internal, "resize_finished"):
                 internal.resize_finished.connect(
                     self._controller._on_node_resize_finished
+                )
+            if hasattr(internal, "subcanvas_toggle_requested"):
+                internal.subcanvas_toggle_requested.connect(
+                    self._controller._on_subcanvas_toggle_requested
                 )
             if internal_parent is not None:
                 subcanvas = getattr(internal_parent, "subcanvas", None)
