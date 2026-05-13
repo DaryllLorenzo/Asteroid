@@ -77,6 +77,10 @@ class AddNodeCommand(QUndoCommand):
                     child.drag_finished.connect(
                         self._controller._on_node_drag_finished
                     )
+                if hasattr(child, "resize_finished"):
+                    child.resize_finished.connect(
+                        self._controller._on_node_resize_finished
+                    )
                 self._restore_children(child, child_data)
 
     def undo(self) -> None:

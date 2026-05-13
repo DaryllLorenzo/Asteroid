@@ -44,6 +44,12 @@ class CanvasNodeController(CanvasControllerMixin):
         if hasattr(node_item, "subcanvas_toggled"):
             node_item.subcanvas_toggled.connect(self._on_subcanvas_toggled)
 
+        if hasattr(node_item, "drag_finished"):
+            node_item.drag_finished.connect(self._on_node_drag_finished)
+
+        if hasattr(node_item, "resize_finished"):
+            node_item.resize_finished.connect(self._on_node_resize_finished)
+
         self.mark_as_modified()
         return node_item
 
@@ -66,6 +72,9 @@ class CanvasNodeController(CanvasControllerMixin):
 
         if hasattr(node_item, "drag_finished"):
             node_item.drag_finished.connect(self._on_node_drag_finished)
+
+        if hasattr(node_item, "resize_finished"):
+            node_item.resize_finished.connect(self._on_node_resize_finished)
 
     def on_node_properties_changed(
         self,

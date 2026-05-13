@@ -125,6 +125,13 @@ class CanvasControllerMixin:
     ) -> None:
         raise NotImplementedError
 
+    def _on_node_resize_finished(
+        self,
+        node_item: object,
+        old_radius: float,
+    ) -> None:
+        raise NotImplementedError
+
     def _collect_edges_for_node(
         self,
         node_item: CanvasNodeItem,

@@ -94,6 +94,21 @@ class CanvasStateController(CanvasControllerMixin):
                 MoveNodeCommand(self, node_item, start_pos, end_pos)
             )
 
+    def _on_node_resize_finished(
+        self,
+        node_item: object,
+        old_radius: float,
+    ) -> None:
+        """Handle resize finish: push a ResizeNodeCommand."""
+        current_radius = float(getattr(node_item, "radius", 0))
+        if hasattr(node_item, "model") and hasattr(node_item.model, "radius"):
+            current_radius = float(node_item.model.radius)
+        if abs(old_radius - current_radius) > 0.5:
+            from app.commands.resize_node_command import ResizeNodeCommand
+            self.undo_stack.push(
+                ResizeNodeCommand(self, node_item, old_radius, current_radius)
+            )
+
     def set_selection_mode(
         self,
         enabled: bool,

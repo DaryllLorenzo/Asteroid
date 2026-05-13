@@ -24,6 +24,7 @@ class BaseTroposItem(QGraphicsObject):
     properties_changed = pyqtSignal(object, dict)
     positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
     drag_finished = pyqtSignal(object, QPointF)  # Nodo, posición inicial
+    resize_finished = pyqtSignal(object, float)  # Nodo, radio inicial
 
     def __init__(self, model: NodeModelLike) -> None:
         super().__init__()
@@ -94,6 +95,9 @@ class BaseTroposItem(QGraphicsObject):
             dist = self._get_distance_to_border(event.pos())
             if dist < 8:
                 self._resizing = True
+                self._resize_start_radius = float(
+                    self._get_model_for_independent_prop("radius", 50)
+                )
                 self.setSelected(True)
                 event.accept()
                 return
@@ -114,6 +118,13 @@ class BaseTroposItem(QGraphicsObject):
         if self._resizing and event.button() == Qt.MouseButton.LeftButton:
             self._resizing = False
             self.setCursor(Qt.CursorShape.ArrowCursor)
+            old_r = getattr(self, "_resize_start_radius", float(
+                self._get_model_for_independent_prop("radius", 50)
+            ))
+            current_r = float(self._get_model_for_independent_prop("radius", 50))
+            if old_r != current_r:
+                self.resize_finished.emit(self, old_r)
+            self._resize_start_radius = None
             event.accept()
             return
         super().mouseReleaseEvent(event)
