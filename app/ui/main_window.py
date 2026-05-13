@@ -257,6 +257,16 @@ class MainWindow(QMainWindow):
         export_pdf_action.triggered.connect(self.export_pdf)
 
         # ---------------------------
+        # Menú Validación
+        # ---------------------------
+        validation_menu = menubar.addMenu("&Validación")
+
+        self.validation_action = validation_menu.addAction("&Modo validador")
+        self.validation_action.setCheckable(True)
+        self.validation_action.setChecked(False)
+        self.validation_action.triggered.connect(self._toggle_validator)
+
+        # ---------------------------
         # Menú Ayuda
         # ---------------------------
         help_menu = menubar.addMenu("&Ayuda")
@@ -269,6 +279,10 @@ class MainWindow(QMainWindow):
         examples_action = help_menu.addAction("&Ejemplos")
         examples_action.triggered.connect(self.show_examples_help)
 
+        # Modo validador
+        validation_help_action = help_menu.addAction("&Modo validador")
+        validation_help_action.triggered.connect(self.show_validation_help)
+
         # Ayuda rápida
         quick_help_action = help_menu.addAction("&Ayuda rápida")
         quick_help_action.setShortcut("F1")
@@ -280,6 +294,9 @@ class MainWindow(QMainWindow):
         # Acerca de
         about_action = help_menu.addAction("&Acerca de Asteroid")
         about_action.triggered.connect(self.show_about_help)
+
+    def _toggle_validator(self, checked: bool) -> None:
+        self.canvas_controller.validator.active = checked
 
     def load_project(self):
         """Carga un proyecto .astr"""
@@ -374,6 +391,12 @@ class MainWindow(QMainWindow):
         """Muestra información sobre Asteroid"""
         md_file = self.get_help_file_path("about.md")
         dialog = HelpModal("Acerca de Asteroid", md_file, self)
+        dialog.exec()
+
+    def show_validation_help(self):
+        """Muestra la ayuda sobre el modo validador"""
+        md_file = self.get_help_file_path("validation_help.md")
+        dialog = HelpModal("Modo Validador", md_file, self)
         dialog.exec()
 
     def show_quick_help(self):

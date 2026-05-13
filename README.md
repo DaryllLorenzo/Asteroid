@@ -146,7 +146,21 @@ asteroid/
 │   │           ├── about.md
 │   │           ├── elements.md
 │   │           ├── examples.md
-│   │           └── quick_help.md
+│   │           ├── quick_help.md
+│   │           └── validation_help.md
+│   ├── validation/               # Tropos methodology validation
+│   │   ├── __init__.py
+│   │   ├── rule.py               # Abstract base class for rules
+│   │   ├── validator.py          # Validator registry and checker
+│   │   └── rules/                # Auto-discovered validation rules
+│   │       ├── __init__.py
+│   │       ├── no_entity_in_entity_subcanvas.py
+│   │       ├── no_dependency_link_between_entities.py
+│   │       ├── no_why_link_between_entities.py
+│   │       ├── no_means_end_between_entities.py
+│   │       ├── no_or_decomposition_between_entities.py
+│   │       ├── no_and_decomposition_between_entities.py
+│   │       └── no_contribution_between_entities.py
 │   └── utils/                    # Utils (serialization, export)
 │       ├── astr_format.py       # .astr serializer
 │       └── pdf_export.py        # PDFs generator
@@ -239,9 +253,14 @@ python main.py
     - Composite dependency creation/deletion
     - Control point add/move/remove/clear
 
+### Completed
+- [x] Model validation (Tropos methodology consistency)
+    - Toggleable validator mode (Validation menu)
+    - Pluggable rule system with auto-discovery
+    - 7 built-in rules (entity-in-subcanvas, 6 link-type rules)
+
 ### In Progress / Planned
 - [ ] Visual themes (light/dark mode)
-- [ ] Model validation (Tropos methodology consistency)
 - [ ] Diagram templates for common Tropos patterns
 - [ ] Multi-language support (English, Spanish) with language switcher
 
@@ -258,6 +277,16 @@ Contributions are welcome! Here's how you can help:
 5. **Open a Pull Request**
 
 Please read our [contributing guidelines](CONTRIBUTING.md) for more details.
+
+### Adding Validation Rules
+
+Each validation rule lives in its own file inside `app/validation/rules/`. To add a new rule:
+
+1. Create a `.py` file in `app/validation/rules/`
+2. Implement a class inheriting from `Rule` with `applies_to()` and `check()` methods
+3. Export the instance as `rule = YourRule()`
+
+The system auto-discovers all rules at startup. No other files need to be modified.
 
 ### Reporting Issues
 Found a bug? Have a feature request? [Open an issue](https://github.com/DaryllLorenzo/asteroid/issues) with a clear description and, if possible, steps to reproduce.

@@ -9,6 +9,8 @@ from functools import partial
 from app.controller_types import CanvasNodeItem
 from app.controllers._canvas_mixin import CanvasControllerMixin
 from app.controllers.canvas_registry_controller import _NODE_MAP
+from app.ui.components.entity_item.actor_node_item import ActorNodeItem
+from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 
 
 class CanvasNodeController(CanvasControllerMixin):
@@ -204,6 +206,19 @@ class CanvasNodeController(CanvasControllerMixin):
         local_y: float,
     ) -> None:
         """Handle subcanvas node drop: push an AddSubcanvasNodeCommand."""
+        errors = self.validator.validate(
+            "subcanvas_add_node",
+            {
+                "parent_is_entity": isinstance(
+                    parent_node_item, (ActorNodeItem, AgentNodeItem)
+                ),
+                "child_type": item_type,
+            },
+        )
+        if errors:
+            self._show_validation_errors(errors)
+            return
+
         from app.commands.add_subcanvas_node_command import AddSubcanvasNodeCommand
 
         self.undo_stack.push(
