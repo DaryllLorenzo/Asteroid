@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 from PyQt6.QtCore import QObject
 from PyQt6.QtCore import pyqtSignal
@@ -35,6 +35,14 @@ class CanvasController(
     CanvasExportController,
     CanvasImportController,
 ):
+    """
+    Canvas Controller.
+
+    Methods:
+        __init__: Initialize the instance.
+        delete_selected_item: Delete Selected Item.
+    """
+
     node_selected = pyqtSignal(object)
     selected_node_properties_changed = pyqtSignal(dict)
     node_deleted = pyqtSignal(object)
@@ -44,6 +52,12 @@ class CanvasController(
     project_modified = pyqtSignal(bool)
 
     def __init__(self, canvas: Canvas) -> None:
+        """
+        Initialize the instance.
+
+        Args:
+            canvas (Canvas): The canvas.
+        """
         super().__init__()
         self.canvas = canvas
         self.nodes: list[CanvasNodeItem] = []
@@ -93,11 +107,22 @@ class CanvasController(
         self._setup_delete_shortcut()
 
     def _on_clean_changed(self, clean: bool) -> None:
-        """Sync undo stack clean state with project modified state."""
+        """
+        On Clean Changed.
+
+        Args:
+            clean (bool): The clean.
+        """
         self._is_modified = not clean
         self.project_modified.emit(not clean)
 
     def _show_validation_errors(self, errors: list[str]) -> None:
+        """
+        Show Validation Errors.
+
+        Args:
+            errors (list[str]): The errors.
+        """
         msg = QMessageBox(self.canvas.window() if self.canvas.window() else self.canvas)
         msg.setIcon(QMessageBox.Icon.Warning)
         msg.setWindowTitle("Error de validación")
@@ -105,7 +130,7 @@ class CanvasController(
         msg.exec()
 
     def delete_selected_item(self) -> None:
-        """Override: push DeleteNodeCommand when deleting a node."""
+        """Delete Selected Item."""
         scene = self.canvas.scene()
         if scene is None:
             return

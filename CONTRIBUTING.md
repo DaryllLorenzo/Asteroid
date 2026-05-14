@@ -1,8 +1,8 @@
 # Contributing to Asteroid
 
-Thank you for your interest in contributing to Asteroid! This guide will help you get started.
+Thank you for your interest in contributing to Asteroid. This guide will help you get started.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Python 3.12 or higher
@@ -26,52 +26,44 @@ source .venv/bin/activate  # Linux/macOS
 pip install -e .
 ```
 
-## 📁 Project Structure
-
-- **`app/core/models/`** → Pure data models (no Qt)
-- **`app/ui/components/`** → Qt graphical items
-- **`app/controllers/`** → Business logic
-- **`app/utils/`** → Helpers (PDF export, etc.)
-
-**Important:** Keep Qt out of `core/` folder.
-
-## 🐛 Reporting Bugs
+## Reporting Bugs
 
 Before opening an issue:
-1. Check if it already exists
+1. Check if it already exists in the issue tracker
 2. Use the bug report template
-3. Include steps to reproduce
-4. Add screenshots if possible
+3. Include clear steps to reproduce the problem
+4. Add screenshots if they help explain the issue
 
-## 💡 Feature Requests
+## Feature Requests
 
 When suggesting a feature:
-- Explain the problem you're solving
+- Explain the problem you are trying to solve
 - Describe your proposed solution
 - Mention if you can help implement it
 
-## 🔧 Pull Requests
+## Pull Requests
 
 ### Steps
-1. Fork the repo and create a branch from `development`
+1. Fork the repository and create a branch from `development`
 2. Make your changes
-3. Test that the app still runs
+3. Test that the application still runs without errors
 4. Open a Pull Request
 
 ### PR Checklist
-- [ ] Code follows existing style
-- [ ] No unnecessary dependencies
-- [ ] Clear commit messages
-- [ ] Changes tested manually (app runs without errors)
+- Code follows existing style
+- Code must pass code quality job (ruff and mypy)
+- No unnecessary dependencies added
+- Commit messages are clear and descriptive
+- Changes tested manually (app runs without errors)
 
-## 📝 Code Style
+## Code Style
 
-Try to follow the existing code style. Consistency is more important than perfection.
+Try to follow the existing code style. Consistency is more important than perfection. Look at how similar features are implemented and match that approach.
 
-## ❓ Questions?
+## Questions?
 
 Open a [GitHub Discussion](https://github.com/DaryllLorenzo/asteroid/discussions) or tag `@DaryllLorenzo`.
 
 ---
 
-**Thanks for contributing!** 🌟
+Thank you for contributing.

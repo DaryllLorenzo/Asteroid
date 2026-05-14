@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
+# ---------------------------------------------------
+
 from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
@@ -6,7 +13,23 @@ from app.controller_types import CanvasNodeItem
 
 
 class DeleteNodeCommand(QUndoCommand):
+    """
+    Delete Node Command.
+
+    Methods:
+        __init__: Initialize the instance.
+        redo: Redo.
+        undo: Undo.
+    """
+
     def __init__(self, controller: Any, node_item: CanvasNodeItem) -> None:
+        """
+        Initialize the instance.
+
+        Args:
+            controller (Any): The controller.
+            node_item (CanvasNodeItem): The node item.
+        """
         super().__init__("Eliminar nodo")
         self._controller = controller
         self._node_item = node_item
@@ -18,12 +41,14 @@ class DeleteNodeCommand(QUndoCommand):
         self._composite_internal_data: dict | None = None
 
     def redo(self) -> None:
+        """Redo."""
         if self._node_data is not None:
             self._do_delete()
             return
         self._collect_and_delete()
 
     def _collect_and_delete(self) -> None:
+        """Collect And Delete."""
         self._node_data = self._node_item.get_serializable_properties()
 
         self._edges_data = []
@@ -37,7 +62,7 @@ class DeleteNodeCommand(QUndoCommand):
         self._do_delete()
 
     def _detect_composite_internal_node(self) -> None:
-        """If this node is a composite midpoint, find and prepare the internal node."""
+        """Detect Composite Internal Node."""
         if not hasattr(self._node_item, "_independent_model"):
             return
         if self._node_item._independent_model is None:
@@ -62,7 +87,12 @@ class DeleteNodeCommand(QUndoCommand):
                     return
 
     def _collect_edges_recursive(self, node_item) -> None:
-        """Collect all edges connected to this node and its descendants."""
+        """
+        Collect Edges Recursive.
+
+        Args:
+            node_item: The node item.
+        """
         for edge in list(self._controller.edges):
             if edge.source_node is node_item or edge.dest_node is node_item:
                 if not any(d["edge"] is edge for d in self._edges_data):
@@ -78,6 +108,15 @@ class DeleteNodeCommand(QUndoCommand):
             self._collect_edges_recursive(child)
 
     def _collect_children(self, parent_item) -> list[dict]:
+        """
+        Collect Children.
+
+        Args:
+            parent_item: The parent item.
+
+        Returns:
+            list[dict]: Collect Children.
+        """
         children = []
         for child in getattr(parent_item, "child_nodes", []):
             child_data = child.get_serializable_properties()
@@ -87,6 +126,7 @@ class DeleteNodeCommand(QUndoCommand):
         return children
 
     def _do_delete(self) -> None:
+        """Do Delete."""
         for edge_data in self._edges_data:
             edge = edge_data["edge"]
             if edge.scene() is not None:
@@ -106,10 +146,23 @@ class DeleteNodeCommand(QUndoCommand):
         self._controller._remove_node_clean(self._node_item)
 
     def _delete_child_nodes(self, parent_item) -> None:
+        """
+        Delete Child Nodes.
+
+        Args:
+            parent_item: The parent item.
+        """
         for child in getattr(parent_item, "child_nodes", []):
             self._controller._remove_node_clean(child)
 
     def _restore_child_nodes(self, parent_item, children_data) -> None:
+        """
+        Restore Child Nodes.
+
+        Args:
+            parent_item: The parent item.
+            children_data: The children data.
+        """
         subcanvas = getattr(parent_item, "subcanvas", None)
         for child_data in children_data:
             child = child_data.get("node")
@@ -143,6 +196,12 @@ class DeleteNodeCommand(QUndoCommand):
             self._restore_child_nodes(child, child_data.get("children", []))
 
     def _restore_edge(self, edge_data: dict) -> None:
+        """
+        Restore Edge.
+
+        Args:
+            edge_data (dict): The edge data.
+        """
         edge = edge_data["edge"]
         parent = edge_data.get("parent_item")
         if edge.scene() is None:
@@ -161,6 +220,7 @@ class DeleteNodeCommand(QUndoCommand):
         edge.update_position()
 
     def undo(self) -> None:
+        """Undo."""
         if self._node_data is None:
             return
 

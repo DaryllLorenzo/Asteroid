@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 from PyQt6.QtWidgets import QDialog
@@ -14,9 +14,21 @@ from PyQt6.QtWidgets import QVBoxLayout
 
 
 class PDFExportDialog(QDialog):
-    """Dialogo para seleccionar el tipo de exportación PDF"""
+    """
+    P D F Export Dialog.
+
+    Methods:
+        __init__: Initialize the instance.
+        should_export_with_info: Should Export With Info.
+    """
 
     def __init__(self, parent=None):
+        """
+        Initialize the instance.
+
+        Args:
+            parent: The parent.
+        """
         super().__init__(parent)
         self.setWindowTitle("Exportar a PDF")
         self.setModal(True)
@@ -27,11 +39,12 @@ class PDFExportDialog(QDialog):
         self._setup_ui()
 
     def _setup_ui(self):
+        """Setup Ui."""
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        # Título
+        # Title
         title_label = QLabel("¿Qué desea incluir en el PDF?")
         title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
         layout.addWidget(title_label)
@@ -40,7 +53,7 @@ class PDFExportDialog(QDialog):
         options_group = QGroupBox("Opciones de exportación")
         options_layout = QVBoxLayout(options_group)
 
-        # Botones de radio
+        # Buttons of radius
         self.radio_image_only = QRadioButton("Solo imagen del diagrama")
         self.radio_image_only.setStyleSheet("font-size: 12px;")
         self.radio_image_only.toggled.connect(self._on_option_changed)
@@ -66,7 +79,7 @@ class PDFExportDialog(QDialog):
 
         layout.addWidget(options_group)
 
-        # Botones de acción
+        # Buttons of action
         button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
@@ -75,8 +88,14 @@ class PDFExportDialog(QDialog):
         layout.addWidget(button_box)
 
     def _on_option_changed(self) -> None:
+        """On Option Changed."""
         self.export_with_info = self.radio_with_info.isChecked()
 
     def should_export_with_info(self) -> bool:
-        """Retorna True si se debe exportar con información adicional"""
+        """
+        Should Export With Info.
+
+        Returns:
+            bool: Should Export With Info.
+        """
         return self.export_with_info

@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 from abc import ABC
@@ -10,13 +10,26 @@ from abc import abstractmethod
 
 
 class BaseEdge(ABC):
-    """Modelo lógico de una arista entre dos nodos."""
+    """
+    Base Edge.
+
+    Methods:
+        __init__: Initialize the instance.
+        edge_type: Edge Type.
+    """
 
     def __init__(self, source, target):
+        """
+        Initialize the instance.
+
+        Args:
+            source: The source.
+            target: The target.
+        """
         self.source = source
         self.target = target
 
     @abstractmethod
     def edge_type(self):
-        """Devuelve el tipo de arista (simple/dashed/etc)."""
+        """Edge Type."""
         pass

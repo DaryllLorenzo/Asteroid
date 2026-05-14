@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 import math
@@ -20,16 +20,30 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class AndDecompositionArrowItem(BaseEdgeItem):
-    """Barra (T) cerca del final + cabeza triangular sin relleno."""
+    """
+    And Decomposition Arrow Item.
+
+    Methods:
+        __init__: Initialize the instance.
+        boundingRect: Boundingrect.
+        paint: Paint.
+    """
 
     def __init__(self, source_node, dest_node):
+        """
+        Initialize the instance.
+
+        Args:
+            source_node: The source node.
+            dest_node: The dest node.
+        """
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
 
     def boundingRect(self):
-        """Extiende el bounding rect para incluir la cabeza de flecha y la barra T."""
-        # Obtener boundingRect base de la línea
+        """Boundingrect."""
+        # Get boundingRect base of the line
         base_rect = super().boundingRect()
-        # Extra para la cabeza de flecha (~12px) y la barra T
+        # Extra for the cabeza of flecha (~12px) y the bar T
         extra = 20
         return base_rect.adjusted(-extra, -extra, extra, extra)
 
@@ -39,6 +53,14 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
+        """
+        Paint.
+
+        Args:
+            painter (QPainter | None): The painter.
+            option (QStyleOptionGraphicsItem | None): The option.
+            widget (QWidget | None): The widget.
+        """
         if painter is None:
             return
         del option, widget
@@ -50,7 +72,7 @@ class AndDecompositionArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() aquí para evitar temblor
+        # NO llamar a update_position() here for avoid temblor
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -60,13 +82,13 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
 
-        # Tamaño de la cabeza de flecha
+        # Size of the cabeza of flecha
         arrow_size = 12.0
 
-        # Calcular ángulo y vectores unitarios usando el último segmento real
+        # Calculate ángulo y vectores unitarios usando the last segmento real
         end_point = self._end_point
 
-        # Determinar el último segmento para calcular el ángulo correcto
+        # Determinar the last segmento for calculate the ángulo correcto
         if self.control_points:
             last_point = self.control_points[-1]
         else:
@@ -82,36 +104,36 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         perp_x = -math.sin(angle)
         perp_y = math.cos(angle)
 
-        # Calcular el punto donde termina la línea (base del triángulo)
+        # Calculate the punto donde termina the line (base of the triángulo)
         line_end_point = QPointF(
             end_point.x() - arrow_size * math.cos(angle),
             end_point.y() - arrow_size * math.sin(angle),
         )
 
-        # Crear un path modificado que termine en la base del triángulo
-        # Obtener todos los puntos del path original (ya en coordenadas locales)
+        # Create a path modificado that termine in the base of the triángulo
+        # Get todos the puntos of the path original (already in coordinates local)
         path_points, start_point, _ = self._calculate_path_points()
 
         if len(path_points) >= 2:
-            # Si hay control points, el último segmento va del último control point
-            # al end_point. Reemplazamos el último punto con line_end_point
+            # If there is control points, the last segmento va of the last control point
+            # al end_point. Reemplazamos the last punto with line_end_point
             if self.control_points:
                 modified_points = path_points[:-1] + [line_end_point]
             else:
                 modified_points = [start_point, line_end_point]
 
-            # Los puntos ya están en coordenadas locales
+            # The puntos already están in coordinates local
             modified_path = QPainterPath(modified_points[0])
             for point in modified_points[1:]:
                 modified_path.lineTo(point)
 
-            # Dibujar el path modificado (línea que termina antes)
+            # Dibujar the path modificado (line that termina before)
             painter.drawPath(modified_path)
         else:
             # Fallback: dibujar path original
             painter.drawPath(path)
 
-        # Cabeza triangular sin relleno en la punta
+        # Cabeza triangular without relleno in the punta
         p_tip = end_point
         base = line_end_point
 
@@ -128,13 +150,13 @@ class AndDecompositionArrowItem(BaseEdgeItem):
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPolygon(poly)
 
-        # Barra vertical (T) en el 60% REAL del path curvo
-        # Usamos el método utilitario para obtener el punto y ángulo correctos
+        # Bar vertical (T) in the 60% REAL of the path curvo
+        # Usamos the method utilitario for get the punto y ángulo correctos
         bar_point, bar_angle = self._get_point_at_percentage(0.6)
 
-        # La barra debe ser perpendicular al path en ese punto
+        # The bar debe ser perpendicular al path in ese punto
         half = 6.0
-        # Perpendicular al ángulo del path
+        # Perpendicular al ángulo of the path
         bar_perp_x = -math.sin(bar_angle)
         bar_perp_y = math.cos(bar_angle)
 

@@ -1,9 +1,25 @@
+# ---------------------------------------------------
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
+# ---------------------------------------------------
+
 from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
 
 
 class ResizeNodeCommand(QUndoCommand):
+    """
+    Resize Node Command.
+
+    Methods:
+        __init__: Initialize the instance.
+        redo: Redo.
+        undo: Undo.
+    """
+
     def __init__(
         self,
         controller: Any,
@@ -11,6 +27,15 @@ class ResizeNodeCommand(QUndoCommand):
         old_radius: float,
         new_radius: float,
     ) -> None:
+        """
+        Initialize the instance.
+
+        Args:
+            controller (Any): The controller.
+            node_item (Any): The node item.
+            old_radius (float): The old radius.
+            new_radius (float): The new radius.
+        """
         super().__init__("Cambiar tamaño")
         self._controller = controller
         self._node_item = node_item
@@ -18,12 +43,20 @@ class ResizeNodeCommand(QUndoCommand):
         self._new_radius = new_radius
 
     def redo(self) -> None:
+        """Redo."""
         self._apply_radius(self._new_radius)
 
     def undo(self) -> None:
+        """Undo."""
         self._apply_radius(self._old_radius)
 
     def _apply_radius(self, radius: float) -> None:
+        """
+        Apply Radius.
+
+        Args:
+            radius (float): The radius.
+        """
         node = self._node_item
         if hasattr(node, "set_radius"):
             node.set_radius(radius)

@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 # app/ui/components/dependency_item/means_end_edge_item.py
@@ -18,16 +18,30 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class MeansEndArrowItem(BaseEdgeItem):
-    """Flecha abierta tipo V sin símbolo (means-end)."""
+    """
+    Means End Arrow Item.
+
+    Methods:
+        __init__: Initialize the instance.
+        boundingRect: Boundingrect.
+        paint: Paint.
+    """
 
     def __init__(self, source_node, dest_node):
+        """
+        Initialize the instance.
+
+        Args:
+            source_node: The source node.
+            dest_node: The dest node.
+        """
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
 
     def boundingRect(self):
-        """Extiende el bounding rect para incluir la cabeza de flecha en V."""
-        # Obtener boundingRect base de la línea
+        """Boundingrect."""
+        # Get boundingRect base of the line
         base_rect = super().boundingRect()
-        # Extra para la V abierta (~12px)
+        # Extra for the V abierta (~12px)
         extra = 15
         return base_rect.adjusted(-extra, -extra, extra, extra)
 
@@ -37,6 +51,14 @@ class MeansEndArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
+        """
+        Paint.
+
+        Args:
+            painter (QPainter | None): The painter.
+            option (QStyleOptionGraphicsItem | None): The option.
+            widget (QWidget | None): The widget.
+        """
         if painter is None:
             return
         del option, widget
@@ -48,7 +70,7 @@ class MeansEndArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() aquí para evitar temblor
+        # NO llamar a update_position() here for avoid temblor
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -61,7 +83,7 @@ class MeansEndArrowItem(BaseEdgeItem):
 
         end_point = self._end_point
 
-        # Determinar el último segmento para calcular el ángulo
+        # Determinar the last segmento for calculate the ángulo
         if self.control_points:
             last_point = self.control_points[-1]
         else:

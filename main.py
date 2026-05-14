@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 import sys
@@ -13,6 +13,7 @@ from app.ui.main_window import MainWindow
 
 
 def main():
+    """Main."""
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

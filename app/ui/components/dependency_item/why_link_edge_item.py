@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 # app/ui/components/dependency_item/why_link_edge_item.py
@@ -24,14 +24,28 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class WhyLinkArrowItem(BaseEdgeItem):
-    """Flecha tipo WHY: línea de extremo a extremo con triángulo en el medio."""
+    """
+    Why Link Arrow Item.
+
+    Methods:
+        __init__: Initialize the instance.
+        boundingRect: Boundingrect.
+        paint: Paint.
+    """
 
     def __init__(self, source_node, dest_node):
+        """
+        Initialize the instance.
+
+        Args:
+            source_node: The source node.
+            dest_node: The dest node.
+        """
         super().__init__(source_node, dest_node, color=QColor(0, 0, 0), dashed=False)
 
     def boundingRect(self):
-        """Extiende el bounding rect para incluir la flecha y el texto."""
-        extra = 20  # suficiente para triángulo + texto
+        """Boundingrect."""
+        extra = 20  # suficiente for triángulo + text
         return super().boundingRect().adjusted(-extra, -extra, extra, extra)
 
     def paint(
@@ -40,6 +54,14 @@ class WhyLinkArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
+        """
+        Paint.
+
+        Args:
+            painter (QPainter | None): The painter.
+            option (QStyleOptionGraphicsItem | None): The option.
+            widget (QWidget | None): The widget.
+        """
         if painter is None:
             return
         del option, widget
@@ -51,7 +73,7 @@ class WhyLinkArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() aquí para evitar temblor
+        # NO llamar a update_position() here for avoid temblor
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -62,15 +84,15 @@ class WhyLinkArrowItem(BaseEdgeItem):
         painter.setPen(self.pen())
         painter.drawPath(path)
 
-        # Triángulo y texto "WHY" en el punto MEDIO REAL del path curvo
-        # Usamos el método utilitario para obtener el punto y ángulo correctos
+        # Triángulo y text "WHY" in the punto MIDDLE REAL of the path curvo
+        # Usamos the method utilitario for get the punto y ángulo correctos
         mid_point, mid_angle = self._get_point_at_percentage(0.5)
 
-        # Ángulo del path en el punto medio
+        # Ángulo of the path in the punto middle
         angle = mid_angle
         size = 12.0
 
-        # Dibujamos triángulo relleno apuntando en la dirección del path
+        # Dibujamos triángulo relleno apuntando in the dirección of the path
         p_tip = mid_point
         p1 = QPointF(
             p_tip.x() - size * math.cos(angle - math.pi / 6),
@@ -84,8 +106,8 @@ class WhyLinkArrowItem(BaseEdgeItem):
         painter.setBrush(QBrush(self.pen().color()))
         painter.drawPolygon(QPolygonF([p_tip, p1, p2]))
 
-        # Texto "WHY" centrado encima de la flecha
-        # Rotado para alinearse con el path
+        # Text "WHY" centrado above of the flecha
+        # Rotado for alinearse with the path
         font = QFont("Arial", 9)
         font.setBold(True)
         painter.setFont(font)
@@ -94,13 +116,13 @@ class WhyLinkArrowItem(BaseEdgeItem):
         w = fm.horizontalAdvance(txt)
         h = fm.height()
 
-        # Desplazamiento vertical para que no choque con el triángulo
-        # Usamos coordenadas rotadas para alinear con el path
+        # Desplazamiento vertical for that no choque with the triángulo
+        # Usamos coordinates rotadas for alinear with the path
         painter.save()
         painter.translate(mid_point)
         painter.rotate(math.degrees(angle))
 
-        # El texto se dibuja perpendicularmente arriba del path
+        # The text itself dibuja perpendicularmente top of the path
         text_offset = size + 2
         text_rect = QRectF(-w / 2, -text_offset - h / 2, w, h)
         painter.setPen(self.pen().color())

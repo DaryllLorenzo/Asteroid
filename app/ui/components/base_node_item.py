@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 from PyQt6.QtCore import QPointF
@@ -20,15 +20,46 @@ from app.ui.components.subcanvas_item import SubCanvasItem
 
 
 class BaseNodeItem(QGraphicsObject):
+    """
+    Base Node Item.
+
+    Methods:
+        __init__: Initialize the instance.
+        boundingRect: Boundingrect.
+        hoverMoveEvent: Hovermoveevent.
+        hoverLeaveEvent: Hoverleaveevent.
+        mousePressEvent: Mousepressevent.
+        mouseMoveEvent: Mousemoveevent.
+        mouseReleaseEvent: Mousereleaseevent.
+        itemChange: Itemchange.
+        set_radius: Set Radius.
+        mouseDoubleClickEvent: Mousedoubleclickevent.
+        ensure_subcanvas_visible: Ensure Subcanvas Visible.
+        prepare_subcanvas_for_internal_use: Prepare Subcanvas For Internal Use.
+        apply_position_in_subcanvas: Apply Position In Subcanvas.
+        position_within_subcanvas: Position Within Subcanvas.
+        draw_multiline_text: Draw Multiline Text.
+        get_serializable_properties: Get Serializable Properties.
+        update_properties: Update Properties.
+        is_subcanvas_visible: Is Subcanvas Visible.
+        apply_subcanvas_clipping: Apply Subcanvas Clipping.
+    """
+
     nodeDoubleClicked = pyqtSignal(object)
     subcanvas_toggled = pyqtSignal(object, object)
     properties_changed = pyqtSignal(object, dict)
-    positionChanged = pyqtSignal()  # Señal para notificar cuando el nodo se mueve
-    drag_finished = pyqtSignal(object, QPointF)  # Nodo, posición inicial
-    resize_finished = pyqtSignal(object, float)  # Nodo, radio inicial
-    subcanvas_toggle_requested = pyqtSignal(object)  # Nodo
+    positionChanged = pyqtSignal()  # Signal for notify when the node itself moves
+    drag_finished = pyqtSignal(object, QPointF)  # Node, position initial
+    resize_finished = pyqtSignal(object, float)  # Node, radius initial
+    subcanvas_toggle_requested = pyqtSignal(object)  # Node
 
     def __init__(self, model: NodeModelLike) -> None:
+        """
+        Initialize the instance.
+
+        Args:
+            model (NodeModelLike): The model.
+        """
         super().__init__()
         self.model: NodeModelLike = model
         self._independent_model: NodeModelLike | None = None
@@ -51,19 +82,49 @@ class BaseNodeItem(QGraphicsObject):
             self.model.text_align = "center"
 
     def boundingRect(self) -> QRectF:
+        """
+        Boundingrect.
+
+        Returns:
+            QRectF: Boundingrect.
+        """
         r = float(self.model.radius)
         return QRectF(-r, -r, 2 * r, 2 * r)
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
+        """
+        Get Distance To Border.
+
+        Args:
+            pos (QPointF): The pos.
+
+        Returns:
+            float: Get Distance To Border.
+        """
         r = float(self.model.radius)
         center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
         return float(abs(center_dist - r))
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
+        """
+        Get New Radius From Pos.
+
+        Args:
+            pos (QPointF): The pos.
+
+        Returns:
+            float: Get New Radius From Pos.
+        """
         center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
         return float(max(center_dist, 10.0))
 
     def hoverMoveEvent(self, event):
+        """
+        Hovermoveevent.
+
+        Args:
+            event: The event.
+        """
         dist = self._get_distance_to_border(event.pos())
         if dist < 8:
             self.setCursor(Qt.CursorShape.SizeAllCursor)
@@ -72,10 +133,22 @@ class BaseNodeItem(QGraphicsObject):
         super().hoverMoveEvent(event)
 
     def hoverLeaveEvent(self, event):
+        """
+        Hoverleaveevent.
+
+        Args:
+            event: The event.
+        """
         self.setCursor(Qt.CursorShape.ArrowCursor)
         super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event):
+        """
+        Mousepressevent.
+
+        Args:
+            event: The event.
+        """
         if event.button() == Qt.MouseButton.LeftButton:
             dist = self._get_distance_to_border(event.pos())
             if dist < 8:
@@ -88,16 +161,28 @@ class BaseNodeItem(QGraphicsObject):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+        """
+        Mousemoveevent.
+
+        Args:
+            event: The event.
+        """
         if self._resizing:
             new_r = self._get_new_radius_from_pos(event.pos())
             self.set_radius(new_r)
             event.accept()
             return
         super().mouseMoveEvent(event)
-        # Emitir señal de movimiento para actualizar edges conectados
+        # Emitir signal of movimiento for update edges conectados
         self.positionChanged.emit()
 
     def mouseReleaseEvent(self, event):
+        """
+        Mousereleaseevent.
+
+        Args:
+            event: The event.
+        """
         if self._resizing and event.button() == Qt.MouseButton.LeftButton:
             self._resizing = False
             self.setCursor(Qt.CursorShape.ArrowCursor)
@@ -114,12 +199,24 @@ class BaseNodeItem(QGraphicsObject):
             self._drag_start_pos = None
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
-        """Emite señal cuando la posición cambia"""
+        """
+        Itemchange.
+
+        Args:
+            change (QGraphicsItem.GraphicsItemChange): The change.
+            value: The value.
+        """
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self.positionChanged.emit()
         return super().itemChange(change, value)
 
     def set_radius(self, new_r: float):
+        """
+        Set Radius.
+
+        Args:
+            new_r (float): The new r.
+        """
         self.prepareGeometryChange()
         old_r = getattr(self.model, "radius", new_r)
         self.model.radius = new_r
@@ -129,10 +226,17 @@ class BaseNodeItem(QGraphicsObject):
             self.properties_changed.emit(self, {"radius": new_r})
 
     def mouseDoubleClickEvent(self, event):
+        """
+        Mousedoubleclickevent.
+
+        Args:
+            event: The event.
+        """
         self.subcanvas_toggle_requested.emit(self)
         event.accept()
 
     def _toggle_subcanvas(self):
+        """Toggle Subcanvas."""
         if hasattr(self.model, "toggle_subcanvas"):
             self.model.toggle_subcanvas()
         else:
@@ -179,6 +283,7 @@ class BaseNodeItem(QGraphicsObject):
         self.update()
 
     def ensure_subcanvas_visible(self):
+        """Ensure Subcanvas Visible."""
         if not getattr(self.model, "show_subcanvas", False):
             self.model.show_subcanvas = True
 
@@ -215,6 +320,7 @@ class BaseNodeItem(QGraphicsObject):
         return self.subcanvas
 
     def prepare_subcanvas_for_internal_use(self):
+        """Prepare Subcanvas For Internal Use."""
         if not self.subcanvas:
             initial_radius = max(250.0, self.model.radius * 3.0)
             self.subcanvas = SubCanvasItem(radius=initial_radius)
@@ -240,6 +346,7 @@ class BaseNodeItem(QGraphicsObject):
         return self.subcanvas
 
     def apply_position_in_subcanvas(self):
+        """Apply Position In Subcanvas."""
         if not hasattr(self.model, "position_in_subcanvas_x") or not hasattr(
             self.model, "position_in_subcanvas_y"
         ):
@@ -263,6 +370,13 @@ class BaseNodeItem(QGraphicsObject):
             self.update()
 
     def position_within_subcanvas(self, x_norm, y_norm):
+        """
+        Position Within Subcanvas.
+
+        Args:
+            x_norm: The x norm.
+            y_norm: The y norm.
+        """
         if not self.is_subcanvas_visible() or not self.subcanvas:
             return
 
@@ -276,6 +390,13 @@ class BaseNodeItem(QGraphicsObject):
         )
 
     def draw_multiline_text(self, painter, text_color_hex):
+        """
+        Draw Multiline Text.
+
+        Args:
+            painter: The painter.
+            text_color_hex: The text color hex.
+        """
         label = getattr(self.model, "label", "")
         if not label:
             return
@@ -306,6 +427,7 @@ class BaseNodeItem(QGraphicsObject):
         painter.drawText(text_rect, flags, label)
 
     def get_serializable_properties(self):
+        """Get Serializable Properties."""
         return {
             "radius": getattr(self.model, "radius", 50),
             "label": getattr(self.model, "label", ""),
@@ -326,7 +448,12 @@ class BaseNodeItem(QGraphicsObject):
         }
 
     def update_properties(self, properties: dict):
-        """Actualiza las propiedades del nodo desde datos serializados"""
+        """
+        Update Properties.
+
+        Args:
+            properties (dict): The properties.
+        """
         for key, value in properties.items():
             if hasattr(self.model, key):
                 setattr(self.model, key, value)
@@ -351,6 +478,12 @@ class BaseNodeItem(QGraphicsObject):
         self.properties_changed.emit(self, properties)
 
     def is_subcanvas_visible(self) -> bool:
+        """
+        Is Subcanvas Visible.
+
+        Returns:
+            bool: Is Subcanvas Visible.
+        """
         return (
             self.subcanvas is not None
             and self.subcanvas.isVisible()
@@ -358,9 +491,12 @@ class BaseNodeItem(QGraphicsObject):
         )
 
     def apply_subcanvas_clipping(self, painter):
-        """Aplica clipping visual si el nodo es hijo de un SubCanvasItem.
-        Retorna True si aplicó clipping (el caller debe hacer restore()),
-        False si no hay clipping necesario."""
+        """
+        Apply Subcanvas Clipping.
+
+        Args:
+            painter: The painter.
+        """
         subcanvas = getattr(self, "subcanvas_parent", None)
         if not subcanvas or not isinstance(subcanvas, SubCanvasItem):
             return False

@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 import json
 
@@ -17,11 +17,27 @@ from app.utils.astr_format import AstrFormat
 
 
 class CanvasExportController(CanvasControllerMixin):
+    """
+    Canvas Export Controller.
+
+    Methods:
+        export_to_astr: Export To Astr.
+        export_to_image: Export To Image.
+    """
+
     def export_to_astr(
         self,
         filename: str | None = None,
     ) -> bool:
-        """Export current canvas state to .astr file"""
+        """
+        Export To Astr.
+
+        Args:
+            filename (str | None): The filename.
+
+        Returns:
+            bool: Export To Astr.
+        """
         try:
             if not filename:
                 filename, _ = QFileDialog.getSaveFileName(
@@ -56,7 +72,15 @@ class CanvasExportController(CanvasControllerMixin):
         self,
         filename: str | None = None,
     ) -> bool:
-        """Export canvas as PNG image"""
+        """
+        Export To Image.
+
+        Args:
+            filename (str | None): The filename.
+
+        Returns:
+            bool: Export To Image.
+        """
         try:
             if not filename:
                 filename, _ = QFileDialog.getSaveFileName(

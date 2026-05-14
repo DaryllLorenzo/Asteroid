@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 from pathlib import Path
@@ -28,7 +28,32 @@ from app.utils.pdf_export import PDFGenerator
 
 
 class MainWindow(QMainWindow):
+    """
+    Main Window.
+
+    Methods:
+        __init__: Initialize the instance.
+        update_zoom_label: Update Zoom Label.
+        on_project_modified: On Project Modified.
+        update_window_title: Update Window Title.
+        create_menu_bar: Create Menu Bar.
+        load_project: Load Project.
+        save_project: Save Project.
+        export_image: Export Image.
+        export_pdf: Export Pdf.
+        new_project: New Project.
+        check_unsaved_changes: Check Unsaved Changes.
+        closeEvent: Closeevent.
+        get_help_file_path: Get Help File Path.
+        show_elements_help: Show Elements Help.
+        show_examples_help: Show Examples Help.
+        show_about_help: Show About Help.
+        show_validation_help: Show Validation Help.
+        show_quick_help: Show Quick Help.
+    """
+
     def __init__(self):
+        """Initialize the instance."""
         super().__init__()
         self.setWindowTitle("Asteroid")
         self.resize(1600, 900)
@@ -56,7 +81,7 @@ class MainWindow(QMainWindow):
         )
         sidebar_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
-        # Panel de propiedades
+        # Panel of properties
         self.properties_panel = PropertiesPanel(controller=self.canvas_controller)
         properties_scroll = QScrollArea()
         properties_scroll.setWidget(self.properties_panel)
@@ -88,7 +113,7 @@ class MainWindow(QMainWindow):
             self.canvas_controller.delete_selected_item
         )
 
-        # Conectar señal de modificación del proyecto
+        # Conectar signal of modificación of the project
         self.canvas_controller.project_modified.connect(self.on_project_modified)
 
         # ------------------
@@ -112,7 +137,7 @@ class MainWindow(QMainWindow):
         zoom_layout.addWidget(zoom_in_btn)
 
         # ------------------
-        # Layout del canvas con controles de zoom
+        # Layout of the canvas with controles of zoom
         # ------------------
         canvas_container = QWidget()
         canvas_layout = QVBoxLayout(canvas_container)
@@ -122,11 +147,11 @@ class MainWindow(QMainWindow):
         canvas_layout.addWidget(zoom_widget)
 
         # ------------------
-        # Splitter principal con tres áreas
+        # Splitter main with tres áreas
         # ------------------
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Área izquierda: Sidebar
+        # Área left: Sidebar
         left_container = QWidget()
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
@@ -136,25 +161,25 @@ class MainWindow(QMainWindow):
         # Área central: Canvas
         main_splitter.addWidget(canvas_container)
 
-        # Área derecha: Panel de propiedades
+        # Área right: Panel of properties
         right_container = QWidget()
         right_layout = QVBoxLayout(right_container)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.addWidget(properties_scroll)
         main_splitter.addWidget(right_container)
 
-        # Configurar tamaños iniciales
+        # Configure tamaños iniciales
         main_splitter.setSizes([300, 1000, 300])
 
         main_layout.addWidget(main_splitter)
 
-        # Inicializar label
+        # Initialize label
         self.update_zoom_label()
 
-        # Crear barra de menú
+        # Create bar of menú
         self.create_menu_bar()
 
-        # Conectar signals de undo stack para actualizar menú
+        # Conectar signals of undo stack for update menú
         self.canvas_controller.undo_stack.canUndoChanged.connect(
             self._update_undo_redo_actions
         )
@@ -165,32 +190,38 @@ class MainWindow(QMainWindow):
             self._update_undo_redo_texts
         )
 
-        # Actualizar título inicial
+        # Update title initial
         self.update_window_title()
 
     @pyqtSlot()
     def update_zoom_label(self):
+        """Update Zoom Label."""
         zoom_percentage = int(self.canvas.zoom_factor * 100)
         self.zoom_label.setText(f"{zoom_percentage}%")
 
     def on_project_modified(self, modified):
-        """Se llama cuando el estado de modificación del proyecto cambia"""
+        """
+        On Project Modified.
+
+        Args:
+            modified: The modified.
+        """
         self.update_window_title()
 
     def _update_undo_redo_actions(self):
-        """Update enabled state of undo/redo menu items"""
+        """Update Undo Redo Actions."""
         self.undo_action.setEnabled(self.canvas_controller.undo_stack.canUndo())
         self.redo_action.setEnabled(self.canvas_controller.undo_stack.canRedo())
 
     def _update_undo_redo_texts(self):
-        """Update text of undo/redo to show next command description"""
+        """Update Undo Redo Texts."""
         undo_text = self.canvas_controller.undo_stack.undoText()
         redo_text = self.canvas_controller.undo_stack.redoText()
         self.undo_action.setText(f"&Deshacer{' ' + undo_text if undo_text else ''}")
         self.redo_action.setText(f"&Rehacer{' ' + redo_text if redo_text else ''}")
 
     def update_window_title(self):
-        """Actualiza el título de la ventana con el estado del proyecto"""
+        """Update Window Title."""
         base_title = "Asteroid"
         if self.canvas_controller._current_file_path:
             file_name = Path(self.canvas_controller._current_file_path).name
@@ -204,23 +235,23 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(title)
 
     def create_menu_bar(self):
-        """Crea la barra de menú con las opciones de archivo"""
+        """Create Menu Bar."""
         menubar = self.menuBar()
 
-        # Menú Archivo
+        # Menú File
         file_menu = menubar.addMenu("&Archivo")
 
-        # Acción para nuevo proyecto
+        # Action for new project
         new_action = file_menu.addAction("&Nuevo proyecto")
         new_action.setShortcut("Ctrl+N")
         new_action.triggered.connect(self.new_project)
 
-        # Acción para cargar .astr
+        # Action for load .astr
         load_action = file_menu.addAction("&Cargar proyecto...")
         load_action.setShortcut("Ctrl+O")
         load_action.triggered.connect(self.load_project)
 
-        # Acción para guardar .astr
+        # Action for save .astr
         save_action = file_menu.addAction("&Guardar proyecto...")
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_project)
@@ -240,18 +271,18 @@ class MainWindow(QMainWindow):
         self.redo_action.triggered.connect(self.canvas_controller.undo_stack.redo)
         self.redo_action.setEnabled(False)
 
-        # Separador
+        # Separator
         file_menu.addSeparator()
 
-        # Acción para exportar imagen
+        # Action for exportar imagen
         export_image_action = file_menu.addAction("&Exportar como imagen...")
         export_image_action.setShortcut("Ctrl+E")
         export_image_action.triggered.connect(self.export_image)
 
-        # Separador
+        # Separator
         file_menu.addSeparator()
 
-        # Acción para exportar PDF
+        # Action for exportar PDF
         export_pdf_action = file_menu.addAction("&Exportar a PDF...")
         export_pdf_action.setShortcut("Ctrl+P")
         export_pdf_action.triggered.connect(self.export_pdf)
@@ -271,7 +302,7 @@ class MainWindow(QMainWindow):
         # ---------------------------
         help_menu = menubar.addMenu("&Ayuda")
 
-        # Elementos
+        # Elements
         elements_action = help_menu.addAction("&Elementos")
         elements_action.triggered.connect(self.show_elements_help)
 
@@ -288,56 +319,69 @@ class MainWindow(QMainWindow):
         quick_help_action.setShortcut("F1")
         quick_help_action.triggered.connect(self.show_quick_help)
 
-        # Separador
+        # Separator
         help_menu.addSeparator()
 
-        # Acerca de
+        # Acerca of
         about_action = help_menu.addAction("&Acerca de Asteroid")
         about_action.triggered.connect(self.show_about_help)
 
     def _toggle_validator(self, checked: bool) -> None:
+        """
+        Toggle Validator.
+
+        Args:
+            checked (bool): The checked.
+        """
         self.canvas_controller.validator.active = checked
 
     def load_project(self):
-        """Carga un proyecto .astr"""
+        """Load Project."""
         if self.check_unsaved_changes():
             success = self.canvas_controller.import_from_astr()
             if success:
                 self.update_window_title()
 
     def save_project(self) -> bool:
-        """Guarda el proyecto actual como .astr"""
+        """
+        Save Project.
+
+        Returns:
+            bool: Save Project.
+        """
         success = self.canvas_controller.export_to_astr()
         if success:
             self.update_window_title()
         return bool(success)
 
     def export_image(self):
-        """Exporta el canvas como imagen"""
+        """Export Image."""
         self.canvas_controller.export_to_image()
 
     def export_pdf(self):
-        """Exporta el diagrama a PDF con opciones de contenido"""
-        # Mostrar diálogo de opciones
+        """Export Pdf."""
+        # Show dialog of opciones
         dialog = PDFExportDialog(self)
         if dialog.exec() != 1:  # QDialog.Accepted
             return
 
-        # Generar PDF
+        # Generate PDF
         with_info = dialog.should_export_with_info()
         pdf_generator = PDFGenerator(self.canvas_controller)
         pdf_generator.export_to_pdf(with_additional_info=with_info)
 
     def new_project(self):
-        """Crea un nuevo proyecto"""
+        """New Project."""
         if self.check_unsaved_changes():
             self.canvas_controller.clear_canvas()
             self.update_window_title()
 
     def check_unsaved_changes(self) -> bool:
         """
-        Verifica si hay cambios sin guardar.
-        Retorna True si puede continuar, False si debe cancelar.
+        Check Unsaved Changes.
+
+        Returns:
+            bool: Check Unsaved Changes.
         """
         if not self.canvas_controller.is_modified:
             return True
@@ -359,50 +403,60 @@ class MainWindow(QMainWindow):
             return False
 
     def closeEvent(self, event):
-        """Maneja el cierre de la aplicación"""
+        """
+        Closeevent.
+
+        Args:
+            event: The event.
+        """
         if self.check_unsaved_changes():
             event.accept()
         else:
             event.ignore()
 
     # ---------------------------
-    # Métodos para mostrar ayuda
+    # Métodos for show ayuda
     # ---------------------------
 
     def get_help_file_path(self, filename):
-        """Obtiene la ruta completa al archivo de ayuda"""
+        """
+        Get Help File Path.
+
+        Args:
+            filename: The filename.
+        """
         current_dir = Path(__file__).parent
         help_dir = current_dir / "help" / "content"
         return help_dir / filename
 
     def show_elements_help(self):
-        """Muestra la ayuda sobre elementos"""
+        """Show Elements Help."""
         md_file = self.get_help_file_path("elements.md")
         dialog = HelpModal("Elementos de Asteroid", md_file, self)
         dialog.exec()
 
     def show_examples_help(self):
-        """Muestra la ayuda con ejemplos"""
+        """Show Examples Help."""
         md_file = self.get_help_file_path("examples.md")
         dialog = HelpModal("Ejemplos de Uso", md_file, self)
         dialog.exec()
 
     def show_about_help(self):
-        """Muestra información sobre Asteroid"""
+        """Show About Help."""
         md_file = self.get_help_file_path("about.md")
         dialog = HelpModal("Acerca de Asteroid", md_file, self)
         dialog.exec()
 
     def show_validation_help(self):
-        """Muestra la ayuda sobre el modo validador"""
+        """Show Validation Help."""
         md_file = self.get_help_file_path("validation_help.md")
         dialog = HelpModal("Modo Validador", md_file, self)
         dialog.exec()
 
     def show_quick_help(self):
-        """Muestra ayuda rápida con atajos de teclado"""
+        """Show Quick Help."""
 
-        # Puedes crear contenido temporal para la ayuda rápida
+        # Puedes create contenido temporal for the ayuda rápida
         md_file = self.get_help_file_path("quick_help.md")
         dialog = HelpModal("Ayuda Rápida - Atajos de Teclado", md_file, self)
         dialog.exec()

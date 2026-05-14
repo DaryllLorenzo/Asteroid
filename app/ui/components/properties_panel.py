@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal
@@ -28,11 +28,37 @@ from app.ui.components.position_controll_widget import PositionControlWidget
 
 
 class PropertiesPanel(QWidget):
+    """
+    Properties Panel.
+
+    Methods:
+        __init__: Initialize the instance.
+        init_ui: Init Ui.
+        on_selection_changed: On Selection Changed.
+        on_edge_selected: On Edge Selected.
+        on_straighten_edge_clicked: On Straighten Edge Clicked.
+        on_node_selected: On Node Selected.
+        on_node_property_changed: On Node Property Changed.
+        on_controller_properties_changed: On Controller Properties Changed.
+        update_visibility: Update Visibility.
+        choose_color: Choose Color.
+        update_color_buttons: Update Color Buttons.
+        on_delete_clicked: On Delete Clicked.
+        on_position_in_subcanvas_changed: On Position In Subcanvas Changed.
+        reset_position_in_subcanvas: Reset Position In Subcanvas.
+    """
+
     properties_changed = pyqtSignal(dict)
     selection_mode_changed = pyqtSignal(bool)
     delete_requested = pyqtSignal()
 
     def __init__(self, controller=None):
+        """
+        Initialize the instance.
+
+        Args:
+            controller: The controller.
+        """
         super().__init__()
         self.controller = controller
         self.current_selection = None
@@ -46,6 +72,7 @@ class PropertiesPanel(QWidget):
             controller.selection_changed.connect(self.on_selection_changed)
 
     def init_ui(self):
+        """Init Ui."""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -58,7 +85,7 @@ class PropertiesPanel(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
 
-        # --- Grupo de Propiedades de NODO ---
+        # --- Grupo of Properties of NODE ---
         self.node_group = QGroupBox("Propiedades del Nodo")
         node_layout = QFormLayout()
 
@@ -86,7 +113,7 @@ class PropertiesPanel(QWidget):
         self.text_width_spin.valueChanged.connect(self.on_node_property_changed)
         node_layout.addRow("Ancho Texto:", self.text_width_spin)
 
-        # --- Alineación Compacta ---
+        # --- Alignment Compacta ---
         align_layout = QHBoxLayout()
         align_layout.setSpacing(2)
         self.align_group = QButtonGroup(self)
@@ -125,7 +152,7 @@ class PropertiesPanel(QWidget):
         self.colors_group.setLayout(colors_layout)
         layout.addWidget(self.colors_group)
 
-        # --- Posición Canvas ---
+        # --- Position Canvas ---
         self.pos_group = QGroupBox("Behaviour Canvas")
         pos_layout = QVBoxLayout()
         self.pos_control = PositionControlWidget()
@@ -148,12 +175,12 @@ class PropertiesPanel(QWidget):
         )
         edge_layout = QVBoxLayout()
 
-        # Información de la flecha
+        # Information of the flecha
         self.edge_info_label = QLabel("Flecha seleccionada")
         self.edge_info_label.setStyleSheet("color: #FFFFFF; font-weight: bold;")
         edge_layout.addWidget(self.edge_info_label)
 
-        # Instrucciones de edición
+        # Instrucciones of edición
         instructions_label = QLabel(
             "<b>Edición de Flecha</b><br><br>"
             "• Arrastra los puntos para modificar la forma<br>"
@@ -168,7 +195,7 @@ class PropertiesPanel(QWidget):
         )
         edge_layout.addWidget(instructions_label)
 
-        # Botón para enderezar la flecha
+        # Button for enderezar the flecha
         self.straighten_button = QPushButton("Enderezar Flecha")
         self.straighten_button.clicked.connect(self.on_straighten_edge_clicked)
         edge_layout.addWidget(self.straighten_button)
@@ -198,8 +225,14 @@ class PropertiesPanel(QWidget):
         self.update_visibility()
 
     def on_selection_changed(self, item):
+        """
+        On Selection Changed.
+
+        Args:
+            item: The item.
+        """
         self.current_selection = item
-        # Verificar si es un ControlPointHandle (no mostrar propiedades)
+        # Verificar if es a ControlPointHandle (no show properties)
         if isinstance(item, ControlPointHandle):
             self.update_visibility()
             return
@@ -209,8 +242,13 @@ class PropertiesPanel(QWidget):
             self.on_node_selected(item)
 
     def on_edge_selected(self, edge):
-        """Muestra información de la flecha seleccionada"""
-        # Obtener el tipo de flecha
+        """
+        On Edge Selected.
+
+        Args:
+            edge: The edge.
+        """
+        # Get the type of flecha
         edge_type = "Flecha"
         if hasattr(edge, "source_node") and hasattr(edge, "dest_node"):
             src_name = (
@@ -229,15 +267,21 @@ class PropertiesPanel(QWidget):
         self.update_visibility()
 
     def on_straighten_edge_clicked(self):
-        """Endereza la flecha seleccionada eliminando todos los control points"""
+        """On Straighten Edge Clicked."""
         if self.current_selection and isinstance(self.current_selection, BaseEdgeItem):
             if self.controller and hasattr(self.controller, "straighten_edge"):
                 self.controller.straighten_edge(self.current_selection)
 
     def on_node_selected(self, node):
+        """
+        On Node Selected.
+
+        Args:
+            node: The node.
+        """
         if node and hasattr(node, "model"):
             self.blockSignals(True)
-            # Solo actualizar si el texto es distinto para no mover el cursor
+            # Only update if the text es distinto for no move the cursor
             if self.label_edit.toPlainText() != node.model.label:
                 self.label_edit.setPlainText(node.model.label)
 
@@ -272,6 +316,7 @@ class PropertiesPanel(QWidget):
         self.update_visibility()
 
     def on_node_property_changed(self):
+        """On Node Property Changed."""
         if not self.current_selection or not hasattr(self.current_selection, "model"):
             return
 
@@ -289,22 +334,28 @@ class PropertiesPanel(QWidget):
         self.properties_changed.emit(props)
 
     def on_controller_properties_changed(self, properties: dict):
-        # Esta parte es vital para el cursor
+        # This part es vital for the cursor
+        """
+        On Controller Properties Changed.
+
+        Args:
+            properties (dict): The properties.
+        """
         if not self.current_selection:
             return
 
         self.blockSignals(True)
         if "label" in properties:
-            # Solo actualizamos el widget si el texto realmente cambió externamente
-            # y no es lo que el usuario acaba de escribir
+            # Only actualizamos the widget if the text realmente changed externamente
+            # y no es lo that the usuario acaba of write
             if self.label_edit.toPlainText() != properties["label"]:
                 self.label_edit.setPlainText(properties["label"])
-                # Mover cursor al final por si acaso
+                # Move cursor al final by if acaso
                 cursor = self.label_edit.textCursor()
                 cursor.movePosition(QTextCursor.MoveOperation.End)
                 self.label_edit.setTextCursor(cursor)
 
-        # Actualizar los demás campos sin problemas de cursor
+        # Update the other campos without problemas of cursor
         if "radius" in properties:
             self.radius_spin.setValue(int(properties["radius"]))
         if "font_size" in properties:
@@ -315,8 +366,9 @@ class PropertiesPanel(QWidget):
         self.update_color_buttons()
 
     def update_visibility(self):
+        """Update Visibility."""
         has_selection = self.current_selection is not None
-        # Excluir ControlPointHandle de las selecciones válidas
+        # Excluir ControlPointHandle of the selecciones válidas
         is_control_point = isinstance(self.current_selection, ControlPointHandle)
         is_node = (
             has_selection
@@ -330,7 +382,7 @@ class PropertiesPanel(QWidget):
         if is_node:
             type_name = self.current_selection.__class__.__name__
             is_behaviour_node = type_name in ["ActorNodeItem", "AgentNodeItem"]
-            # Usar model directamente para show_subcanvas (propiedad no sincronizada)
+            # Usar model directamente for show_subcanvas (propiedad no sincronizada)
             has_subcanvas = getattr(
                 self.current_selection.model, "show_subcanvas", False
             )
@@ -343,6 +395,12 @@ class PropertiesPanel(QWidget):
         self.no_selection_label.setVisible(not has_selection or is_control_point)
 
     def choose_color(self, color_type):
+        """
+        Choose Color.
+
+        Args:
+            color_type: The color type.
+        """
         if not self.current_selection:
             return
         # Colores son sincronizados, usar node.model (wrapper)
@@ -353,6 +411,7 @@ class PropertiesPanel(QWidget):
             self.update_color_buttons()
 
     def update_color_buttons(self):
+        """Update Color Buttons."""
         if not self.current_selection or not hasattr(self.current_selection, "model"):
             return
         # Colores son sincronizados, usar node.model (wrapper)
@@ -370,15 +429,24 @@ class PropertiesPanel(QWidget):
         )
 
     def on_delete_clicked(self):
+        """On Delete Clicked."""
         self.delete_requested.emit()
 
     def on_position_in_subcanvas_changed(self, x, y):
+        """
+        On Position In Subcanvas Changed.
+
+        Args:
+            x: The x.
+            y: The y.
+        """
         if self.current_selection:
-            # Position es independiente, emitir como está
+            # Position es independiente, emitir as this
             self.properties_changed.emit(
                 {"position_in_subcanvas_x": x, "position_in_subcanvas_y": y}
             )
 
     def reset_position_in_subcanvas(self):
+        """Reset Position In Subcanvas."""
         self.pos_control.set_position(0, 0)
         self.on_position_in_subcanvas_changed(0, 0)

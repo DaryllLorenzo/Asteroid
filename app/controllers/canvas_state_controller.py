@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QKeySequence
@@ -20,6 +20,30 @@ from app.ui.components.base_tropos_item import BaseTroposItem
 
 
 class CanvasStateController(CanvasControllerMixin):
+    """
+    Canvas State Controller.
+
+    Attributes:
+        selection_mode (bool): selection mode.
+        selected_node (CanvasNodeItem | None): selected node.
+        selected_edge (BaseEdgeItem | None): selected edge.
+        current_selection (CanvasNodeItem | BaseEdgeItem | None): current selection.
+        _current_file_path (str | None): current file path.
+        _is_modified (bool): is modified.
+        delete_shortcut (QShortcut): delete shortcut.
+        delete_shortcut2 (QShortcut): delete shortcut2.
+        undo_stack (QUndoStack): undo stack.
+
+    Methods:
+        is_modified: Is Modified.
+        mark_as_modified: Mark As Modified.
+        mark_as_saved: Mark As Saved.
+        set_selection_mode: Set Selection Mode.
+        on_selection_changed: On Selection Changed.
+        update_node_properties: Update Node Properties.
+        find_node_by_ui: Find Node By Ui.
+    """
+
     selection_mode: bool
     selected_node: CanvasNodeItem | None
     selected_edge: BaseEdgeItem | None
@@ -32,23 +56,40 @@ class CanvasStateController(CanvasControllerMixin):
 
     @property
     def is_modified(self) -> bool:
+        """
+        Is Modified.
+
+        Returns:
+            bool: Is Modified.
+        """
         return self._is_modified
 
     @is_modified.setter
     def is_modified(self, value: bool) -> None:
+        """
+        Is Modified.
+
+        Args:
+            value (bool): The value.
+        """
         if self._is_modified != value:
             self._is_modified = value
             self.project_modified.emit(value)
 
     def mark_as_modified(self) -> None:
-        """Mark project as modified"""
+        """Mark As Modified."""
         self.is_modified = True
 
     def mark_as_saved(
         self,
         file_path: str | None = None,
     ) -> None:
-        """Mark project as saved"""
+        """
+        Mark As Saved.
+
+        Args:
+            file_path (str | None): The file path.
+        """
         if hasattr(self, "undo_stack"):
             self.undo_stack.setClean()
         self.is_modified = False
@@ -56,7 +97,7 @@ class CanvasStateController(CanvasControllerMixin):
             self._current_file_path = file_path
 
     def _setup_delete_shortcut(self) -> None:
-        """Setup keyboard shortcut to delete selected elements"""
+        """Setup Delete Shortcut."""
         self.delete_shortcut = QShortcut(QKeySequence("Delete"), self.canvas)
         self.delete_shortcut.activated.connect(self.delete_selected_item)
 
@@ -68,8 +109,16 @@ class CanvasStateController(CanvasControllerMixin):
         node_item: CanvasNodeItem,
         key: str,
     ) -> object:
-        """Read a property value from a node item,
-        matching update_properties lookup order."""
+        """
+        Get Node Property.
+
+        Args:
+            node_item (CanvasNodeItem): The node item.
+            key (str): The key.
+
+        Returns:
+            object: Get Node Property.
+        """
         if hasattr(node_item, "_independent_model") and node_item._independent_model:
             if hasattr(node_item._independent_model, key):
                 return getattr(node_item._independent_model, key)
@@ -86,7 +135,13 @@ class CanvasStateController(CanvasControllerMixin):
         node_item: CanvasNodeItem,
         start_pos: object,
     ) -> None:
-        """Handle drag finish: push a MoveNodeCommand."""
+        """
+        On Node Drag Finished.
+
+        Args:
+            node_item (CanvasNodeItem): The node item.
+            start_pos (object): The start pos.
+        """
         if not isinstance(start_pos, QPointF):
             return
         end_pos = node_item.pos()
@@ -98,7 +153,13 @@ class CanvasStateController(CanvasControllerMixin):
         node_item: object,
         old_radius: float,
     ) -> None:
-        """Handle resize finish: push a ResizeNodeCommand."""
+        """
+        On Node Resize Finished.
+
+        Args:
+            node_item (object): The node item.
+            old_radius (float): The old radius.
+        """
         current_radius = float(getattr(node_item, "radius", 0))
         if hasattr(node_item, "model") and hasattr(node_item.model, "radius"):
             current_radius = float(node_item.model.radius)
@@ -113,13 +174,23 @@ class CanvasStateController(CanvasControllerMixin):
         self,
         node_item: object,
     ) -> None:
-        """Handle subcanvas toggle: push a ToggleSubcanvasCommand."""
+        """
+        On Subcanvas Toggle Requested.
+
+        Args:
+            node_item (object): The node item.
+        """
         from app.commands.toggle_subcanvas_command import ToggleSubcanvasCommand
 
         self.undo_stack.push(ToggleSubcanvasCommand(self, node_item))
 
     def _connect_edge_undo_tracking(self, edge: object) -> None:
-        """Connect control point change tracking for an edge."""
+        """
+        Connect Edge Undo Tracking.
+
+        Args:
+            edge (object): The edge.
+        """
         if hasattr(edge, "cp_changed_callback"):
             edge.cp_changed_callback = lambda: self._on_edge_cp_changed(edge)
 
@@ -127,7 +198,12 @@ class CanvasStateController(CanvasControllerMixin):
         self,
         edge: object,
     ) -> None:
-        """Handle control point changes: push a ChangeControlPointsCommand."""
+        """
+        On Edge Cp Changed.
+
+        Args:
+            edge (object): The edge.
+        """
         saved = getattr(edge, "_saved_control_points", None)
         current = getattr(edge, "control_points", [])
         if saved is not None and saved != current:
@@ -143,7 +219,12 @@ class CanvasStateController(CanvasControllerMixin):
         self,
         enabled: bool,
     ) -> None:
-        """Enable/disable selection mode"""
+        """
+        Set Selection Mode.
+
+        Args:
+            enabled (bool): The enabled.
+        """
         self.selection_mode = enabled
         if not enabled:
             scene = self.canvas.scene()
@@ -154,7 +235,7 @@ class CanvasStateController(CanvasControllerMixin):
             self.current_selection = None
 
     def on_selection_changed(self) -> None:
-        """Handle selection changes considering subcanvases and edges"""
+        """On Selection Changed."""
         scene = self.canvas.scene()
         if scene is None:
             self.selection_changed.emit(None)
@@ -211,7 +292,12 @@ class CanvasStateController(CanvasControllerMixin):
         self,
         properties: PropertyMap,
     ) -> None:
-        """Update properties of the selected node via undo command"""
+        """
+        Update Node Properties.
+
+        Args:
+            properties (PropertyMap): The properties.
+        """
         selection = self.current_selection
         if isinstance(selection, (BaseNodeItem, BaseTroposItem)):
             old_properties: PropertyMap = {}
@@ -232,6 +318,15 @@ class CanvasStateController(CanvasControllerMixin):
         self,
         ui_item: CanvasNodeItem,
     ) -> CanvasNodeItem | None:
+        """
+        Find Node By Ui.
+
+        Args:
+            ui_item (CanvasNodeItem): The ui item.
+
+        Returns:
+            CanvasNodeItem | None: Find Node By Ui.
+        """
         for node in self.nodes:
             if node is ui_item:
                 return node

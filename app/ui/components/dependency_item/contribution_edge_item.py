@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 # app/ui/components/dependency_item/contribution_edge_item.py
@@ -19,16 +19,30 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class ContributionArrowItem(BaseEdgeItem):
-    """Flecha abierta tipo V y símbolo '+' cerca del cuerpo."""
+    """
+    Contribution Arrow Item.
+
+    Methods:
+        __init__: Initialize the instance.
+        boundingRect: Boundingrect.
+        paint: Paint.
+    """
 
     def __init__(self, source_node, dest_node):
+        """
+        Initialize the instance.
+
+        Args:
+            source_node: The source node.
+            dest_node: The dest node.
+        """
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
 
     def boundingRect(self):
-        """Extiende el bounding rect para incluir la cabeza de flecha y el '+'."""
-        # Obtener boundingRect base de la línea
+        """Boundingrect."""
+        # Get boundingRect base of the line
         base_rect = super().boundingRect()
-        # Extra para la V abierta (~12px) y el símbolo '+'
+        # Extra for the V abierta (~12px) y the símbolo '+'
         extra = 20
         return base_rect.adjusted(-extra, -extra, extra, extra)
 
@@ -38,6 +52,14 @@ class ContributionArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
+        """
+        Paint.
+
+        Args:
+            painter (QPainter | None): The painter.
+            option (QStyleOptionGraphicsItem | None): The option.
+            widget (QWidget | None): The widget.
+        """
         if painter is None:
             return
         del option, widget
@@ -49,7 +71,7 @@ class ContributionArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() aquí para evitar temblor
+        # NO llamar a update_position() here for avoid temblor
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -59,19 +81,19 @@ class ContributionArrowItem(BaseEdgeItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
 
-        # Dibujar la ruta (línea con control points si existen)
+        # Dibujar the path (line with control points if existen)
         painter.drawPath(path)
 
-        # Obtener punto final y dirección para la punta de flecha
+        # Get punto final y dirección for the punta of flecha
         end_point = self._end_point
 
-        # Determinar el último segmento para dibujar la punta
+        # Determinar the last segmento for dibujar the punta
         if self.control_points:
             last_point = self.control_points[-1]
         else:
             last_point = self._start_point
 
-        # Calcular ángulo del último segmento
+        # Calculate ángulo of the last segmento
         dx = end_point.x() - last_point.x()
         dy = end_point.y() - last_point.y()
 
@@ -98,22 +120,22 @@ class ContributionArrowItem(BaseEdgeItem):
         painter.drawLine(end_point, pA)
         painter.drawLine(end_point, pB)
 
-        # símbolo '+' en el punto medio REAL del path curvo
-        # Usamos el método utilitario para obtener el punto y ángulo correctos
+        # símbolo '+' in the punto middle REAL of the path curvo
+        # Usamos the method utilitario for get the punto y ángulo correctos
         mid_point, mid_angle = self._get_point_at_percentage(0.5)
 
         painter.save()
-        # Rotar el sistema de coordenadas para alinear el '+' con el path
+        # Rotar the sistema of coordinates for alinear the '+' with the path
         painter.translate(mid_point)
         painter.rotate(math.degrees(mid_angle))
 
         painter.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         # Dibujar '+' centrado, ligeramente desplazado perpendicularmente
-        # para no tapar la línea
+        # for no tapar the line
         fm = painter.fontMetrics()
         w = fm.horizontalAdvance("+")
         h = fm.height()
-        # Pequeño offset perpendicular para que el '+' no se superponga con la línea
+        # Small offset perpendicular for that the '+' no itself superponga with the line
         offset_perp = 8.0
         painter.drawText(QPointF(-w / 2, -h / 2 - offset_perp), "+")
         painter.restore()

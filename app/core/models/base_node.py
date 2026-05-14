@@ -1,15 +1,32 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 from abc import ABC
 from abc import abstractmethod
 
 
 class BaseNode(ABC):
+    """
+    Base Node.
+
+    Methods:
+        __init__: Initialize the instance.
+        toggle_subcanvas: Toggle Subcanvas.
+        node_type: Node Type.
+    """
+
     def __init__(self, x: float = 0, y: float = 0, radius: float = 50) -> None:
+        """
+        Initialize the instance.
+
+        Args:
+            x (float): The x.
+            y (float): The y.
+            radius (float): The radius.
+        """
         self.x: float = x
         self.y: float = y
         self.radius: float = radius
@@ -31,9 +48,21 @@ class BaseNode(ABC):
         self.show_subcanvas: bool = False
 
     def toggle_subcanvas(self) -> bool:
+        """
+        Toggle Subcanvas.
+
+        Returns:
+            bool: Toggle Subcanvas.
+        """
         self.show_subcanvas = not self.show_subcanvas
         return self.show_subcanvas
 
     @abstractmethod
     def node_type(self) -> str:
+        """
+        Node Type.
+
+        Returns:
+            str: Node Type.
+        """
         pass
