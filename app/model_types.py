@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
+# ---------------------------------------------------
+
 from __future__ import annotations
 
 from collections.abc import Callable

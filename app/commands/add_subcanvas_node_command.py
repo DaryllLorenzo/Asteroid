@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
+# ---------------------------------------------------
+
 from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
