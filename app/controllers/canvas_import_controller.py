@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 import json
 from typing import TypedDict
@@ -25,17 +25,47 @@ from app.ui.components.base_tropos_item import BaseTroposItem
 
 
 class PositionData(TypedDict):
+    """
+    Position Data.
+
+    Attributes:
+        x (float): x.
+        y (float): y.
+    """
+
     x: float
     y: float
 
 
 class SerializedSubcanvasData(TypedDict, total=False):
+    """
+    Serialized Subcanvas Data.
+
+    Attributes:
+        visible (bool): visible.
+        radius (float): radius.
+        original_radius (float): original radius.
+    """
+
     visible: bool
     radius: float
     original_radius: float
 
 
 class SerializedNodeData(TypedDict, total=False):
+    """
+    Serialized Node Data.
+
+    Attributes:
+        id (int): id.
+        type (str): type.
+        position (PositionData): position.
+        properties (dict[str, object]): properties.
+        parent_id (int | None): parent id.
+        model_properties (dict[str, object]): model properties.
+        subcanvas (SerializedSubcanvasData): subcanvas.
+    """
+
     id: int
     type: str
     position: PositionData
@@ -46,6 +76,18 @@ class SerializedNodeData(TypedDict, total=False):
 
 
 class SerializedEdgeData(TypedDict, total=False):
+    """
+    Serialized Edge Data.
+
+    Attributes:
+        type (str): type.
+        source_id (int): source id.
+        target_id (int): target id.
+        properties (dict[str, object]): properties.
+        parent_id (int | None): parent id.
+        control_points (list[PositionData]): control points.
+    """
+
     type: str
     source_id: int
     target_id: int
@@ -55,11 +97,29 @@ class SerializedEdgeData(TypedDict, total=False):
 
 
 class SerializedSceneData(TypedDict):
+    """
+    Serialized Scene Data.
+
+    Attributes:
+        nodes (list[SerializedNodeData]): nodes.
+        edges (list[SerializedEdgeData]): edges.
+    """
+
     nodes: list[SerializedNodeData]
     edges: list[SerializedEdgeData]
 
 
 def _as_float(value: object, default: float) -> float:
+    """
+    As Float.
+
+    Args:
+        value (object): The value.
+        default (float): The default.
+
+    Returns:
+        float: As Float.
+    """
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, str):
@@ -71,11 +131,26 @@ def _as_float(value: object, default: float) -> float:
 
 
 class CanvasImportController(CanvasControllerMixin):
+    """
+    Canvas Import Controller.
+
+    Methods:
+        import_from_astr: Import From Astr.
+    """
+
     def import_from_astr(
         self,
         filename: str | None = None,
     ) -> bool:
-        """Import project from .astr file"""
+        """
+        Import From Astr.
+
+        Args:
+            filename (str | None): The filename.
+
+        Returns:
+            bool: Import From Astr.
+        """
         try:
             if not filename:
                 filename, _ = QFileDialog.getOpenFileName(
@@ -261,6 +336,14 @@ class CanvasImportController(CanvasControllerMixin):
                                 value: object,
                                 node: BaseNodeItem | BaseTroposItem = external_node,
                             ) -> None:
+                                """
+                                On External Changed.
+
+                                Args:
+                                    prop_name (str): The prop name.
+                                    value (object): The value.
+                                    node (BaseNodeItem | BaseTroposItem): The node.
+                                """
                                 node.update()
                                 node.properties_changed.emit(node, {prop_name: value})
 
@@ -269,6 +352,14 @@ class CanvasImportController(CanvasControllerMixin):
                                 value: object,
                                 node: CanvasNodeItem = internal_node,
                             ) -> None:
+                                """
+                                On Internal Changed.
+
+                                Args:
+                                    prop_name (str): The prop name.
+                                    value (object): The value.
+                                    node (CanvasNodeItem): The node.
+                                """
                                 del prop_name, value
                                 node.update()
 
@@ -300,7 +391,16 @@ class CanvasImportController(CanvasControllerMixin):
         child_node: CanvasNodeItem,
         parent_node: BaseNodeItem,
     ) -> bool:
-        """Move a node to another node's subcanvas"""
+        """
+        Move Node To Subcanvas.
+
+        Args:
+            child_node (CanvasNodeItem): The child node.
+            parent_node (BaseNodeItem): The parent node.
+
+        Returns:
+            bool: Move Node To Subcanvas.
+        """
         try:
             subcanvas = parent_node.ensure_subcanvas_visible()
             if not subcanvas:
@@ -334,7 +434,16 @@ class CanvasImportController(CanvasControllerMixin):
         parent_node: BaseNodeItem,
         model_props: PropertyMap,
     ) -> bool:
-        """Create internal composite dependency node in subcanvas"""
+        """
+        Create Composite Internal Node.
+
+        Args:
+            parent_node (BaseNodeItem): The parent node.
+            model_props (PropertyMap): The model props.
+
+        Returns:
+            bool: Create Composite Internal Node.
+        """
         try:
             subcanvas = parent_node.ensure_subcanvas_visible()
             if not subcanvas:
@@ -358,6 +467,13 @@ class CanvasImportController(CanvasControllerMixin):
             internal_node._independent_model = internal_model
 
             def on_model_changed(prop_name: str, value: object) -> None:
+                """
+                On Model Changed.
+
+                Args:
+                    prop_name (str): The prop name.
+                    value (object): The value.
+                """
                 del prop_name, value
                 internal_node.update()
 
@@ -400,7 +516,15 @@ class CanvasImportController(CanvasControllerMixin):
         self,
         node_data: SerializedNodeData,
     ) -> CanvasNodeItem | None:
-        """Create node from serialized data"""
+        """
+        Create Node From Data.
+
+        Args:
+            node_data (SerializedNodeData): The node data.
+
+        Returns:
+            CanvasNodeItem | None: Create Node From Data.
+        """
         node_type = node_data["type"]
         pos_data = node_data["position"]
 
@@ -442,6 +566,13 @@ class CanvasImportController(CanvasControllerMixin):
                         prop_name: str,
                         value: object,
                     ) -> None:
+                        """
+                        On Model Changed.
+
+                        Args:
+                            prop_name (str): The prop name.
+                            value (object): The value.
+                        """
                         node.update()
                         node.properties_changed.emit(node, {prop_name: value})
 
@@ -593,7 +724,16 @@ class CanvasImportController(CanvasControllerMixin):
         edge_data: SerializedEdgeData,
         node_map: dict[int, CanvasNodeItem],
     ) -> BaseEdgeItem | None:
-        """Create edge from serialized data"""
+        """
+        Create Edge From Data.
+
+        Args:
+            edge_data (SerializedEdgeData): The edge data.
+            node_map (dict[int, CanvasNodeItem]): The node map.
+
+        Returns:
+            BaseEdgeItem | None: Create Edge From Data.
+        """
         edge_type = edge_data["type"]
         source_id = edge_data["source_id"]
         target_id = edge_data["target_id"]
@@ -642,7 +782,16 @@ class CanvasImportController(CanvasControllerMixin):
         edge: BaseEdgeItem,
         parent_node: BaseNodeItem,
     ) -> bool:
-        """Move an edge to another node's subcanvas"""
+        """
+        Move Edge To Subcanvas.
+
+        Args:
+            edge (BaseEdgeItem): The edge.
+            parent_node (BaseNodeItem): The parent node.
+
+        Returns:
+            bool: Move Edge To Subcanvas.
+        """
         try:
             subcanvas = parent_node.ensure_subcanvas_visible()
             if not subcanvas:

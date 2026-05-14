@@ -18,6 +18,8 @@ type SubcanvasHandler = tuple[
 
 
 class NodeItemFactory(Protocol):
+    """Node Item Factory."""
+
     def __call__(
         self,
         x: float = 0,

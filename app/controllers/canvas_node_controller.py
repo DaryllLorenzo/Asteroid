@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 from functools import partial
 
@@ -14,12 +14,31 @@ from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 
 
 class CanvasNodeController(CanvasControllerMixin):
+    """
+    Canvas Node Controller.
+
+    Methods:
+        add_node: Add Node.
+        on_node_properties_changed: On Node Properties Changed.
+    """
+
     def add_node(
         self,
         node_type: str,
         x: float,
         y: float,
     ) -> CanvasNodeItem | None:
+        """
+        Add Node.
+
+        Args:
+            node_type (str): The node type.
+            x (float): The x.
+            y (float): The y.
+
+        Returns:
+            CanvasNodeItem | None: Add Node.
+        """
         NodeClass = _NODE_MAP.get(node_type)
         if NodeClass is None:
             return None
@@ -64,7 +83,12 @@ class CanvasNodeController(CanvasControllerMixin):
         self,
         node_item: CanvasNodeItem,
     ) -> None:
-        """Re-add a previously removed node to scene + lists + signals."""
+        """
+        Restore Node.
+
+        Args:
+            node_item (CanvasNodeItem): The node item.
+        """
         scene = self.canvas.scene()
         if scene is not None and node_item.scene() is None:
             scene.addItem(node_item)
@@ -93,7 +117,13 @@ class CanvasNodeController(CanvasControllerMixin):
         node_item: CanvasNodeItem,
         properties: dict[str, object],
     ) -> None:
-        """Handle property changes emitted by nodes"""
+        """
+        On Node Properties Changed.
+
+        Args:
+            node_item (CanvasNodeItem): The node item.
+            properties (dict[str, object]): The properties.
+        """
         if node_item == self.selected_node:
             self.selected_node_properties_changed.emit(properties)
 
@@ -109,6 +139,13 @@ class CanvasNodeController(CanvasControllerMixin):
         parent_node_item: CanvasNodeItem,
         subcanvas,
     ) -> None:
+        """
+        On Subcanvas Toggled.
+
+        Args:
+            parent_node_item (CanvasNodeItem): The parent node item.
+            subcanvas: The subcanvas.
+        """
         if subcanvas is None:
             stored = self._subcanvas_handlers.pop(parent_node_item, None)
             if stored:
@@ -157,6 +194,19 @@ class CanvasNodeController(CanvasControllerMixin):
         local_x: float,
         local_y: float,
     ) -> CanvasNodeItem | None:
+        """
+        Add To Subcanvas.
+
+        Args:
+            parent_node_item (CanvasNodeItem): The parent node item.
+            subcanvas: The subcanvas.
+            item_type (str): The item type.
+            local_x (float): The local x.
+            local_y (float): The local y.
+
+        Returns:
+            CanvasNodeItem | None: Add To Subcanvas.
+        """
         NodeClass = _NODE_MAP.get(item_type)
         if NodeClass is None:
             return None
@@ -205,7 +255,16 @@ class CanvasNodeController(CanvasControllerMixin):
         local_x: float,
         local_y: float,
     ) -> None:
-        """Handle subcanvas node drop: push an AddSubcanvasNodeCommand."""
+        """
+        On Subcanvas Node Dropped.
+
+        Args:
+            parent_node_item (CanvasNodeItem): The parent node item.
+            subcanvas: The subcanvas.
+            item_type (str): The item type.
+            local_x (float): The local x.
+            local_y (float): The local y.
+        """
         errors = self.validator.validate(
             "subcanvas_add_node",
             {

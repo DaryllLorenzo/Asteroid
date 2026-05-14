@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 from PyQt6.QtWidgets import QGraphicsItem
 
@@ -24,6 +24,24 @@ from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 
 
 class CanvasInteractionController(CanvasControllerMixin):
+    """
+    Canvas Interaction Controller.
+
+    Attributes:
+        arrow_mode (bool): arrow mode.
+        selected_arrow_type (str | None): selected arrow type.
+        selected_nodes_for_arrow (list[CanvasNodeItem]): selected nodes for arrow.
+        composite_mode (bool): composite mode.
+        composite_node_type (str | None): composite node type.
+
+    Methods:
+        start_arrow_mode: Start Arrow Mode.
+        start_composite_dependency_mode: Start Composite Dependency Mode.
+        handle_node_click: Handle Node Click.
+        create_arrow: Create Arrow.
+        create_composite_dependency: Create Composite Dependency.
+    """
+
     arrow_mode: bool
     selected_arrow_type: str | None
     selected_nodes_for_arrow: list[CanvasNodeItem]
@@ -34,6 +52,12 @@ class CanvasInteractionController(CanvasControllerMixin):
         self,
         arrow_type: str,
     ) -> None:
+        """
+        Start Arrow Mode.
+
+        Args:
+            arrow_type (str): The arrow type.
+        """
         if arrow_type not in _ARROW_TYPES:
             return
         self._reset_modes()
@@ -45,6 +69,12 @@ class CanvasInteractionController(CanvasControllerMixin):
         self,
         node_type: str,
     ) -> None:
+        """
+        Start Composite Dependency Mode.
+
+        Args:
+            node_type (str): The node type.
+        """
         if node_type not in _NODE_MAP:
             print(f"CanvasController: unknown composite node_type '{node_type}'")
             return
@@ -58,6 +88,7 @@ class CanvasInteractionController(CanvasControllerMixin):
         )
 
     def _reset_modes(self) -> None:
+        """Reset Modes."""
         self.arrow_mode = False
         self.selected_arrow_type = None
         self.selected_nodes_for_arrow = []
@@ -69,6 +100,12 @@ class CanvasInteractionController(CanvasControllerMixin):
         self,
         node_item: object,
     ) -> None:
+        """
+        Handle Node Click.
+
+        Args:
+            node_item (object): The node item.
+        """
         if self.selection_mode:
             return
 
@@ -87,6 +124,12 @@ class CanvasInteractionController(CanvasControllerMixin):
         self,
         node_item: object,
     ) -> None:
+        """
+        Handle Composite Mode Click.
+
+        Args:
+            node_item (object): The node item.
+        """
         node = self._find_parent_actor_agent(node_item)
         if node is None:
             print("CanvasController: composite mode only accepts Actor/Agent; ignored.")
@@ -107,6 +150,15 @@ class CanvasInteractionController(CanvasControllerMixin):
         self,
         node_item: object,
     ) -> CanvasNodeItem | None:
+        """
+        Find Parent Actor Agent.
+
+        Args:
+            node_item (object): The node item.
+
+        Returns:
+            CanvasNodeItem | None: Find Parent Actor Agent.
+        """
         node = node_item if isinstance(node_item, QGraphicsItem) else None
         while node is not None and not isinstance(node, (ActorNodeItem, AgentNodeItem)):
             node = node.parentItem()
@@ -116,6 +168,12 @@ class CanvasInteractionController(CanvasControllerMixin):
         self,
         node_item: CanvasNodeItem,
     ) -> None:
+        """
+        Handle Arrow Mode Click.
+
+        Args:
+            node_item (CanvasNodeItem): The node item.
+        """
         node_subcanvas = getattr(node_item, "subcanvas_parent", None)
         if self._current_subcanvas:
             if node_subcanvas is not self._current_subcanvas:
@@ -135,6 +193,14 @@ class CanvasInteractionController(CanvasControllerMixin):
         subcanvas,
         arrow_type: str,
     ) -> None:
+        """
+        Start Subarrow Mode.
+
+        Args:
+            parent_node_item (CanvasNodeItem): The parent node item.
+            subcanvas: The subcanvas.
+            arrow_type (str): The arrow type.
+        """
         if arrow_type not in _ARROW_TYPES:
             return
         self._reset_modes()
@@ -145,6 +211,7 @@ class CanvasInteractionController(CanvasControllerMixin):
         print(f"CanvasController: start subarrow mode '{arrow_type}' in {subcanvas}")
 
     def create_arrow(self):
+        """Create Arrow."""
         if len(self.selected_nodes_for_arrow) != 2:
             return None
 
@@ -181,6 +248,7 @@ class CanvasInteractionController(CanvasControllerMixin):
         return edge_item
 
     def create_composite_dependency(self):
+        """Create Composite Dependency."""
         if len(self.selected_nodes_for_arrow) != 2 or not self.composite_node_type:
             return None
 
@@ -206,6 +274,13 @@ class CanvasInteractionController(CanvasControllerMixin):
         wrapper = CompositeModelWrapper(external_model, internal_model)
 
         def on_model_changed(prop_name, value):
+            """
+            On Model Changed.
+
+            Args:
+                prop_name: The prop name.
+                value: The value.
+            """
             mid_node.update()
             if hasattr(internal_node, "update"):
                 internal_node.update()

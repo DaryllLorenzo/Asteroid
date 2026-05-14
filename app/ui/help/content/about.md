@@ -17,10 +17,10 @@ Asteroid es un editor visual de flujos de trabajo desarrollado con Python y PyQt
 - **Formato de proyecto**: .astr (JSON personalizado)
 - **Renderizado**: QPainter
 
-## Licencia
+## License
 MIT License
 
-## Autor
+## Author
 Daryll Lorenzo Alfonso
 Año: 2025
 

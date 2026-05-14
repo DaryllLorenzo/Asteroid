@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 from pathlib import Path
 
@@ -15,24 +15,42 @@ from PyQt6.QtWidgets import QWidget
 
 
 class MarkdownViewer(QWidget):
+    """
+    Markdown Viewer.
+
+    Methods:
+        __init__: Initialize the instance.
+        setup_ui: Setup Ui.
+        get_stylesheet: Get Stylesheet.
+        load_markdown: Load Markdown.
+        show_error: Show Error.
+    """
+
     def __init__(self, parent=None):
+        """
+        Initialize the instance.
+
+        Args:
+            parent: The parent.
+        """
         super().__init__(parent)
         self.setup_ui()
 
     def setup_ui(self):
+        """Setup Ui."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.text_browser = QTextBrowser()
         self.text_browser.setOpenExternalLinks(True)
 
-        # Configurar fuente base
+        # Configure font base
         font = QFont()
         font.setFamily("Segoe UI")
         font.setPointSize(13)
         self.text_browser.setFont(font)
 
-        # Configurar scroll
+        # Configure scroll
         self.text_browser.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAsNeeded
         )
@@ -43,7 +61,7 @@ class MarkdownViewer(QWidget):
         layout.addWidget(self.text_browser)
 
     def get_stylesheet(self):
-        """CSS profesional y elegante para el visor de markdown"""
+        """Get Stylesheet."""
         return """
             /* ===== ESTILOS GENERALES ===== */
             body {
@@ -328,7 +346,12 @@ class MarkdownViewer(QWidget):
         """
 
     def load_markdown(self, file_path):
-        """Carga y renderiza un archivo markdown con estilos profesionales"""
+        """
+        Load Markdown.
+
+        Args:
+            file_path: The file path.
+        """
         try:
             file_path = Path(file_path)
 
@@ -342,7 +365,7 @@ class MarkdownViewer(QWidget):
                 self.show_error(f"El archivo está vacío: {file_path.name}")
                 return
 
-            # Convertir markdown a HTML con extensiones
+            # Convert markdown a HTML with extensiones
             html = markdown.markdown(
                 content, extensions=["extra", "nl2br", "toc"], output_format="html5"
             )
@@ -350,7 +373,7 @@ class MarkdownViewer(QWidget):
             # Aplicar estilos CSS
             self.text_browser.document().setDefaultStyleSheet(self.get_stylesheet())
 
-            # Establecer el HTML
+            # Set the HTML
             self.text_browser.setHtml(html)
 
         except Exception as e:
@@ -358,7 +381,12 @@ class MarkdownViewer(QWidget):
             self.show_error(f"Error: {str(e)}")
 
     def show_error(self, message):
-        """Muestra un mensaje de error estilizado"""
+        """
+        Show Error.
+
+        Args:
+            message: The message.
+        """
         error_html = f"""
         <div class="warning">
             <h3>⚠️ Error</h3>

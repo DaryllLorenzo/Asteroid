@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 import math
 
@@ -19,11 +19,38 @@ from app.ui.components.base_tropos_item import BaseTroposItem
 
 
 class HardGoalNodeItem(BaseTroposItem):
+    """
+    Hard Goal Node Item.
+
+    Methods:
+        __init__: Initialize the instance.
+        paint: Paint.
+        get_serializable_properties: Get Serializable Properties.
+        update_properties: Update Properties.
+    """
+
     def __init__(self, x=0, y=0, radius=60):
+        """
+        Initialize the instance.
+
+        Args:
+            x: The x.
+            y: The y.
+            radius: The radius.
+        """
         super().__init__(HardGoal(x, y, radius))
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
         # Usar _independent_model si existe
+        """
+        Get Distance To Border.
+
+        Args:
+            pos (QPointF): The pos.
+
+        Returns:
+            float: Get Distance To Border.
+        """
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
@@ -43,17 +70,34 @@ class HardGoalNodeItem(BaseTroposItem):
             return float(math.sqrt(dx * dx + dy * dy))
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
+        """
+        Get New Radius From Pos.
+
+        Args:
+            pos (QPointF): The pos.
+
+        Returns:
+            float: Get New Radius From Pos.
+        """
         new_r = abs(pos.x())
         return float(max(new_r, 20.0))
 
     def paint(self, painter, option, widget=None):
+        """
+        Paint.
+
+        Args:
+            painter: The painter.
+            option: The option.
+            widget: The widget.
+        """
         clipped = self.apply_subcanvas_clipping(painter)
 
         default_color = QColor(150, 200, 150)
         default_border = QColor(0, 0, 0)
         default_text = QColor(255, 255, 255)
 
-        # Usar _independent_model si existe (para nodos composite internos)
+        # Usar _independent_model if existe (for nodes composite internos)
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
@@ -79,14 +123,14 @@ class HardGoalNodeItem(BaseTroposItem):
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
 
-        # Usar radio del modelo independiente
+        # Usar radius of the model independiente
         r = model_for_props.radius
         rect = QRectF(-r, -r / 2, 2 * r, r)
         path = QPainterPath()
         path.addRoundedRect(rect, r / 2, r / 2)
         painter.drawPath(path)
 
-        #   DIBUJAR TEXTO MULTILÍNEA
+        #   DIBUJAR TEXT MULTILÍNEA
         self.draw_multiline_text(painter, text_color)
 
         if self.isSelected():
@@ -98,9 +142,16 @@ class HardGoalNodeItem(BaseTroposItem):
             painter.restore()
 
     def get_serializable_properties(self):
+        """Get Serializable Properties."""
         base_properties = super().get_serializable_properties()
         base_properties["node_type"] = "hard_goal"
         return base_properties
 
     def update_properties(self, properties: dict):
+        """
+        Update Properties.
+
+        Args:
+            properties (dict): The properties.
+        """
         super().update_properties(properties)

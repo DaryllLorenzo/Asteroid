@@ -1,15 +1,31 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 from app.core.models.base_node import BaseNode
 
 
 class Actor(BaseNode):
+    """
+    Actor.
+
+    Methods:
+        __init__: Initialize the instance.
+        node_type: Node Type.
+    """
+
     def __init__(self, x=0, y=0, radius=50):
+        """
+        Initialize the instance.
+
+        Args:
+            x: The x.
+            y: The y.
+            radius: The radius.
+        """
         super().__init__(x, y, radius)
         self.label = "Actor"
         self.color = "#6496fa"  # Azul claro (equivalente a QColor(100, 150, 250))
@@ -17,4 +33,10 @@ class Actor(BaseNode):
         self.text_color = "#ffffff"
 
     def node_type(self) -> str:
+        """
+        Node Type.
+
+        Returns:
+            str: Node Type.
+        """
         return "actor"

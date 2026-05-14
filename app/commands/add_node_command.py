@@ -6,6 +6,15 @@ from app.controller_types import CanvasNodeItem
 
 
 class AddNodeCommand(QUndoCommand):
+    """
+    Add Node Command.
+
+    Methods:
+        __init__: Initialize the instance.
+        redo: Redo.
+        undo: Undo.
+    """
+
     def __init__(
         self,
         controller: Any,
@@ -13,6 +22,15 @@ class AddNodeCommand(QUndoCommand):
         x: float,
         y: float,
     ) -> None:
+        """
+        Initialize the instance.
+
+        Args:
+            controller (Any): The controller.
+            node_type (str): The node type.
+            x (float): The x.
+            y (float): The y.
+        """
         super().__init__("Añadir nodo")
         self._controller = controller
         self._node_type = node_type
@@ -23,6 +41,7 @@ class AddNodeCommand(QUndoCommand):
         self._edges_data: list[dict] = []
 
     def redo(self) -> None:
+        """Redo."""
         if self._node_item is None:
             self._node_item = self._controller.add_node(
                 self._node_type, self._x, self._y
@@ -40,6 +59,12 @@ class AddNodeCommand(QUndoCommand):
             self._restore_children(self._node_item, self._node_data)
 
     def _restore_edge(self, edge_data: dict) -> None:
+        """
+        Restore Edge.
+
+        Args:
+            edge_data (dict): The edge data.
+        """
         edge = edge_data["edge"]
         parent = edge_data.get("parent_item")
         if edge.scene() is None:
@@ -58,6 +83,13 @@ class AddNodeCommand(QUndoCommand):
         edge.update_position()
 
     def _restore_children(self, parent_item, data) -> None:
+        """
+        Restore Children.
+
+        Args:
+            parent_item: The parent item.
+            data: The data.
+        """
         if data is None:
             return
         children_data = data.get("children", [])
@@ -90,6 +122,7 @@ class AddNodeCommand(QUndoCommand):
                 self._restore_children(child, child_data)
 
     def undo(self) -> None:
+        """Undo."""
         if self._node_item is None:
             return
 
@@ -114,6 +147,15 @@ class AddNodeCommand(QUndoCommand):
         self._controller._remove_node_clean(self._node_item)
 
     def _collect_children_data(self, parent_item) -> list[dict]:
+        """
+        Collect Children Data.
+
+        Args:
+            parent_item: The parent item.
+
+        Returns:
+            list[dict]: Collect Children Data.
+        """
         children = []
         for child in getattr(parent_item, "child_nodes", []):
             child_data = child.get_serializable_properties()

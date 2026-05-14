@@ -4,6 +4,15 @@ from PyQt6.QtGui import QUndoCommand
 
 
 class AddSubcanvasNodeCommand(QUndoCommand):
+    """
+    Add Subcanvas Node Command.
+
+    Methods:
+        __init__: Initialize the instance.
+        redo: Redo.
+        undo: Undo.
+    """
+
     def __init__(
         self,
         controller: Any,
@@ -13,6 +22,17 @@ class AddSubcanvasNodeCommand(QUndoCommand):
         local_x: float,
         local_y: float,
     ) -> None:
+        """
+        Initialize the instance.
+
+        Args:
+            controller (Any): The controller.
+            parent_node_item (Any): The parent node item.
+            subcanvas (Any): The subcanvas.
+            item_type (str): The item type.
+            local_x (float): The local x.
+            local_y (float): The local y.
+        """
         super().__init__("Añadir nodo a subcanvas")
         self._controller = controller
         self._parent_node_item = parent_node_item
@@ -23,6 +43,7 @@ class AddSubcanvasNodeCommand(QUndoCommand):
         self._child_node: Any = None
 
     def redo(self) -> None:
+        """Redo."""
         if self._child_node is None:
             self._child_node = self._controller._add_to_subcanvas(
                 self._parent_node_item,
@@ -35,6 +56,7 @@ class AddSubcanvasNodeCommand(QUndoCommand):
             self._restore_child()
 
     def undo(self) -> None:
+        """Undo."""
         if self._child_node is None:
             return
         if hasattr(self._parent_node_item, "child_nodes"):
@@ -43,6 +65,7 @@ class AddSubcanvasNodeCommand(QUndoCommand):
         self._controller._remove_node_clean(self._child_node)
 
     def _restore_child(self) -> None:
+        """Restore Child."""
         child = self._child_node
         subcanvas = self._subcanvas
 

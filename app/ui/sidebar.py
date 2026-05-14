@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 from PyQt6.QtCore import QMimeData
@@ -24,7 +24,7 @@ from app.ui.components.dependency_item.contribution_edge_item import (
     ContributionArrowItem,
 )
 
-# Arrow/link items (deben aceptar (source_node, dest_node) en su constructor)
+# Arrow/link items (deben aceptar (source_node, dest_node) in its constructor)
 from app.ui.components.dependency_item.dependency_link_edge_item import (
     DependencyLinkArrowItem,
 )
@@ -45,8 +45,13 @@ from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeIte
 
 class DraggableLabel(QLabel):
     """
-    Label arrastrable para nodos / links o boton de composite.
-    Si se proporciona `on_click` se ejecuta con click (usado para composites).
+    Draggable Label.
+
+    Methods:
+        __init__: Initialize the instance.
+        create_pixmap: Create Pixmap.
+        mousePressEvent: Mousepressevent.
+        start_drag: Start Drag.
     """
 
     def __init__(
@@ -56,6 +61,15 @@ class DraggableLabel(QLabel):
         on_click=None,
         tooltip_text: str | None = None,
     ) -> None:
+        """
+        Initialize the instance.
+
+        Args:
+            text (str): The text.
+            item_type (str): The item type.
+            on_click: The on click.
+            tooltip_text (str | None): The tooltip text.
+        """
         super().__init__(text)
         self.item_type = item_type
         self.on_click = on_click
@@ -80,6 +94,12 @@ class DraggableLabel(QLabel):
         self.setPixmap(self.create_pixmap())
 
     def create_pixmap(self) -> QPixmap:
+        """
+        Create Pixmap.
+
+        Returns:
+            QPixmap: Create Pixmap.
+        """
         W, H = 80, 80
         pixmap = QPixmap(W, H)
         pixmap.fill(Qt.GlobalColor.transparent)
@@ -110,6 +130,16 @@ class DraggableLabel(QLabel):
         return pixmap
 
     def _render_preview(self, painter, W, H, node_map, arrow_map):
+        """
+        Render Preview.
+
+        Args:
+            painter: The painter.
+            W: The W.
+            H: The H.
+            node_map: The node map.
+            arrow_map: The arrow map.
+        """
         if self.item_type.startswith("composite:"):
             self._render_composite_preview(painter, W, H, node_map)
         elif self.item_type in node_map:
@@ -118,6 +148,15 @@ class DraggableLabel(QLabel):
             self._render_arrow_preview(painter, W, H, arrow_map)
 
     def _render_composite_preview(self, painter, W, H, node_map):
+        """
+        Render Composite Preview.
+
+        Args:
+            painter: The painter.
+            W: The W.
+            H: The H.
+            node_map: The node map.
+        """
         scene = QGraphicsScene()
         node_key = self.item_type.split(":")[1]
         NodeClass = node_map.get(node_key)
@@ -153,6 +192,15 @@ class DraggableLabel(QLabel):
             painter.drawLine(int(node_right + margin), y, W - 8, y)
 
     def _render_node_preview(self, painter, W, H, node_map):
+        """
+        Render Node Preview.
+
+        Args:
+            painter: The painter.
+            W: The W.
+            H: The H.
+            node_map: The node map.
+        """
         NodeClass = node_map[self.item_type]
         scene = QGraphicsScene()
         try:
@@ -167,6 +215,15 @@ class DraggableLabel(QLabel):
         scene.render(painter, QRectF(0, 0, W, H), rect)
 
     def _render_arrow_preview(self, painter, W, H, arrow_map):
+        """
+        Render Arrow Preview.
+
+        Args:
+            painter: The painter.
+            W: The W.
+            H: The H.
+            arrow_map: The arrow map.
+        """
         ArrowClass = arrow_map[self.item_type]
         from PyQt6.QtWidgets import QGraphicsEllipseItem
 
@@ -189,7 +246,13 @@ class DraggableLabel(QLabel):
         scene.render(painter, QRectF(0, 0, W, H), rect)
 
     def mousePressEvent(self, event):
-        # si on_click está presente, tratar clicks como acción (ej. composites)
+        # if on_click this presente, tratar clicks as action (ej. composites)
+        """
+        Mousepressevent.
+
+        Args:
+            event: The event.
+        """
         if event.button() == Qt.MouseButton.LeftButton and self.on_click:
             # llamar callback (sin argumentos)
             try:
@@ -197,11 +260,12 @@ class DraggableLabel(QLabel):
             except Exception as e:
                 print(f"[ERROR] Error executing on_click for {self.item_type}: {e}")
             return
-        # si no hay callback, iniciar drag normal
+        # if no there is callback, iniciar drag normal
         if event.button() == Qt.MouseButton.LeftButton:
             self.start_drag()
 
     def start_drag(self):
+        """Start Drag."""
         mime = QMimeData()
         mime.setText(self.item_type)
         drag = QDrag(self)
@@ -213,16 +277,19 @@ class DraggableLabel(QLabel):
 
 class Sidebar(QWidget):
     """
-    Sidebar con 3 secciones:
-      - Items (nodos)
-      - Links (flechas)
-      - Composite Dependencies (botones que activan modo composite
-        en el controller)
-    Si `controller` es provisto, los composites invocan
-    controller.start_composite_dependency_mode(tipo).
+    Sidebar.
+
+    Methods:
+        __init__: Initialize the instance.
     """
 
     def __init__(self, controller=None):
+        """
+        Initialize the instance.
+
+        Args:
+            controller: The controller.
+        """
         super().__init__()
         self.controller = controller
         self.setStyleSheet("""
@@ -319,9 +386,15 @@ class Sidebar(QWidget):
         comp_grid.setHorizontalSpacing(8)
         comp_grid.setVerticalSpacing(8)
 
-        # cuando se hace click en estos labels, llamamos al controlador
+        # when itself hace click in these labels, llamamos al controlador
         # para activar modo composite
         def make_onclick(node_type):
+            """
+            Make Onclick.
+
+            Args:
+                node_type: The node type.
+            """
             return lambda: self._start_composite(node_type)
 
         self.hard_comp = DraggableLabel(
@@ -358,7 +431,12 @@ class Sidebar(QWidget):
         main_layout.addStretch()
 
     def _start_composite(self, node_type):
-        """Callback de los botones composite: delega al controller si existe."""
+        """
+        Start Composite.
+
+        Args:
+            node_type: The node type.
+        """
         if not self.controller:
             print("Sidebar: composite clicked but no controller attached.")
             return

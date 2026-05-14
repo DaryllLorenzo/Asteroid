@@ -3,6 +3,14 @@ from abc import abstractmethod
 
 
 class Rule(ABC):
+    """
+    Rule.
+
+    Methods:
+        applies_to: Applies To.
+        check: Check.
+    """
+
     @abstractmethod
     def applies_to(self, action_type: str) -> bool: ...
 

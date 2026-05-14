@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 # app/ui/components/dependency_item/dependency_link_edge_item.py
@@ -20,14 +20,28 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class DependencyLinkArrowItem(BaseEdgeItem):
-    """Flecha tipo dependency: línea de centro a centro con triángulo en el medio."""
+    """
+    Dependency Link Arrow Item.
+
+    Methods:
+        __init__: Initialize the instance.
+        boundingRect: Boundingrect.
+        paint: Paint.
+    """
 
     def __init__(self, source_node, dest_node):
+        """
+        Initialize the instance.
+
+        Args:
+            source_node: The source node.
+            dest_node: The dest node.
+        """
         super().__init__(source_node, dest_node, color=QColor(0, 0, 0), dashed=False)
 
     def boundingRect(self):
-        """Extiende el bounding rect para incluir el triángulo en medio de la línea."""
-        extra = 15  # suficiente para el triángulo
+        """Boundingrect."""
+        extra = 15  # suficiente for the triángulo
         return super().boundingRect().adjusted(-extra, -extra, extra, extra)
 
     def paint(
@@ -36,6 +50,14 @@ class DependencyLinkArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
+        """
+        Paint.
+
+        Args:
+            painter (QPainter | None): The painter.
+            option (QStyleOptionGraphicsItem | None): The option.
+            widget (QWidget | None): The widget.
+        """
         if painter is None:
             return
         del option, widget
@@ -47,7 +69,7 @@ class DependencyLinkArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() aquí para evitar temblor
+        # NO llamar a update_position() here for avoid temblor
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -57,18 +79,18 @@ class DependencyLinkArrowItem(BaseEdgeItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
 
-        # Dibujar la ruta (línea con control points si existen)
+        # Dibujar the path (line with control points if existen)
         painter.drawPath(path)
 
-        # Triángulo en el punto MEDIO REAL del path curvo
-        # Usamos el método utilitario para obtener el punto y ángulo correctos
+        # Triángulo in the punto MIDDLE REAL of the path curvo
+        # Usamos the method utilitario for get the punto y ángulo correctos
         mid_point, mid_angle = self._get_point_at_percentage(0.5)
 
-        # Dibujar triángulo apuntando en la dirección del path
+        # Dibujar triángulo apuntando in the dirección of the path
         size = 12.0
-        # El vértice del triángulo apunta en la dirección del path
+        # The vértice of the triángulo apunta in the dirección of the path
         p_tip = mid_point
-        # Los otros dos vértices forman la base del triángulo
+        # The otros dos vértices forman the base of the triángulo
 
         p1 = QPointF(
             p_tip.x() - size * math.cos(mid_angle - math.pi / 6),

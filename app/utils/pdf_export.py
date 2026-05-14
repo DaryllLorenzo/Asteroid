@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 import os
@@ -30,9 +30,21 @@ from reportlab.platypus import TableStyle
 
 
 class PDFGenerator:
-    """Generador de archivos PDF para diagramas de Asteroid"""
+    """
+    P D F Generator.
+
+    Methods:
+        __init__: Initialize the instance.
+        export_to_pdf: Export To Pdf.
+    """
 
     def __init__(self, canvas_controller):
+        """
+        Initialize the instance.
+
+        Args:
+            canvas_controller: The canvas controller.
+        """
         self.canvas_controller = canvas_controller
 
     def export_to_pdf(
@@ -51,7 +63,7 @@ class PDFGenerator:
             True si la exportación fue exitosa
         """
         try:
-            # Obtener nombre de archivo
+            # Get name of file
             if not filename:
                 filename, _ = QFileDialog.getSaveFileName(
                     self.canvas_controller.canvas,
@@ -79,7 +91,7 @@ class PDFGenerator:
             story = []
             styles = getSampleStyleSheet()
 
-            # Título
+            # Title
             title_style = ParagraphStyle(
                 "CustomTitle",
                 parent=styles["Heading1"],
@@ -91,7 +103,7 @@ class PDFGenerator:
             story.append(Paragraph("Diagrama Asteroid", title_style))
             story.append(Spacer(1, 0.3 * inch))
 
-            # Agregar imagen del diagrama
+            # Add imagen of the diagrama
             diagram_image = self._capture_canvas_image()
             if diagram_image:
                 img = Image(diagram_image, width=6 * inch, height=4 * inch)
@@ -99,7 +111,7 @@ class PDFGenerator:
                 story.append(img)
                 story.append(Spacer(1, 0.5 * inch))
 
-            # Agregar información adicional si se solicita
+            # Add information adicional if itself solicita
             if with_additional_info:
                 story.append(PageBreak())
                 self._add_additional_info(story, styles)
@@ -113,7 +125,7 @@ class PDFGenerator:
                 f"PDF exportado exitosamente:\n{filename}",
             )
             if diagram_image:
-                os.remove(diagram_image)  # Eliminar el archivo temporal
+                os.remove(diagram_image)  # Delete the file temporal
 
             return True
 
@@ -135,31 +147,31 @@ class PDFGenerator:
         try:
             canvas = self.canvas_controller.canvas
 
-            # Obtener los límites reales de todos los items + margen
-            # para evitar cortes
+            # Get the límites reales of todos the items + margin
+            # for avoid cortes
             scene = canvas.scene()
             if scene is None:
                 return None
 
             scene_rect = scene.itemsBoundingRect()
-            margin = 50.0  # Margen extra para asegurar que no se corten bordes
+            margin = 50.0  # Margin extra for asegurar that no itself corten borders
             # (subcanvas, etc.)
             expanded_rect = scene_rect.adjusted(-margin, -margin, margin, margin)
 
-            # Crear pixmap del tamaño expandido
+            # Create pixmap of the size expandido
             pixmap = QPixmap(int(expanded_rect.width()), int(expanded_rect.height()))
-            pixmap.fill(QColor(255, 255, 255))  # Usar QColor en lugar de colors.white
+            pixmap.fill(QColor(255, 255, 255))  # Usar QColor in lugar of colors.white
 
-            # Renderizar la escena en el pixmap con el rect expandido
+            # Renderizar the scene in the pixmap with the rect expandido
             painter = QPainter(pixmap)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
-            # Renderizar usando el rect expandido para capturar todos los elementos
+            # Renderizar usando the rect expandido for capturar todos the elements
             scene.render(painter, source=expanded_rect)
             painter.end()
 
-            # Guardar como PNG temporal
+            # Save as PNG temporal
             temp_path = Path(__file__).parent.parent.parent / "temp_diagram.png"
             pixmap.save(str(temp_path), "PNG")
 
@@ -186,13 +198,13 @@ class PDFGenerator:
             spaceBefore=10,
         )
 
-        # Sección de Elementos
+        # Sección of Elements
         story.append(Paragraph("Elementos del Diagrama", section_style))
         self._add_elements_table(story, styles)
 
         story.append(Spacer(1, 0.3 * inch))
 
-        # Sección de Relaciones
+        # Sección of Relaciones
         story.append(Paragraph("Relaciones entre Elementos", section_style))
         self._add_relationships_table(story, styles)
 
@@ -209,13 +221,13 @@ class PDFGenerator:
         # Encabezados
         data = [["ID", "Tipo", "Nombre/Label"]]
 
-        # Agregar elementos
+        # Add elements
         for idx, node in enumerate(nodes, 1):
             node_type = self._get_node_type_display(node)
             label = self._get_node_label(node)
             data.append([str(idx), node_type, label])
 
-        # Crear tabla
+        # Create tabla
         table = Table(data, colWidths=[0.5 * inch, 1.5 * inch, 3.5 * inch])
         table.setStyle(
             TableStyle(
@@ -257,14 +269,14 @@ class PDFGenerator:
         # Encabezados
         data = [["Origen", "Tipo de Relación", "Destino"]]
 
-        # Agregar relaciones
+        # Add relaciones
         for edge in edges:
             source_label = self._get_node_label(edge.source_node)
             target_label = self._get_node_label(edge.dest_node)
             edge_type = self._get_edge_type_display(edge)
             data.append([source_label, edge_type, target_label])
 
-        # Crear tabla
+        # Create tabla
         table = Table(data, colWidths=[2 * inch, 2 * inch, 2 * inch])
         table.setStyle(
             TableStyle(

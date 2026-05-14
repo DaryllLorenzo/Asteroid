@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 from collections.abc import Callable
@@ -18,12 +18,19 @@ from PyQt6.QtWidgets import QGraphicsItem
 
 class ControlPointHandle(QGraphicsEllipseItem):
     """
-    Handle arrastrable para modificar la forma de una arista.
-    Representa un punto de control que el usuario puede arrastrar
-    para deformar la línea (estilo Draw.io).
+    Control Point Handle.
+
+    Methods:
+        __init__: Initialize the instance.
+        mousePressEvent: Mousepressevent.
+        mouseMoveEvent: Mousemoveevent.
+        mouseReleaseEvent: Mousereleaseevent.
+        hoverEnterEvent: Hoverenterevent.
+        hoverLeaveEvent: Hoverleaveevent.
+        update_appearance: Update Appearance.
     """
 
-    HANDLE_SIZE = 10.0  # Tamaño del handle en píxeles
+    HANDLE_SIZE = 10.0  # Size of the handle in píxeles
 
     def __init__(
         self,
@@ -33,6 +40,16 @@ class ControlPointHandle(QGraphicsEllipseItem):
         on_release: Callable | None = None,
         on_drag_start: Callable | None = None,
     ):
+        """
+        Initialize the instance.
+
+        Args:
+            parent_edge: The parent edge.
+            position (QPointF): The position.
+            on_position_changed (Callable | None): The on position changed.
+            on_release (Callable | None): The on release.
+            on_drag_start (Callable | None): The on drag start.
+        """
         super().__init__(
             -self.HANDLE_SIZE / 2,
             -self.HANDLE_SIZE / 2,
@@ -46,10 +63,10 @@ class ControlPointHandle(QGraphicsEllipseItem):
         self.on_drag_start = on_drag_start
         self.setPos(position)
 
-        # Punto donde se hizo click inicial (para calcular offset)
+        # Punto donde itself hizo click initial (for calculate offset)
         self._click_offset = QPointF(0, 0)
 
-        # Configurar apariencia
+        # Configure apariencia
         self.setPen(QPen(QColor(0, 100, 200), 2))
         self.setBrush(QBrush(QColor(255, 255, 255)))
 
@@ -58,17 +75,22 @@ class ControlPointHandle(QGraphicsEllipseItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setAcceptHoverEvents(True)
 
-        # Cursor personalizado
+        # Cursor custom
         self.setCursor(Qt.CursorShape.SizeAllCursor)
 
-        # Z-value alto para estar por encima de la línea
+        # Z-value alto for estar by above of the line
         self.setZValue(100)
 
-        # Estado
+        # State
         self._is_dragging = False
 
     def mousePressEvent(self, event):
-        """Iniciar arrastre del handle"""
+        """
+        Mousepressevent.
+
+        Args:
+            event: The event.
+        """
         if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
             self.setSelected(True)
@@ -79,21 +101,26 @@ class ControlPointHandle(QGraphicsEllipseItem):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        """Mover el handle y notificar al edge padre"""
+        """
+        Mousemoveevent.
+
+        Args:
+            event: The event.
+        """
         if self._is_dragging and event.buttons() & Qt.MouseButton.LeftButton:
-            # Transformar posición de escena a coordenadas locales del padre (edge)
+            # Transform position of scene a coordinates local of the parent (edge)
             parent = self.parentItem()
             if parent:
-                # Convertir de coordenadas de escena a coordenadas locales del padre
+                # Convert of coordinates of scene a coordinates local of the parent
                 local_pos = parent.mapFromScene(event.scenePos())
                 self.setPos(local_pos)
                 new_pos = local_pos
             else:
-                # Sin padre, usar coordenadas de escena directamente
+                # Without parent, usar coordinates of scene directamente
                 new_pos = event.scenePos()
                 self.setPos(new_pos)
 
-            # Notificar al edge padre sobre el cambio de posición
+            # Notify al edge parent over the changed of position
             if self.on_position_changed:
                 self.on_position_changed(self, new_pos)
             event.accept()
@@ -101,26 +128,46 @@ class ControlPointHandle(QGraphicsEllipseItem):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        """Finalizar arrastre"""
+        """
+        Mousereleaseevent.
+
+        Args:
+            event: The event.
+        """
         self._is_dragging = False
-        # Notificar que se soltó el handle
+        # Notify that itself dropped the handle
         if self.on_release:
             self.on_release()
         super().mouseReleaseEvent(event)
 
     def hoverEnterEvent(self, event):
-        """Hover: resaltar el handle"""
+        """
+        Hoverenterevent.
+
+        Args:
+            event: The event.
+        """
         self.setBrush(QBrush(QColor(200, 230, 255)))
         super().hoverEnterEvent(event)
 
     def hoverLeaveEvent(self, event):
-        """Salir del hover: restaurar apariencia"""
+        """
+        Hoverleaveevent.
+
+        Args:
+            event: The event.
+        """
         if not self.isSelected():
             self.setBrush(QBrush(QColor(255, 255, 255)))
         super().hoverLeaveEvent(event)
 
     def update_appearance(self, is_selected: bool):
-        """Actualizar apariencia según estado de selección"""
+        """
+        Update Appearance.
+
+        Args:
+            is_selected (bool): The is selected.
+        """
         if is_selected:
             self.setBrush(QBrush(QColor(0, 100, 200)))
         else:

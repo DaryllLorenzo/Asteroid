@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 
 from PyQt6.QtCore import QPointF
@@ -16,19 +16,54 @@ from app.ui.components.base_node_item import BaseNodeItem
 
 
 class AgentNodeItem(BaseNodeItem):
+    """
+    Agent Node Item.
+
+    Methods:
+        __init__: Initialize the instance.
+        paint: Paint.
+        get_serializable_properties: Get Serializable Properties.
+        update_properties: Update Properties.
+    """
+
     def __init__(self, x=0, y=0, radius=50):
+        """
+        Initialize the instance.
+
+        Args:
+            x: The x.
+            y: The y.
+            radius: The radius.
+        """
         super().__init__(Agent(x, y, radius))
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
+        """
+        Get Distance To Border.
+
+        Args:
+            pos (QPointF): The pos.
+
+        Returns:
+            float: Get Distance To Border.
+        """
         r = float(self.model.radius)
         center_dist = (pos.x() ** 2 + pos.y() ** 2) ** 0.5
         return float(abs(center_dist - r))
 
     def paint(self, painter, option, widget=None):
-        # Aplicar clipping si es nodo interno de subcanvas
+        # Apply clipping if node internal of subcanvas
+        """
+        Paint.
+
+        Args:
+            painter: The painter.
+            option: The option.
+            widget: The widget.
+        """
         clipped = self.apply_subcanvas_clipping(painter)
 
-        # 1. Colores
+        # 1. Colors
         default_color = QColor(250, 150, 100)
         default_border = QColor(0, 0, 0)
         default_text = QColor(255, 255, 255)
@@ -47,23 +82,21 @@ class AgentNodeItem(BaseNodeItem):
             else default_text
         )
 
-        # 2. DIBUJAR EL CONTENEDOR
+        # 2. Draw THE CONTAINER
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
         painter.drawEllipse(self.boundingRect())
 
-        # 3. DIBUJAR TEXTO (Multilínea)
+        # 3. Draw TEXT (Multilínea)
         self.draw_multiline_text(painter, text_color)
 
-        # 4. DIBUJAR LA LÍNEA DEL AGENTE
-        # La línea debe moverse con el offset igual que el texto.
-        content_off_x = getattr(
-            self.model, "content_offset_x", 0.0
-        )  # En píxeles si BaseNode lo maneja así
+        # 4. Draw THE LINE OF THE AGENTE
+        # The line must move with the offset like the text.
+        content_off_x = getattr(self.model, "content_offset_x", 0.0)
         content_off_y = getattr(self.model, "content_offset_y", 0.0)
 
         painter.save()
-        # Aplicamos offset solo para la línea (el texto ya se dibujó en su sitio)
+        # Apply offset only for the line (the text already itself drew in its place)
         painter.translate(content_off_x, content_off_y)
 
         y_position = int(-self.model.radius * 0.3)
@@ -73,7 +106,7 @@ class AgentNodeItem(BaseNodeItem):
         )
         painter.restore()
 
-        # 5. Indicador de selección
+        # 5. Indicador of selection
         if self.isSelected():
             painter.setPen(QPen(Qt.GlobalColor.yellow, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -83,6 +116,7 @@ class AgentNodeItem(BaseNodeItem):
             painter.restore()
 
     def get_serializable_properties(self):
+        """Get Serializable Properties."""
         base_properties = super().get_serializable_properties()
         base_properties["node_type"] = "agent"
         base_properties["content_offset_x"] = getattr(
@@ -100,5 +134,11 @@ class AgentNodeItem(BaseNodeItem):
         return base_properties
 
     def update_properties(self, properties: dict):
+        """
+        Update Properties.
+
+        Args:
+            properties (dict): The properties.
+        """
         super().update_properties(properties)
         self.update()

@@ -9,6 +9,32 @@ type ChangeCallback = Callable[[str, object], None]
 
 
 class NodeModelLike(Protocol):
+    """
+    Node Model Like.
+
+    Attributes:
+        x (float): x.
+        y (float): y.
+        radius (float): radius.
+        label (str): label.
+        color (str): color.
+        border_color (str): border color.
+        text_color (str): text color.
+        text_align (str): text align.
+        text_width (float): text width.
+        font_size (float): font size.
+        content_offset_x (float): content offset x.
+        content_offset_y (float): content offset y.
+        position_in_subcanvas_x (float): position in subcanvas x.
+        position_in_subcanvas_y (float): position in subcanvas y.
+        child_nodes (list[object]): child nodes.
+        show_subcanvas (bool): show subcanvas.
+
+    Methods:
+        toggle_subcanvas: Toggle Subcanvas.
+        node_type: Node Type.
+    """
+
     x: float
     y: float
     radius: float
@@ -32,6 +58,15 @@ class NodeModelLike(Protocol):
 
 
 class CompositeModelLike(NodeModelLike, Protocol):
+    """
+    Composite Model Like.
+
+    Methods:
+        add_change_callback: Add Change Callback.
+        get_external_model: Get External Model.
+        get_internal_model: Get Internal Model.
+    """
+
     def add_change_callback(self, callback: ChangeCallback) -> None: ...
 
     def get_external_model(self) -> NodeModelLike: ...
@@ -40,6 +75,8 @@ class CompositeModelLike(NodeModelLike, Protocol):
 
 
 class ModelFactory(Protocol):
+    """Model Factory."""
+
     def __call__(
         self,
         x: float = 0,

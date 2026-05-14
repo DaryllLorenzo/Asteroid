@@ -1,8 +1,8 @@
 # ---------------------------------------------------
-# Proyecto: Asteroid
-# Autor: Daryll Lorenzo Alfonso
-# Año: 2025
-# Licencia: MIT License
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
 # ---------------------------------------------------
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QDialog
@@ -15,13 +15,28 @@ from .markdown_viewer import MarkdownViewer
 
 
 class HelpModal(QDialog):
+    """
+    Help Modal.
+
+    Methods:
+        __init__: Initialize the instance.
+    """
+
     def __init__(self, title, md_file_path, parent=None):
+        """
+        Initialize the instance.
+
+        Args:
+            title: The title.
+            md_file_path: The md file path.
+            parent: The parent.
+        """
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setMinimumSize(900, 650)
         self.resize(1000, 750)
 
-        # Configurar estilo del diálogo - PROFESIONAL
+        # Configure style of the dialog - PROFESSIONAL
         self.setStyleSheet("""
             /* ===== DIÁLOGO PRINCIPAL ===== */
             QDialog {
@@ -57,15 +72,15 @@ class HelpModal(QDialog):
             }
         """)
 
-        # Layout principal con márgenes elegantes
+        # Layout main with margins elegant
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
 
-        # Crear visor de markdown
+        # Create visor of markdown
         self.viewer = MarkdownViewer()
 
-        # Aplicar estilo al QTextBrowser para bordes redondeados, etc.
+        # Aplicar style al QTextBrowser for borders redondeados, etc.
         self.viewer.text_browser.setStyleSheet("""
             /* ===== QTextBrowser ===== */
             QTextBrowser {
@@ -124,20 +139,20 @@ class HelpModal(QDialog):
             }
         """)
 
-        main_layout.addWidget(self.viewer, 1)  # El 1 hace que se expanda
+        main_layout.addWidget(self.viewer, 1)  # The 1 hace that itself expanda
 
-        # Contenedor para el botón con alineación centrada
+        # Container for the button with alignment centered
         button_container = QWidget()
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(0, 15, 0, 0)
 
-        # Botón de cerrar elegante
+        # Button of cerrar elegante
         close_btn = QPushButton("Cerrar")
         close_btn.clicked.connect(self.accept)
         close_btn.setFixedSize(120, 42)
         close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        # Estilo adicional para el botón
+        # Style adicional for the button
         close_btn.setStyleSheet("""
             QPushButton {
                 font-size: 25px;
@@ -152,11 +167,11 @@ class HelpModal(QDialog):
 
         main_layout.addWidget(button_container)
 
-        # Cargar el archivo markdown
+        # Load the file markdown
         self.viewer.load_markdown(md_file_path)
 
-        # Foco en el botón por defecto
+        # Foco in the button by defecto
         close_btn.setFocus()
 
-        # Añadir sombra de ventana (efecto visual)
+        # Añadir sombra of window (efecto visual)
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.Window)

@@ -5,6 +5,15 @@ from PyQt6.QtGui import QUndoCommand
 
 
 class ChangeControlPointsCommand(QUndoCommand):
+    """
+    Change Control Points Command.
+
+    Methods:
+        __init__: Initialize the instance.
+        redo: Redo.
+        undo: Undo.
+    """
+
     def __init__(
         self,
         controller: Any,
@@ -12,6 +21,15 @@ class ChangeControlPointsCommand(QUndoCommand):
         old_points: list[QPointF],
         new_points: list[QPointF],
     ) -> None:
+        """
+        Initialize the instance.
+
+        Args:
+            controller (Any): The controller.
+            edge (Any): The edge.
+            old_points (list[QPointF]): The old points.
+            new_points (list[QPointF]): The new points.
+        """
         super().__init__("Mover punto de control")
         self._controller = controller
         self._edge = edge
@@ -19,12 +37,20 @@ class ChangeControlPointsCommand(QUndoCommand):
         self._new_points = [QPointF(p) for p in new_points]
 
     def redo(self) -> None:
+        """Redo."""
         self._apply(self._new_points)
 
     def undo(self) -> None:
+        """Undo."""
         self._apply(self._old_points)
 
     def _apply(self, points: list[QPointF]) -> None:
+        """
+        Apply.
+
+        Args:
+            points (list[QPointF]): The points.
+        """
         self._edge.control_points = [QPointF(p) for p in points]
         self._edge._update_handles_position()
         self._edge.update_position()
