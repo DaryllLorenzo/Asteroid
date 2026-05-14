@@ -26,7 +26,7 @@ jobs:
         run: uv pip install pyinstaller
 
       - name: Build executable with PyInstaller
-        run: .venv\Scripts\pyinstaller.exe --onefile --windowed --name asteroid --add-data "images;images" --collect-all app main.py
+        run: .venv\Scripts\pyinstaller.exe --onefile --windowed --name asteroid --icon "images/AsteroidLogo.ico" --add-data "images;images" --collect-all app main.py
         shell: cmd
 
       - name: Upload Windows executable as artifact
