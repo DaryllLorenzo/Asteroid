@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import QRadioButton
 from PyQt6.QtWidgets import QVBoxLayout
 
 from app.i18n import tr
+from app.ui.theme_manager import theme_manager
 
 
 class PDFExportDialog(QDialog):
@@ -46,9 +47,14 @@ class PDFExportDialog(QDialog):
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
 
+        dark = theme_manager().is_dark
+
         # Title
         title_label = QLabel(tr("What would you like to include in the PDF?"))
-        title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
+        if dark:
+            title_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #e0e0e0;")
+        else:
+            title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
         layout.addWidget(title_label)
 
         # Export options
@@ -77,7 +83,10 @@ class PDFExportDialog(QDialog):
                 " (dependencies, decompositions, etc.)"
             )
         )
-        info_label.setStyleSheet("color: #666; font-size: 11px;")
+        if dark:
+            info_label.setStyleSheet("color: #aaaaaa; font-size: 11px;")
+        else:
+            info_label.setStyleSheet("color: #666; font-size: 11px;")
         info_label.setWordWrap(True)
         options_layout.addWidget(info_label)
 

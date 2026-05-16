@@ -26,6 +26,7 @@ from app.i18n import tr
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.control_point_handle import ControlPointHandle
 from app.ui.components.position_controll_widget import PositionControlWidget
+from app.ui.theme_manager import theme_manager
 
 
 class PropertiesPanel(QWidget):
@@ -71,6 +72,29 @@ class PropertiesPanel(QWidget):
                 self.on_controller_properties_changed
             )
             controller.selection_changed.connect(self.on_selection_changed)
+
+        theme_manager().theme_changed.connect(self._on_theme_changed)
+
+    def _on_theme_changed(self, dark: bool):
+        """Update hardcoded styles when theme changes."""
+        if dark:
+            self.edge_group.setStyleSheet(
+                "QGroupBox { color: #e0e0e0; font-weight: bold; }"
+            )
+            self.edge_info_label.setStyleSheet("color: #e0e0e0; font-weight: bold;")
+            self.instructions_label.setStyleSheet(
+                "background-color: #2d2d2d; color: #cccccc; "
+                "padding: 8px; border-radius: 4px; margin: 4px 0;"
+            )
+        else:
+            self.edge_group.setStyleSheet(
+                "QGroupBox { color: #FFFFFF; font-weight: bold; }"
+            )
+            self.edge_info_label.setStyleSheet("color: #FFFFFF; font-weight: bold;")
+            self.instructions_label.setStyleSheet(
+                "background-color: #f5f5f5; color: #333333; "
+                "padding: 8px; border-radius: 4px; margin: 4px 0;"
+            )
 
     def init_ui(self):
         """Init Ui."""

@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import QVBoxLayout
 from PyQt6.QtWidgets import QWidget
 
 from app.i18n import tr
+from app.ui.theme_manager import theme_manager
 from app.ui.components.dependency_item.and_decomposition_edge_item import (
     AndDecompositionArrowItem,
 )
@@ -80,20 +81,42 @@ class DraggableLabel(QLabel):
         self.setWordWrap(True)
         if tooltip_text:
             self.setToolTip(tr(tooltip_text))
-        self.setStyleSheet("""
-            QLabel {
-                border: 2px solid #cccccc;
-                border-radius: 10px;
-                padding: 8px;
-                background-color: #fafafa;
-                min-width: 90px;
-                min-height: 90px;
-            }
-            QLabel:hover {
-                background-color: #f0f0f0;
-                border: 2px solid #888888;
-            }
-        """)
+        self._update_style()
+
+    def _update_style(self):
+        """Update stylesheet based on current theme."""
+        if theme_manager().is_dark:
+            self.setStyleSheet("""
+                QLabel {
+                    border: 2px solid #666666;
+                    border-radius: 10px;
+                    padding: 8px;
+                    background-color: #2d2d2d;
+                    color: #e0e0e0;
+                    min-width: 90px;
+                    min-height: 90px;
+                }
+                QLabel:hover {
+                    background-color: #3d3d3d;
+                    border: 2px solid #aaaaaa;
+                }
+            """)
+        else:
+            self.setStyleSheet("""
+                QLabel {
+                    border: 2px solid #cccccc;
+                    border-radius: 10px;
+                    padding: 8px;
+                    background-color: #fafafa;
+                    color: #000000;
+                    min-width: 90px;
+                    min-height: 90px;
+                }
+                QLabel:hover {
+                    background-color: #f0f0f0;
+                    border: 2px solid #888888;
+                }
+            """)
         self.setPixmap(self.create_pixmap())
 
     def retranslate(self):
@@ -193,8 +216,11 @@ class DraggableLabel(QLabel):
             margin = 4
             y = int(H / 2)
 
+            from PyQt6.QtGui import QColor
+            edge_color = QColor("#ffffff") if theme_manager().is_dark else QColor("#000000")
             pen = painter.pen()
             pen.setWidth(2)
+            pen.setColor(edge_color)
             painter.setPen(pen)
 
             painter.drawLine(8, y, int(node_left - margin), y)
@@ -301,40 +327,47 @@ class Sidebar(QWidget):
         """
         super().__init__()
         self.controller = controller
-        self.setStyleSheet("""
-            QToolTip {
-                background-color: #ffffff;
-                color: #000000;
-                border: 1px solid #333333;
-                padding: 4px;
-                font-size: 12px;
-            }
-        """)
+        self._all_labels: list[DraggableLabel] = []
+
+        self._update_tooltip_style()
+
+        # Listen for theme changes
+        theme_manager().theme_changed.connect(self._on_theme_changed)
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
+        self._update_tooltip_style()
+
         # ===== Items =====
-        self.items_title = QLabel(tr("Items"))
-        self.items_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.items_title.setStyleSheet("font-weight:bold; font-size:14px; margin:8px;")
-        main_layout.addWidget(self.items_title)
+        items_title = QLabel(tr("Items"))
+        items_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        items_title.setProperty("class", "sidebar-title")
+        items_title.setStyleSheet("font-weight:bold; font-size:14px; margin:8px;")
+        self._title_labels = [items_title]
+        main_layout.addWidget(items_title)
 
         items_grid = QGridLayout()
         items_grid.setHorizontalSpacing(8)
         items_grid.setVerticalSpacing(8)
 
         self.actor_label = DraggableLabel("Actor", "actor", tooltip_text="Actor")
+        self._all_labels.append(self.actor_label)
         self.agent_label = DraggableLabel("Agent", "agent", tooltip_text="Agent")
+        self._all_labels.append(self.agent_label)
         self.hardgoal_label = DraggableLabel(
             "HardGoal", "hard_goal", tooltip_text="HardGoal"
         )
+        self._all_labels.append(self.hardgoal_label)
         self.softgoal_label = DraggableLabel(
             "SoftGoal", "soft_goal", tooltip_text="SoftGoal"
         )
+        self._all_labels.append(self.softgoal_label)
         self.plan_label = DraggableLabel("Plan", "plan", tooltip_text="Plan")
+        self._all_labels.append(self.plan_label)
         self.resource_label = DraggableLabel(
             "Resource", "resource", tooltip_text="Resource"
         )
+        self._all_labels.append(self.resource_label)
 
         items_grid.addWidget(self.actor_label, 0, 0)
         items_grid.addWidget(self.agent_label, 0, 1)
@@ -346,12 +379,14 @@ class Sidebar(QWidget):
         main_layout.addLayout(items_grid)
 
         # ===== Links =====
-        self.links_title = QLabel(tr("Links"))
-        self.links_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.links_title.setStyleSheet(
+        links_title = QLabel(tr("Links"))
+        links_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        links_title.setProperty("class", "sidebar-title")
+        links_title.setStyleSheet(
             "font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;"
         )
-        main_layout.addWidget(self.links_title)
+        self._title_labels.append(links_title)
+        main_layout.addWidget(links_title)
 
         links_grid = QGridLayout()
         links_grid.setHorizontalSpacing(8)
@@ -360,19 +395,25 @@ class Sidebar(QWidget):
         self.dependency_label = DraggableLabel(
             "Dependency", "dependency_link", tooltip_text="Dependency Link"
         )
+        self._all_labels.append(self.dependency_label)
         self.why_label = DraggableLabel("Why", "why_link", tooltip_text="Why Link")
+        self._all_labels.append(self.why_label)
         self.or_label = DraggableLabel(
             "OR Decomposition", "or_decomposition", tooltip_text="OR Decomposition"
         )
+        self._all_labels.append(self.or_label)
         self.and_label = DraggableLabel(
             "AND Decomposition", "and_decomposition", tooltip_text="AND Decomposition"
         )
+        self._all_labels.append(self.and_label)
         self.contribution_label = DraggableLabel(
             "Contribution", "contribution", tooltip_text="Contribution"
         )
+        self._all_labels.append(self.contribution_label)
         self.means_label = DraggableLabel(
             "Means-End", "means_end", tooltip_text="Means-End"
         )
+        self._all_labels.append(self.means_label)
 
         links_grid.addWidget(self.dependency_label, 0, 0)
         links_grid.addWidget(self.why_label, 0, 1)
@@ -384,12 +425,14 @@ class Sidebar(QWidget):
         main_layout.addLayout(links_grid)
 
         # ===== Composite Dependencies =====
-        self.comp_title = QLabel(tr("Composite Dependencies"))
-        self.comp_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.comp_title.setStyleSheet(
+        comp_title = QLabel(tr("Composite Dependencies"))
+        comp_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        comp_title.setProperty("class", "sidebar-title")
+        comp_title.setStyleSheet(
             "font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;"
         )
-        main_layout.addWidget(self.comp_title)
+        self._title_labels.append(comp_title)
+        main_layout.addWidget(comp_title)
 
         comp_grid = QGridLayout()
         comp_grid.setHorizontalSpacing(8)
@@ -412,24 +455,28 @@ class Sidebar(QWidget):
             on_click=make_onclick("hard_goal"),
             tooltip_text="HardGoal Composite",
         )
+        self._all_labels.append(self.hard_comp)
         self.soft_comp = DraggableLabel(
             "SoftGoal Composite",
             "composite:soft_goal",
             on_click=make_onclick("soft_goal"),
             tooltip_text="SoftGoal Composite",
         )
+        self._all_labels.append(self.soft_comp)
         self.plan_comp = DraggableLabel(
             "Plan Composite",
             "composite:plan",
             on_click=make_onclick("plan"),
             tooltip_text="Plan Composite",
         )
+        self._all_labels.append(self.plan_comp)
         self.res_comp = DraggableLabel(
             "Resource Composite",
             "composite:resource",
             on_click=make_onclick("resource"),
             tooltip_text="Resource Composite",
         )
+        self._all_labels.append(self.res_comp)
 
         comp_grid.addWidget(self.hard_comp, 0, 0)
         comp_grid.addWidget(self.soft_comp, 0, 1)
@@ -441,11 +488,45 @@ class Sidebar(QWidget):
 
     def retranslate(self):
         """Retranslate all sidebar text."""
-        self.items_title.setText(tr("Items"))
-        self.links_title.setText(tr("Links"))
-        self.comp_title.setText(tr("Composite Dependencies"))
         for child in self.findChildren(DraggableLabel):
             child.retranslate()
+    def _update_tooltip_style(self):
+        """Update tooltip stylesheet based on theme."""
+        if theme_manager().is_dark:
+            self.setStyleSheet("""
+                QToolTip {
+                    background-color: #2d2d2d;
+                    color: #e0e0e0;
+                    border: 1px solid #555555;
+                    padding: 4px;
+                    font-size: 12px;
+                }
+            """)
+        else:
+            self.setStyleSheet("""
+                QToolTip {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #333333;
+                    padding: 4px;
+                    font-size: 12px;
+                }
+            """)
+
+    def _on_theme_changed(self, dark: bool):
+        """Update sidebar styles when theme changes."""
+        self._update_tooltip_style()
+        for label in self._all_labels:
+            label._update_style()
+        for title in self._title_labels:
+            if dark:
+                title.setStyleSheet(
+                    "font-weight:bold; font-size:14px; margin:8px; color: #e0e0e0;"
+                )
+            else:
+                title.setStyleSheet(
+                    "font-weight:bold; font-size:14px; margin:8px;"
+                )
 
     def _start_composite(self, node_type):
         """

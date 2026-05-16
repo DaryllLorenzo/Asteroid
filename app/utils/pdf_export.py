@@ -13,6 +13,8 @@ from PyQt6.QtGui import QPainter
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QFileDialog
 from PyQt6.QtWidgets import QMessageBox
+
+from app.i18n import tr
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
@@ -121,8 +123,8 @@ class PDFGenerator:
 
             QMessageBox.information(
                 self.canvas_controller.canvas,
-                "Exportación completada",
-                f"PDF exportado exitosamente:\n{filename}",
+                tr("Export completed"),
+                f"{tr('PDF exported successfully')}:\n{filename}",
             )
             if diagram_image:
                 os.remove(diagram_image)  # Delete the file temporal

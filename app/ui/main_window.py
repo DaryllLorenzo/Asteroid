@@ -10,6 +10,7 @@ from pathlib import Path
 from PyQt6.QtCore import QSettings
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtWidgets import QApplication
 from PyQt6.QtWidgets import QHBoxLayout
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtWidgets import QMessageBox
@@ -24,10 +25,13 @@ from app.i18n import get_language
 from app.i18n import load_language
 from app.i18n import tr
 from app.ui.canvas import Canvas
+from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.properties_panel import PropertiesPanel
 from app.ui.help.help_modal import HelpModal
 from app.ui.pdf_export_dialog import PDFExportDialog
 from app.ui.sidebar import Sidebar
+from app.ui.theme_manager import generate_stylesheet
+from app.ui.theme_manager import theme_manager
 from app.utils.pdf_export import PDFGenerator
 
 
@@ -180,11 +184,18 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(main_splitter)
 
+        # Theme manager (before menu bar creation)
+        self._tm = theme_manager()
+        self._tm.theme_changed.connect(self._on_theme_changed)
+
         # Initialize label
         self.update_zoom_label()
 
         # Create bar of menú
         self.create_menu_bar()
+
+        # Apply initial theme
+        self._on_theme_changed(self._tm.is_dark)
 
         # Conectar signals of undo stack for update menú
         self.canvas_controller.undo_stack.canUndoChanged.connect(
@@ -286,7 +297,23 @@ class MainWindow(QMainWindow):
         self.redo_action.triggered.connect(self.canvas_controller.undo_stack.redo)
         self.redo_action.setEnabled(False)
 
-        # Validation menu
+        # Separator
+        file_menu.addSeparator()
+
+        # ---------------------------
+        # Menú Ver (tema)
+        # ---------------------------
+        self.view_menu = menubar.addMenu(tr("&View"))
+
+        self.theme_action = self.view_menu.addAction(tr("&Dark mode"))
+        self.theme_action.setCheckable(True)
+        self.theme_action.setChecked(self._tm.is_dark)
+        self.theme_action.triggered.connect(self._tm.toggle)
+
+        # ---------------------------
+        # Menú Validación
+        # ---------------------------
+
         self.validation_menu = menubar.addMenu(tr("&Validation"))
         validation_menu = self.validation_menu
 
@@ -338,6 +365,27 @@ class MainWindow(QMainWindow):
             checked (bool): The checked.
         """
         self.canvas_controller.validator.active = checked
+
+    def _on_theme_changed(self, dark: bool) -> None:
+        """On Theme Changed."""
+        self.theme_action.setChecked(dark)
+
+        # Apply QSS to app
+        app = QApplication.instance()
+        if isinstance(app, QApplication):
+            app.setStyleSheet(generate_stylesheet(dark))
+
+        # Update canvas background
+        self.canvas.apply_theme(dark)
+
+        # Update edges
+        scene = self.canvas.scene()
+        if scene:
+            for item in scene.items():
+                if isinstance(item, BaseEdgeItem):
+                    item.update_theme()
+                else:
+                    item.update()
 
     def load_project(self):
         """Load Project."""
@@ -416,9 +464,12 @@ class MainWindow(QMainWindow):
 
         self.file_menu.setTitle(tr("&File"))
         self.edit_menu.setTitle(tr("&Edit"))
+        self.view_menu.setTitle(tr("&View"))
         self.validation_menu.setTitle(tr("&Validation"))
         self.lang_menu.setTitle(tr("&Language"))
         self.help_menu.setTitle(tr("&Help"))
+
+        self.theme_action.setText(tr("&Dark mode"))
 
     def check_unsaved_changes(self) -> bool:
         """

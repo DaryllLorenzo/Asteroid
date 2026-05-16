@@ -13,10 +13,13 @@ from PyQt6.QtCore import QRectF
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QBrush
+from PyQt6.QtGui import QColor
 from PyQt6.QtGui import QPainterPath
 from PyQt6.QtGui import QPen
 from PyQt6.QtWidgets import QGraphicsObject
 from PyQt6.QtWidgets import QGraphicsRectItem
+
+from app.ui.theme_manager import theme_manager
 
 # List of tipos of "links" soportados inside of the subcanvas
 ARROW_TYPES = {
@@ -156,7 +159,11 @@ class SubCanvasItem(QGraphicsObject):
         # Clipping SOLO visual
         painter.setClipPath(clip_path)
 
-        painter.setBrush(self.bg_brush)
+        colors = theme_manager().current
+        border_pen = QPen(QColor(colors.subcanvas_border), 2)
+        bg_brush = QBrush(QColor(colors.subcanvas_fill))
+
+        painter.setBrush(bg_brush)
         painter.setOpacity(0.04)
         painter.setPen(Qt.PenStyle.NoPen)
 
@@ -165,7 +172,7 @@ class SubCanvasItem(QGraphicsObject):
         painter.restore()
 
         # Dibujar border outside of the clipping
-        painter.setPen(self.border_pen)
+        painter.setPen(border_pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
 
         painter.drawEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
