@@ -111,6 +111,7 @@ asteroid/
 │   │   ├── canvas.py                  # Main QGraphicsView
 │   │   ├── main_window.py             # Main window
 │   │   ├── pdf_export_dialog.py      # PDF export dialog
+│   │   ├── theme_manager.py          # Dark/light theme manager
 │   │   ├── sidebar.py                 # Sidebar with draggable elements
 │   │   ├── components/
 │   │   │   ├── __init__.py
@@ -256,9 +257,13 @@ python main.py
     - Toggleable validator mode (Validation menu)
     - Pluggable rule system with auto-discovery
     - 7 built-in rules (entity-in-subcanvas, 6 link-type rules)
+- [x] Visual themes (light/dark mode)
+    - Ver → "Modo oscuro" toggle in menu
+    - Persistent preference via QSettings
+    - Full dark QSS for sidebar, panels, dialogs, help system
+    - Theme-aware node borders, text, and edge colors
 
 ### In Progress / Planned
-- [ ] Visual themes (light/dark mode)
 - [ ] Diagram templates for common Tropos patterns
 - [ ] Multi-language support (English, Spanish) with language switcher
 

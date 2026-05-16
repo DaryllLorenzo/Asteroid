@@ -9,6 +9,7 @@ from pathlib import Path
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtWidgets import QApplication
 from PyQt6.QtWidgets import QHBoxLayout
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtWidgets import QMessageBox
@@ -20,10 +21,13 @@ from PyQt6.QtWidgets import QWidget
 
 from app.controllers.canvas_controller import CanvasController
 from app.ui.canvas import Canvas
+from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.properties_panel import PropertiesPanel
 from app.ui.help.help_modal import HelpModal
 from app.ui.pdf_export_dialog import PDFExportDialog
 from app.ui.sidebar import Sidebar
+from app.ui.theme_manager import generate_stylesheet
+from app.ui.theme_manager import theme_manager
 from app.utils.pdf_export import PDFGenerator
 
 
@@ -173,11 +177,18 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(main_splitter)
 
+        # Theme manager (before menu bar creation)
+        self._tm = theme_manager()
+        self._tm.theme_changed.connect(self._on_theme_changed)
+
         # Initialize label
         self.update_zoom_label()
 
         # Create bar of menú
         self.create_menu_bar()
+
+        # Apply initial theme
+        self._on_theme_changed(self._tm.is_dark)
 
         # Conectar signals of undo stack for update menú
         self.canvas_controller.undo_stack.canUndoChanged.connect(
@@ -288,6 +299,16 @@ class MainWindow(QMainWindow):
         export_pdf_action.triggered.connect(self.export_pdf)
 
         # ---------------------------
+        # Menú Ver (tema)
+        # ---------------------------
+        view_menu = menubar.addMenu("&Ver")
+
+        self.theme_action = view_menu.addAction("Modo oscuro")
+        self.theme_action.setCheckable(True)
+        self.theme_action.setChecked(self._tm.is_dark)
+        self.theme_action.triggered.connect(self._tm.toggle)
+
+        # ---------------------------
         # Menú Validación
         # ---------------------------
         validation_menu = menubar.addMenu("&Validación")
@@ -334,6 +355,27 @@ class MainWindow(QMainWindow):
             checked (bool): The checked.
         """
         self.canvas_controller.validator.active = checked
+
+    def _on_theme_changed(self, dark: bool) -> None:
+        """On Theme Changed."""
+        self.theme_action.setChecked(dark)
+
+        # Apply QSS to app
+        app = QApplication.instance()
+        if isinstance(app, QApplication):
+            app.setStyleSheet(generate_stylesheet(dark))
+
+        # Update canvas background
+        self.canvas.apply_theme(dark)
+
+        # Update edges
+        scene = self.canvas.scene()
+        if scene:
+            for item in scene.items():
+                if isinstance(item, BaseEdgeItem):
+                    item.update_theme()
+                else:
+                    item.update()
 
     def load_project(self):
         """Load Project."""

@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import QGraphicsView
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.control_point_handle import ControlPointHandle
 from app.ui.components.subcanvas_item import SubCanvasItem
+from app.ui.theme_manager import theme_manager
 
 
 class Canvas(QGraphicsView):
@@ -64,6 +65,14 @@ class Canvas(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+
+    def apply_theme(self, dark: bool):
+        """Apply theme to canvas background."""
+        colors = theme_manager().current
+        bg = colors.canvas_bg
+        from PyQt6.QtGui import QColor
+        self.setBackgroundBrush(QColor(bg))
+        self._scene.setBackgroundBrush(QColor(bg))
 
     # ---------------------
     # Drag & Drop

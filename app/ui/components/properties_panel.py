@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import QWidget
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.control_point_handle import ControlPointHandle
 from app.ui.components.position_controll_widget import PositionControlWidget
+from app.ui.theme_manager import theme_manager
 
 
 class PropertiesPanel(QWidget):
@@ -70,6 +71,29 @@ class PropertiesPanel(QWidget):
                 self.on_controller_properties_changed
             )
             controller.selection_changed.connect(self.on_selection_changed)
+
+        theme_manager().theme_changed.connect(self._on_theme_changed)
+
+    def _on_theme_changed(self, dark: bool):
+        """Update hardcoded styles when theme changes."""
+        if dark:
+            self.edge_group.setStyleSheet(
+                "QGroupBox { color: #e0e0e0; font-weight: bold; }"
+            )
+            self.edge_info_label.setStyleSheet("color: #e0e0e0; font-weight: bold;")
+            self.instructions_label.setStyleSheet(
+                "background-color: #2d2d2d; color: #cccccc; "
+                "padding: 8px; border-radius: 4px; margin: 4px 0;"
+            )
+        else:
+            self.edge_group.setStyleSheet(
+                "QGroupBox { color: #FFFFFF; font-weight: bold; }"
+            )
+            self.edge_info_label.setStyleSheet("color: #FFFFFF; font-weight: bold;")
+            self.instructions_label.setStyleSheet(
+                "background-color: #f5f5f5; color: #333333; "
+                "padding: 8px; border-radius: 4px; margin: 4px 0;"
+            )
 
     def init_ui(self):
         """Init Ui."""
@@ -181,19 +205,19 @@ class PropertiesPanel(QWidget):
         edge_layout.addWidget(self.edge_info_label)
 
         # Instrucciones of edición
-        instructions_label = QLabel(
+        self.instructions_label = QLabel(
             "<b>Edición de Flecha</b><br><br>"
             "• Arrastra los puntos para modificar la forma<br>"
             "• Doble-click en la línea para agregar un punto<br>"
             "• Selecciona un punto y presiona Delete para eliminar<br>"
             "• Click en 'Enderezar' para línea recta"
         )
-        instructions_label.setWordWrap(True)
-        instructions_label.setStyleSheet(
+        self.instructions_label.setWordWrap(True)
+        self.instructions_label.setStyleSheet(
             "background-color: #f5f5f5; color: #333333; "
             "padding: 8px; border-radius: 4px; margin: 4px 0;"
         )
-        edge_layout.addWidget(instructions_label)
+        edge_layout.addWidget(self.instructions_label)
 
         # Button for enderezar the flecha
         self.straighten_button = QPushButton("Enderezar Flecha")

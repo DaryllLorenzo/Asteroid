@@ -14,6 +14,8 @@ from PyQt6.QtGui import QPen
 from PyQt6.QtGui import QRadialGradient
 from PyQt6.QtWidgets import QWidget
 
+from app.ui.theme_manager import theme_manager
+
 
 class PositionControlWidget(QWidget):
     """
@@ -70,16 +72,24 @@ class PositionControlWidget(QWidget):
         radius = min(w, h) / 2 - 5  # Margin of 5px
 
         # 1. Dibujar fondo (the área permitida)
-        bg_gradient = QRadialGradient(center, radius)
-        bg_gradient.setColorAt(0, QColor("#f0f0f0"))
-        bg_gradient.setColorAt(1, QColor("#e0e0e0"))
+        dark = theme_manager().is_dark
+        if dark:
+            bg_gradient = QRadialGradient(center, radius)
+            bg_gradient.setColorAt(0, QColor("#3d3d3d"))
+            bg_gradient.setColorAt(1, QColor("#2d2d2d"))
+            painter.setPen(QPen(QColor("#555555"), 2))
+        else:
+            bg_gradient = QRadialGradient(center, radius)
+            bg_gradient.setColorAt(0, QColor("#f0f0f0"))
+            bg_gradient.setColorAt(1, QColor("#e0e0e0"))
+            painter.setPen(QPen(QColor("#cccccc"), 2))
 
-        painter.setPen(QPen(QColor("#cccccc"), 2))
         painter.setBrush(QBrush(bg_gradient))
         painter.drawEllipse(center, radius, radius)
 
         # 2. Dibujar ejes cruzados (guías visuales)
-        painter.setPen(QPen(QColor("#dddddd"), 1, Qt.PenStyle.DashLine))
+        guide_color = QColor("#555555") if dark else QColor("#dddddd")
+        painter.setPen(QPen(guide_color, 1, Qt.PenStyle.DashLine))
         painter.drawLine(
             int(center.x()),
             int(center.y() - radius),
