@@ -9,6 +9,7 @@ from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
 
+from app.i18n import tr
 from app.ui.components.base_edge_item import BaseEdgeItem
 
 
@@ -30,7 +31,7 @@ class DeleteEdgeCommand(QUndoCommand):
             controller (Any): The controller.
             edge (BaseEdgeItem): The edge.
         """
-        super().__init__("Eliminar flecha")
+        super().__init__(tr("Delete arrow"))
         self._controller = controller
         self._edge = edge
         self._node_source = edge.source_node

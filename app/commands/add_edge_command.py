@@ -10,6 +10,7 @@ from typing import Any
 from PyQt6.QtGui import QUndoCommand
 from PyQt6.QtWidgets import QGraphicsItem
 
+from app.i18n import tr
 from app.ui.components.base_edge_item import BaseEdgeItem
 
 
@@ -37,7 +38,7 @@ class AddEdgeCommand(QUndoCommand):
             edge (BaseEdgeItem): The edge.
             parent_item (QGraphicsItem | None): The parent item.
         """
-        super().__init__("Añadir flecha")
+        super().__init__(tr("Add arrow"))
         self._controller = controller
         self._edge = edge
         self._parent_item = parent_item

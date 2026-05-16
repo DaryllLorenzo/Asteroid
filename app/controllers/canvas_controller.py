@@ -20,6 +20,7 @@ from app.controllers.canvas_import_controller import CanvasImportController
 from app.controllers.canvas_interaction_controller import CanvasInteractionController
 from app.controllers.canvas_node_controller import CanvasNodeController
 from app.controllers.canvas_state_controller import CanvasStateController
+from app.i18n import tr
 from app.ui.canvas import Canvas
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.control_point_handle import ControlPointHandle
@@ -125,7 +126,7 @@ class CanvasController(
         """
         msg = QMessageBox(self.canvas.window() if self.canvas.window() else self.canvas)
         msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setWindowTitle("Error de validación")
+        msg.setWindowTitle(tr("Validation error"))
         msg.setText("\n\n".join(errors))
         msg.exec()
 

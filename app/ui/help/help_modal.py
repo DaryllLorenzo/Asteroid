@@ -11,6 +11,8 @@ from PyQt6.QtWidgets import QPushButton
 from PyQt6.QtWidgets import QVBoxLayout
 from PyQt6.QtWidgets import QWidget
 
+from app.i18n import tr
+
 from .markdown_viewer import MarkdownViewer
 
 
@@ -146,8 +148,7 @@ class HelpModal(QDialog):
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(0, 15, 0, 0)
 
-        # Button of cerrar elegante
-        close_btn = QPushButton("Cerrar")
+        close_btn = QPushButton(tr("Close"))
         close_btn.clicked.connect(self.accept)
         close_btn.setFixedSize(120, 42)
         close_btn.setCursor(Qt.CursorShape.PointingHandCursor)

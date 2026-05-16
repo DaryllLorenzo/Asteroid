@@ -10,6 +10,7 @@ from typing import Any
 from PyQt6.QtGui import QUndoCommand
 
 from app.controller_types import CanvasNodeItem
+from app.i18n import tr
 
 
 class DeleteNodeCommand(QUndoCommand):
@@ -30,7 +31,7 @@ class DeleteNodeCommand(QUndoCommand):
             controller (Any): The controller.
             node_item (CanvasNodeItem): The node item.
         """
-        super().__init__("Eliminar nodo")
+        super().__init__(tr("Delete node"))
         self._controller = controller
         self._node_item = node_item
         self._node_data: dict | None = None

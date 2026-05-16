@@ -17,21 +17,14 @@ from PyQt6.QtWidgets import QLabel
 from PyQt6.QtWidgets import QVBoxLayout
 from PyQt6.QtWidgets import QWidget
 
-from app.ui.components.dependency_item.and_decomposition_edge_item import (
-    AndDecompositionArrowItem,
-)
-from app.ui.components.dependency_item.contribution_edge_item import (
-    ContributionArrowItem,
-)
+from app.i18n import tr
+from app.ui.components.dependency_item.and_decomposition_edge_item import AndDecompositionArrowItem
+from app.ui.components.dependency_item.contribution_edge_item import ContributionArrowItem
 
 # Arrow/link items (deben aceptar (source_node, dest_node) in its constructor)
-from app.ui.components.dependency_item.dependency_link_edge_item import (
-    DependencyLinkArrowItem,
-)
+from app.ui.components.dependency_item.dependency_link_edge_item import DependencyLinkArrowItem
 from app.ui.components.dependency_item.means_end_edge_item import MeansEndArrowItem
-from app.ui.components.dependency_item.or_decomposition_edge_item import (
-    OrDecompositionArrowItem,
-)
+from app.ui.components.dependency_item.or_decomposition_edge_item import OrDecompositionArrowItem
 from app.ui.components.dependency_item.why_link_edge_item import WhyLinkArrowItem
 from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem
@@ -70,13 +63,15 @@ class DraggableLabel(QLabel):
             on_click: The on click.
             tooltip_text (str | None): The tooltip text.
         """
-        super().__init__(text)
+        self._text_key = text
+        self._tooltip_key = tooltip_text
+        super().__init__()
         self.item_type = item_type
         self.on_click = on_click
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setWordWrap(True)
         if tooltip_text:
-            self.setToolTip(tooltip_text)
+            self.setToolTip(tr(tooltip_text))
         self.setStyleSheet("""
             QLabel {
                 border: 2px solid #cccccc;
@@ -92,6 +87,12 @@ class DraggableLabel(QLabel):
             }
         """)
         self.setPixmap(self.create_pixmap())
+
+    def retranslate(self):
+        """Retranslate the label text and tooltip."""
+        self.setPixmap(self.create_pixmap())
+        if self._tooltip_key:
+            self.setToolTip(tr(self._tooltip_key))
 
     def create_pixmap(self) -> QPixmap:
         """
@@ -305,10 +306,10 @@ class Sidebar(QWidget):
         self.setLayout(main_layout)
 
         # ===== Items =====
-        items_title = QLabel("Items")
-        items_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        items_title.setStyleSheet("font-weight:bold; font-size:14px; margin:8px;")
-        main_layout.addWidget(items_title)
+        self.items_title = QLabel(tr("Items"))
+        self.items_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.items_title.setStyleSheet("font-weight:bold; font-size:14px; margin:8px;")
+        main_layout.addWidget(self.items_title)
 
         items_grid = QGridLayout()
         items_grid.setHorizontalSpacing(8)
@@ -337,12 +338,12 @@ class Sidebar(QWidget):
         main_layout.addLayout(items_grid)
 
         # ===== Links =====
-        links_title = QLabel("Links")
-        links_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        links_title.setStyleSheet(
+        self.links_title = QLabel(tr("Links"))
+        self.links_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.links_title.setStyleSheet(
             "font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;"
         )
-        main_layout.addWidget(links_title)
+        main_layout.addWidget(self.links_title)
 
         links_grid = QGridLayout()
         links_grid.setHorizontalSpacing(8)
@@ -375,12 +376,12 @@ class Sidebar(QWidget):
         main_layout.addLayout(links_grid)
 
         # ===== Composite Dependencies =====
-        comp_title = QLabel("Composite Dependencies")
-        comp_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        comp_title.setStyleSheet(
+        self.comp_title = QLabel(tr("Composite Dependencies"))
+        self.comp_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.comp_title.setStyleSheet(
             "font-weight:bold; font-size:14px; margin:12px 8px 6px 8px;"
         )
-        main_layout.addWidget(comp_title)
+        main_layout.addWidget(self.comp_title)
 
         comp_grid = QGridLayout()
         comp_grid.setHorizontalSpacing(8)
@@ -429,6 +430,14 @@ class Sidebar(QWidget):
 
         main_layout.addLayout(comp_grid)
         main_layout.addStretch()
+
+    def retranslate(self):
+        """Retranslate all sidebar text."""
+        self.items_title.setText(tr("Items"))
+        self.links_title.setText(tr("Links"))
+        self.comp_title.setText(tr("Composite Dependencies"))
+        for child in self.findChildren(DraggableLabel):
+            child.retranslate()
 
     def _start_composite(self, node_type):
         """

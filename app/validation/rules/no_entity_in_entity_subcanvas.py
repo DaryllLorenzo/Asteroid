@@ -5,6 +5,7 @@
 # License: MIT License
 # ---------------------------------------------------
 
+from app.i18n import tr
 from app.validation.rule import Rule
 
 
@@ -43,10 +44,8 @@ class NoEntityInEntitySubcanvas(Rule):
             "actor",
             "agent",
         ):
-            return (
-                "No se puede agregar un Actor/Agente dentro del subcanvas "
-                "de otro Actor/Agente. Los subcanvases son para elementos "
-                "Tropos (Metas, Recursos, Planes, Softgoals)."
+            return tr(
+                "Cannot add an Actor/Agent inside another Actor/Agent's subcanvas. Subcanvases are for Tropos elements (Goals, Resources, Plans, Softgoals)."
             )
         return None
 

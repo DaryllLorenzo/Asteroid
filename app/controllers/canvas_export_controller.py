@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import QFileDialog
 from PyQt6.QtWidgets import QMessageBox
 
 from app.controllers._canvas_mixin import CanvasControllerMixin
+from app.i18n import tr
 from app.utils.astr_format import AstrFormat
 
 
@@ -42,9 +43,9 @@ class CanvasExportController(CanvasControllerMixin):
             if not filename:
                 filename, _ = QFileDialog.getSaveFileName(
                     self.canvas,
-                    "Export as .astr",
+                    tr("Export as .astr"),
                     "",
-                    "Asteroid Files (*.astr)",
+                    tr("Asteroid Files (*.astr)"),
                 )
                 if not filename:
                     return False
@@ -64,7 +65,14 @@ class CanvasExportController(CanvasControllerMixin):
         except Exception as error:
             print(f"Error exporting project: {error}")
             QMessageBox.critical(
-                self.canvas, "Error", f"Could not export project:\n{error}"
+                self.canvas, tr("Error"), tr("Could not export project:\n{error}").format(error=error)
+            )
+            return False
+
+        except Exception as error:
+            print(f"Error exporting project: {error}")
+            QMessageBox.critical(
+                self.canvas, tr("Error"), tr("Could not export image:\n{error}").format(error=error)
             )
             return False
 
@@ -85,9 +93,9 @@ class CanvasExportController(CanvasControllerMixin):
             if not filename:
                 filename, _ = QFileDialog.getSaveFileName(
                     self.canvas,
-                    "Export as image",
+                    tr("Export as image"),
                     "",
-                    "PNG Images (*.png);;JPEG Images (*.jpg *.jpeg)",
+                    tr("PNG Images (*.png);;JPEG Images (*.jpg *.jpeg)"),
                 )
                 if not filename:
                     return False

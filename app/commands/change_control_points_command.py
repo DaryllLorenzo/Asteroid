@@ -10,6 +10,8 @@ from typing import Any
 from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QUndoCommand
 
+from app.i18n import tr
+
 
 class ChangeControlPointsCommand(QUndoCommand):
     """
@@ -37,7 +39,7 @@ class ChangeControlPointsCommand(QUndoCommand):
             old_points (list[QPointF]): The old points.
             new_points (list[QPointF]): The new points.
         """
-        super().__init__("Mover punto de control")
+        super().__init__(tr("Move control point"))
         self._controller = controller
         self._edge = edge
         self._old_points = [QPointF(p) for p in old_points]

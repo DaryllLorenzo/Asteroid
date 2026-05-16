@@ -11,6 +11,7 @@ from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QUndoCommand
 
 from app.controller_types import CanvasNodeItem
+from app.i18n import tr
 
 
 class MoveNodeCommand(QUndoCommand):
@@ -41,7 +42,7 @@ class MoveNodeCommand(QUndoCommand):
             old_pos (QPointF): The old pos.
             new_pos (QPointF): The new pos.
         """
-        super().__init__("Mover nodo")
+        super().__init__(tr("Move node"))
         self._controller = controller
         self._node_item = node_item
         self._old_pos = old_pos

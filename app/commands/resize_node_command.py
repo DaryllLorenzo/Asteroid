@@ -9,6 +9,8 @@ from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
 
+from app.i18n import tr
+
 
 class ResizeNodeCommand(QUndoCommand):
     """
@@ -36,7 +38,7 @@ class ResizeNodeCommand(QUndoCommand):
             old_radius (float): The old radius.
             new_radius (float): The new radius.
         """
-        super().__init__("Cambiar tamaño")
+        super().__init__(tr("Resize"))
         self._controller = controller
         self._node_item = node_item
         self._old_radius = old_radius

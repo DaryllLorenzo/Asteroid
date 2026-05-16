@@ -207,9 +207,7 @@ class CanvasStateController(CanvasControllerMixin):
         saved = getattr(edge, "_saved_control_points", None)
         current = getattr(edge, "control_points", [])
         if saved is not None and saved != current:
-            from app.commands.change_control_points_command import (
-                ChangeControlPointsCommand,
-            )
+            from app.commands.change_control_points_command import ChangeControlPointsCommand
 
             self.undo_stack.push(
                 ChangeControlPointsCommand(self, edge, list(saved), list(current))

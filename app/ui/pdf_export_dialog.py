@@ -12,6 +12,8 @@ from PyQt6.QtWidgets import QLabel
 from PyQt6.QtWidgets import QRadioButton
 from PyQt6.QtWidgets import QVBoxLayout
 
+from app.i18n import tr
+
 
 class PDFExportDialog(QDialog):
     """
@@ -30,7 +32,7 @@ class PDFExportDialog(QDialog):
             parent: The parent.
         """
         super().__init__(parent)
-        self.setWindowTitle("Exportar a PDF")
+        self.setWindowTitle(tr("Export to PDF"))
         self.setModal(True)
         self.resize(400, 250)
 
@@ -45,33 +47,29 @@ class PDFExportDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Title
-        title_label = QLabel("¿Qué desea incluir en el PDF?")
+        title_label = QLabel(tr("What would you like to include in the PDF?"))
         title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
         layout.addWidget(title_label)
 
-        # Grupo de opciones
-        options_group = QGroupBox("Opciones de exportación")
+        # Export options
+        options_group = QGroupBox(tr("Export options"))
         options_layout = QVBoxLayout(options_group)
 
-        # Buttons of radius
-        self.radio_image_only = QRadioButton("Solo imagen del diagrama")
+        self.radio_image_only = QRadioButton(tr("Diagram image only"))
         self.radio_image_only.setStyleSheet("font-size: 12px;")
         self.radio_image_only.toggled.connect(self._on_option_changed)
         options_layout.addWidget(self.radio_image_only)
 
         self.radio_with_info = QRadioButton(
-            "Imagen del diagrama + Información adicional de elementos"
+            tr("Diagram image + Additional element information")
         )
         self.radio_with_info.setChecked(True)
         self.radio_with_info.setStyleSheet("font-size: 12px;")
         self.radio_with_info.toggled.connect(self._on_option_changed)
         options_layout.addWidget(self.radio_with_info)
 
-        # Descripción
         info_label = QLabel(
-            "La información adicional incluye:\n"
-            "• Lista de elementos con su clasificación (Actor, Agente, Meta, etc.)\n"
-            "• Relaciones entre elementos (dependencias, descomposiciones, etc.)"
+            tr("Additional information includes:\n• List of elements with their classification (Actor, Agent, Goal, etc.)\n• Relationships between elements (dependencies, decompositions, etc.)")
         )
         info_label.setStyleSheet("color: #666; font-size: 11px;")
         info_label.setWordWrap(True)

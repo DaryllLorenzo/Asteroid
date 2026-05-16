@@ -13,6 +13,8 @@ from PyQt6.QtWidgets import QTextBrowser
 from PyQt6.QtWidgets import QVBoxLayout
 from PyQt6.QtWidgets import QWidget
 
+from app.i18n import tr
+
 
 class MarkdownViewer(QWidget):
     """
@@ -356,29 +358,26 @@ class MarkdownViewer(QWidget):
             file_path = Path(file_path)
 
             if not file_path.exists():
-                self.show_error(f"Archivo no encontrado: {file_path}")
+                self.show_error(f"{tr('File not found')}: {file_path}")
                 return
 
             content = file_path.read_text(encoding="utf-8")
 
             if not content.strip():
-                self.show_error(f"El archivo está vacío: {file_path.name}")
+                self.show_error(f"{tr('The file is empty')}: {file_path.name}")
                 return
 
-            # Convert markdown a HTML with extensiones
             html = markdown.markdown(
                 content, extensions=["extra", "nl2br", "toc"], output_format="html5"
             )
 
-            # Aplicar estilos CSS
             self.text_browser.document().setDefaultStyleSheet(self.get_stylesheet())
 
-            # Set the HTML
             self.text_browser.setHtml(html)
 
         except Exception as e:
-            print(f"Error al cargar markdown: {e}")
-            self.show_error(f"Error: {str(e)}")
+            print(f"Error loading markdown: {e}")
+            self.show_error(f"{tr('Error')}: {str(e)}")
 
     def show_error(self, message):
         """
@@ -389,9 +388,9 @@ class MarkdownViewer(QWidget):
         """
         error_html = f"""
         <div class="warning">
-            <h3>⚠️ Error</h3>
+            <h3>⚠️ {tr("Error")}</h3>
             <p><strong>{message}</strong></p>
-            <p>Por favor, verifica que el archivo exista y tenga contenido válido.</p>
+            <p>{tr("Please verify that the file exists and contains valid content.")}</p>
         </div>
         """
         self.text_browser.setHtml(error_html)
