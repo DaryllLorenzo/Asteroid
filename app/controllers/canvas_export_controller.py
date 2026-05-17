@@ -65,14 +65,9 @@ class CanvasExportController(CanvasControllerMixin):
         except Exception as error:
             print(f"Error exporting project: {error}")
             QMessageBox.critical(
-                self.canvas, tr("Error"), tr("Could not export project:\n{error}").format(error=error)
-            )
-            return False
-
-        except Exception as error:
-            print(f"Error exporting project: {error}")
-            QMessageBox.critical(
-                self.canvas, tr("Error"), tr("Could not export image:\n{error}").format(error=error)
+                self.canvas,
+                tr("Error"),
+                tr("Could not export project:\n{error}").format(error=error),
             )
             return False
 

@@ -11,11 +11,19 @@ from app.core.models.tropos_element.resource import Resource
 from app.core.models.tropos_element.soft_goal import SoftGoal
 from app.model_types import ModelFactory
 from app.ui.components.base_edge_item import BaseEdgeItem
-from app.ui.components.dependency_item.and_decomposition_edge_item import AndDecompositionArrowItem
-from app.ui.components.dependency_item.contribution_edge_item import ContributionArrowItem
-from app.ui.components.dependency_item.dependency_link_edge_item import DependencyLinkArrowItem
+from app.ui.components.dependency_item.and_decomposition_edge_item import (
+    AndDecompositionArrowItem,
+)
+from app.ui.components.dependency_item.contribution_edge_item import (
+    ContributionArrowItem,
+)
+from app.ui.components.dependency_item.dependency_link_edge_item import (
+    DependencyLinkArrowItem,
+)
 from app.ui.components.dependency_item.means_end_edge_item import MeansEndArrowItem
-from app.ui.components.dependency_item.or_decomposition_edge_item import OrDecompositionArrowItem
+from app.ui.components.dependency_item.or_decomposition_edge_item import (
+    OrDecompositionArrowItem,
+)
 from app.ui.components.dependency_item.why_link_edge_item import WhyLinkArrowItem
 from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem

@@ -46,7 +46,8 @@ class NoWhyLinkBetweenEntities(Rule):
             and context.get("dest_is_entity")
         ):
             return tr(
-                "Cannot create a Why Link between Actors/Agents. Links are for Tropos elements inside the subcanvas."
+                "Cannot create a Why Link between Actors/Agents."
+                " Links are for Tropos elements inside the subcanvas."
             )
         return None
 

@@ -155,7 +155,10 @@ class CanvasImportController(CanvasControllerMixin):
         try:
             if not filename:
                 filename, _ = QFileDialog.getOpenFileName(
-                    self.canvas, tr("Load .astr project"), "", tr("Asteroid Files (*.astr)")
+                    self.canvas,
+                    tr("Load .astr project"),
+                    "",
+                    tr("Asteroid Files (*.astr)"),
                 )
                 if not filename:
                     return False
@@ -383,7 +386,9 @@ class CanvasImportController(CanvasControllerMixin):
 
             traceback.print_exc()
             QMessageBox.critical(
-                self.canvas, tr("Error"), tr("Could not load project:\n{error}").format(error=error)
+                self.canvas,
+                tr("Error"),
+                tr("Could not load project:\n{error}").format(error=error),
             )
             return False
 

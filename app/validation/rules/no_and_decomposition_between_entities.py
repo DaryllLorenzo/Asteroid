@@ -46,7 +46,8 @@ class NoAndDecompositionBetweenEntities(Rule):
             and context.get("dest_is_entity")
         ):
             return tr(
-                "Cannot create an AND Decomposition between Actors/Agents. Links are for Tropos elements inside the subcanvas."
+                "Cannot create an AND Decomposition between Actors/Agents."
+                " Links are for Tropos elements inside the subcanvas."
             )
         return None
 

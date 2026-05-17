@@ -46,7 +46,8 @@ class NoOrDecompositionBetweenEntities(Rule):
             and context.get("dest_is_entity")
         ):
             return tr(
-                "Cannot create an OR Decomposition between Actors/Agents. Links are for Tropos elements inside the subcanvas."
+                "Cannot create an OR Decomposition between Actors/Agents."
+                " Links are for Tropos elements inside the subcanvas."
             )
         return None
 

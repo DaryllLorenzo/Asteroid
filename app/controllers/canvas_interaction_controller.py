@@ -16,7 +16,9 @@ from app.core.models.composite_model_wrapper import CompositeModelWrapper
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.base_node_item import BaseNodeItem
 from app.ui.components.base_tropos_item import BaseTroposItem
-from app.ui.components.dependency_item.dependency_link_edge_item import DependencyLinkArrowItem
+from app.ui.components.dependency_item.dependency_link_edge_item import (
+    DependencyLinkArrowItem,
+)
 from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 
@@ -138,7 +140,9 @@ class CanvasInteractionController(CanvasControllerMixin):
             node.setSelected(True)
 
         if len(self.selected_nodes_for_arrow) == 2:
-            from app.commands.add_composite_dependency_command import AddCompositeDependencyCommand
+            from app.commands.add_composite_dependency_command import (
+                AddCompositeDependencyCommand,
+            )
 
             self.undo_stack.push(AddCompositeDependencyCommand(self))
 

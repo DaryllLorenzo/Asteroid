@@ -45,7 +45,9 @@ class NoEntityInEntitySubcanvas(Rule):
             "agent",
         ):
             return tr(
-                "Cannot add an Actor/Agent inside another Actor/Agent's subcanvas. Subcanvases are for Tropos elements (Goals, Resources, Plans, Softgoals)."
+                "Cannot add an Actor/Agent inside another Actor/Agent's subcanvas."
+                " Subcanvases are for Tropos elements"
+                " (Goals, Resources, Plans, Softgoals)."
             )
         return None
 

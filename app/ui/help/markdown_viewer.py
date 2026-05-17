@@ -390,7 +390,9 @@ class MarkdownViewer(QWidget):
         <div class="warning">
             <h3>⚠️ {tr("Error")}</h3>
             <p><strong>{message}</strong></p>
-            <p>{tr("Please verify that the file exists and contains valid content.")}</p>
+            <p>{
+            tr("Please verify that the file exists and contains valid content.")
+        }</p>
         </div>
         """
         self.text_browser.setHtml(error_html)

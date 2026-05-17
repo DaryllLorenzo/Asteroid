@@ -46,7 +46,8 @@ class NoContributionBetweenEntities(Rule):
             and context.get("dest_is_entity")
         ):
             return tr(
-                "Cannot create a Contribution between Actors/Agents. Links are for Tropos elements inside the subcanvas."
+                "Cannot create a Contribution between Actors/Agents."
+                " Links are for Tropos elements inside the subcanvas."
             )
         return None
 

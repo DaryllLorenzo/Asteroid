@@ -69,7 +69,13 @@ class PDFExportDialog(QDialog):
         options_layout.addWidget(self.radio_with_info)
 
         info_label = QLabel(
-            tr("Additional information includes:\n• List of elements with their classification (Actor, Agent, Goal, etc.)\n• Relationships between elements (dependencies, decompositions, etc.)")
+            tr(
+                "Additional information includes:\n"
+                "• List of elements with their classification"
+                " (Actor, Agent, Goal, etc.)\n"
+                "• Relationships between elements"
+                " (dependencies, decompositions, etc.)"
+            )
         )
         info_label.setStyleSheet("color: #666; font-size: 11px;")
         info_label.setWordWrap(True)
