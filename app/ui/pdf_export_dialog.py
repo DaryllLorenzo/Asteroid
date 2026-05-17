@@ -51,7 +51,9 @@ class PDFExportDialog(QDialog):
         # Title
         title_label = QLabel("¿Qué desea incluir en el PDF?")
         if dark:
-            title_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #e0e0e0;")
+            title_label.setStyleSheet(
+                "font-size: 14px; font-weight: bold; color: #e0e0e0;"
+            )
         else:
             title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
         layout.addWidget(title_label)

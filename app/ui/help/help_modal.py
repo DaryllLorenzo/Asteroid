@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import QVBoxLayout
 from PyQt6.QtWidgets import QWidget
 
 from app.ui.theme_manager import theme_manager
+
 from .markdown_viewer import MarkdownViewer
 
 

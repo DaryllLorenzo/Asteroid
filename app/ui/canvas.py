@@ -71,6 +71,7 @@ class Canvas(QGraphicsView):
         colors = theme_manager().current
         bg = colors.canvas_bg
         from PyQt6.QtGui import QColor
+
         self.setBackgroundBrush(QColor(bg))
         self._scene.setBackgroundBrush(QColor(bg))
 

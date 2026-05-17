@@ -17,7 +17,6 @@ from PyQt6.QtWidgets import QLabel
 from PyQt6.QtWidgets import QVBoxLayout
 from PyQt6.QtWidgets import QWidget
 
-from app.ui.theme_manager import theme_manager
 from app.ui.components.dependency_item.and_decomposition_edge_item import (
     AndDecompositionArrowItem,
 )
@@ -42,6 +41,7 @@ from app.ui.components.tropos_element_item.hard_goal_item import HardGoalNodeIte
 from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
 from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
 from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeItem
+from app.ui.theme_manager import theme_manager
 
 
 class DraggableLabel(QLabel):
@@ -208,7 +208,10 @@ class DraggableLabel(QLabel):
             y = int(H / 2)
 
             from PyQt6.QtGui import QColor
-            edge_color = QColor("#ffffff") if theme_manager().is_dark else QColor("#000000")
+
+            edge_color = (
+                QColor("#ffffff") if theme_manager().is_dark else QColor("#000000")
+            )
             pen = painter.pen()
             pen.setWidth(2)
             pen.setColor(edge_color)
@@ -511,9 +514,7 @@ class Sidebar(QWidget):
                     "font-weight:bold; font-size:14px; margin:8px; color: #e0e0e0;"
                 )
             else:
-                title.setStyleSheet(
-                    "font-weight:bold; font-size:14px; margin:8px;"
-                )
+                title.setStyleSheet("font-weight:bold; font-size:14px; margin:8px;")
 
     def _start_composite(self, node_type):
         """
