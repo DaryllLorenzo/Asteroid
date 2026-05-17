@@ -9,6 +9,8 @@ from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
 
+from app.i18n import tr
+
 
 class AddCompositeDependencyCommand(QUndoCommand):
     """
@@ -27,7 +29,7 @@ class AddCompositeDependencyCommand(QUndoCommand):
         Args:
             controller (Any): The controller.
         """
-        super().__init__("Crear dependencia compuesta")
+        super().__init__(tr("Create composite dependency"))
         self._controller = controller
         self._mid_node: Any = None
         self._internal_node: Any = None

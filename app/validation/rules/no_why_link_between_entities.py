@@ -5,6 +5,7 @@
 # License: MIT License
 # ---------------------------------------------------
 
+from app.i18n import tr
 from app.validation.rule import Rule
 
 
@@ -44,10 +45,9 @@ class NoWhyLinkBetweenEntities(Rule):
             and context.get("source_is_entity")
             and context.get("dest_is_entity")
         ):
-            return (
-                "No se puede crear un enlace Why Link entre "
-                "Actores/Agentes. Los enlaces son para elementos Tropos "
-                "dentro del subcanvas."
+            return tr(
+                "Cannot create a Why Link between Actors/Agents."
+                " Links are for Tropos elements inside the subcanvas."
             )
         return None
 

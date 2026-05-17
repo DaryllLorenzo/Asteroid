@@ -7,8 +7,10 @@
 
 from pathlib import Path
 
+from PyQt6.QtCore import QSettings
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtWidgets import QApplication
 from PyQt6.QtWidgets import QHBoxLayout
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtWidgets import QMessageBox
@@ -19,11 +21,17 @@ from PyQt6.QtWidgets import QVBoxLayout
 from PyQt6.QtWidgets import QWidget
 
 from app.controllers.canvas_controller import CanvasController
+from app.i18n import get_language
+from app.i18n import load_language
+from app.i18n import tr
 from app.ui.canvas import Canvas
+from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.properties_panel import PropertiesPanel
 from app.ui.help.help_modal import HelpModal
 from app.ui.pdf_export_dialog import PDFExportDialog
 from app.ui.sidebar import Sidebar
+from app.ui.theme_manager import generate_stylesheet
+from app.ui.theme_manager import theme_manager
 from app.utils.pdf_export import PDFGenerator
 
 
@@ -55,7 +63,10 @@ class MainWindow(QMainWindow):
     def __init__(self):
         """Initialize the instance."""
         super().__init__()
-        self.setWindowTitle("Asteroid")
+        settings = QSettings("Asteroid", "Asteroid")
+        saved_lang = settings.value("language", "en")
+        load_language(saved_lang)
+        self.setWindowTitle(tr("Asteroid"))
         self.resize(1600, 900)
 
         # Widget central
@@ -173,11 +184,18 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(main_splitter)
 
+        # Theme manager (before menu bar creation)
+        self._tm = theme_manager()
+        self._tm.theme_changed.connect(self._on_theme_changed)
+
         # Initialize label
         self.update_zoom_label()
 
         # Create bar of menú
         self.create_menu_bar()
+
+        # Apply initial theme
+        self._on_theme_changed(self._tm.is_dark)
 
         # Conectar signals of undo stack for update menú
         self.canvas_controller.undo_stack.canUndoChanged.connect(
@@ -217,17 +235,16 @@ class MainWindow(QMainWindow):
         """Update Undo Redo Texts."""
         undo_text = self.canvas_controller.undo_stack.undoText()
         redo_text = self.canvas_controller.undo_stack.redoText()
-        self.undo_action.setText(f"&Deshacer{' ' + undo_text if undo_text else ''}")
-        self.redo_action.setText(f"&Rehacer{' ' + redo_text if redo_text else ''}")
+        self.undo_action.setText(f"{tr('&Undo')}{' ' + undo_text if undo_text else ''}")
+        self.redo_action.setText(f"{tr('&Redo')}{' ' + redo_text if redo_text else ''}")
 
     def update_window_title(self):
         """Update Window Title."""
-        base_title = "Asteroid"
         if self.canvas_controller._current_file_path:
             file_name = Path(self.canvas_controller._current_file_path).name
-            title = f"{base_title} - {file_name}"
+            title = f"{tr('Asteroid')} - {file_name}"
         else:
-            title = f"{base_title} - Proyecto sin título"
+            title = f"{tr('Asteroid')} - {tr('Untitled project')}"
 
         if self.canvas_controller.is_modified:
             title += " *"
@@ -238,35 +255,44 @@ class MainWindow(QMainWindow):
         """Create Menu Bar."""
         menubar = self.menuBar()
 
-        # Menú File
-        file_menu = menubar.addMenu("&Archivo")
+        # File menu
+        self.file_menu = menubar.addMenu(tr("&File"))
+        file_menu = self.file_menu
 
-        # Action for new project
-        new_action = file_menu.addAction("&Nuevo proyecto")
-        new_action.setShortcut("Ctrl+N")
-        new_action.triggered.connect(self.new_project)
+        self.new_action = file_menu.addAction(tr("&New project"))
+        self.new_action.setShortcut("Ctrl+N")
+        self.new_action.triggered.connect(self.new_project)
 
-        # Action for load .astr
-        load_action = file_menu.addAction("&Cargar proyecto...")
-        load_action.setShortcut("Ctrl+O")
-        load_action.triggered.connect(self.load_project)
+        self.load_action = file_menu.addAction(tr("&Load project..."))
+        self.load_action.setShortcut("Ctrl+O")
+        self.load_action.triggered.connect(self.load_project)
 
-        # Action for save .astr
-        save_action = file_menu.addAction("&Guardar proyecto...")
-        save_action.setShortcut("Ctrl+S")
-        save_action.triggered.connect(self.save_project)
+        self.save_action = file_menu.addAction(tr("&Save project..."))
+        self.save_action.setShortcut("Ctrl+S")
+        self.save_action.triggered.connect(self.save_project)
 
-        # ---------------------------
-        # Menú Editar
-        # ---------------------------
-        edit_menu = menubar.addMenu("&Editar")
+        file_menu.addSeparator()
 
-        self.undo_action = edit_menu.addAction("&Deshacer")
+        self.export_image_action = file_menu.addAction(tr("&Export as image..."))
+        self.export_image_action.setShortcut("Ctrl+E")
+        self.export_image_action.triggered.connect(self.export_image)
+
+        file_menu.addSeparator()
+
+        self.export_pdf_action = file_menu.addAction(tr("&Export to PDF..."))
+        self.export_pdf_action.setShortcut("Ctrl+P")
+        self.export_pdf_action.triggered.connect(self.export_pdf)
+
+        # Edit menu
+        self.edit_menu = menubar.addMenu(tr("&Edit"))
+        edit_menu = self.edit_menu
+
+        self.undo_action = edit_menu.addAction(tr("&Undo"))
         self.undo_action.setShortcut("Ctrl+Z")
         self.undo_action.triggered.connect(self.canvas_controller.undo_stack.undo)
         self.undo_action.setEnabled(False)
 
-        self.redo_action = edit_menu.addAction("&Rehacer")
+        self.redo_action = edit_menu.addAction(tr("&Redo"))
         self.redo_action.setShortcuts(["Ctrl+Y", "Ctrl+Shift+Z"])
         self.redo_action.triggered.connect(self.canvas_controller.undo_stack.redo)
         self.redo_action.setEnabled(False)
@@ -274,57 +300,62 @@ class MainWindow(QMainWindow):
         # Separator
         file_menu.addSeparator()
 
-        # Action for exportar imagen
-        export_image_action = file_menu.addAction("&Exportar como imagen...")
-        export_image_action.setShortcut("Ctrl+E")
-        export_image_action.triggered.connect(self.export_image)
+        # ---------------------------
+        # Menú Ver (tema)
+        # ---------------------------
+        self.view_menu = menubar.addMenu(tr("&View"))
 
-        # Separator
-        file_menu.addSeparator()
-
-        # Action for exportar PDF
-        export_pdf_action = file_menu.addAction("&Exportar a PDF...")
-        export_pdf_action.setShortcut("Ctrl+P")
-        export_pdf_action.triggered.connect(self.export_pdf)
+        self.theme_action = self.view_menu.addAction(tr("&Dark mode"))
+        self.theme_action.setCheckable(True)
+        self.theme_action.setChecked(self._tm.is_dark)
+        self.theme_action.triggered.connect(self._tm.toggle)
 
         # ---------------------------
         # Menú Validación
         # ---------------------------
-        validation_menu = menubar.addMenu("&Validación")
 
-        self.validation_action = validation_menu.addAction("&Modo validador")
+        self.validation_menu = menubar.addMenu(tr("&Validation"))
+        validation_menu = self.validation_menu
+
+        self.validation_action = validation_menu.addAction(tr("&Validator mode"))
         self.validation_action.setCheckable(True)
         self.validation_action.setChecked(False)
         self.validation_action.triggered.connect(self._toggle_validator)
 
-        # ---------------------------
-        # Menú Ayuda
-        # ---------------------------
-        help_menu = menubar.addMenu("&Ayuda")
+        # Language menu
+        self.lang_menu = menubar.addMenu(tr("&Language"))
+        lang_menu = self.lang_menu
+        self.en_action = lang_menu.addAction(tr("&English"))
+        self.en_action.setCheckable(True)
+        self.en_action.setChecked(get_language() == "en")
+        self.en_action.triggered.connect(lambda: self._change_language("en"))
 
-        # Elements
-        elements_action = help_menu.addAction("&Elementos")
-        elements_action.triggered.connect(self.show_elements_help)
+        self.es_action = lang_menu.addAction(tr("&Spanish"))
+        self.es_action.setCheckable(True)
+        self.es_action.setChecked(get_language() == "es")
+        self.es_action.triggered.connect(lambda: self._change_language("es"))
 
-        # Ejemplos
-        examples_action = help_menu.addAction("&Ejemplos")
-        examples_action.triggered.connect(self.show_examples_help)
+        # Help menu
+        self.help_menu = menubar.addMenu(tr("&Help"))
+        help_menu = self.help_menu
 
-        # Modo validador
-        validation_help_action = help_menu.addAction("&Modo validador")
-        validation_help_action.triggered.connect(self.show_validation_help)
+        self.elements_action = help_menu.addAction(tr("&Elements"))
+        self.elements_action.triggered.connect(self.show_elements_help)
 
-        # Ayuda rápida
-        quick_help_action = help_menu.addAction("&Ayuda rápida")
-        quick_help_action.setShortcut("F1")
-        quick_help_action.triggered.connect(self.show_quick_help)
+        self.examples_action = help_menu.addAction(tr("&Examples"))
+        self.examples_action.triggered.connect(self.show_examples_help)
 
-        # Separator
+        self.validation_help_action = help_menu.addAction(tr("&Validator mode"))
+        self.validation_help_action.triggered.connect(self.show_validation_help)
+
+        self.quick_help_action = help_menu.addAction(tr("&Quick help"))
+        self.quick_help_action.setShortcut("F1")
+        self.quick_help_action.triggered.connect(self.show_quick_help)
+
         help_menu.addSeparator()
 
-        # Acerca of
-        about_action = help_menu.addAction("&Acerca de Asteroid")
-        about_action.triggered.connect(self.show_about_help)
+        self.about_action = help_menu.addAction(tr("&About Asteroid"))
+        self.about_action.triggered.connect(self.show_about_help)
 
     def _toggle_validator(self, checked: bool) -> None:
         """
@@ -334,6 +365,27 @@ class MainWindow(QMainWindow):
             checked (bool): The checked.
         """
         self.canvas_controller.validator.active = checked
+
+    def _on_theme_changed(self, dark: bool) -> None:
+        """On Theme Changed."""
+        self.theme_action.setChecked(dark)
+
+        # Apply QSS to app
+        app = QApplication.instance()
+        if isinstance(app, QApplication):
+            app.setStyleSheet(generate_stylesheet(dark))
+
+        # Update canvas background
+        self.canvas.apply_theme(dark)
+
+        # Update edges
+        scene = self.canvas.scene()
+        if scene:
+            for item in scene.items():
+                if isinstance(item, BaseEdgeItem):
+                    item.update_theme()
+                else:
+                    item.update()
 
     def load_project(self):
         """Load Project."""
@@ -376,6 +428,49 @@ class MainWindow(QMainWindow):
             self.canvas_controller.clear_canvas()
             self.update_window_title()
 
+    def _change_language(self, lang: str) -> None:
+        """Change Language."""
+        load_language(lang)
+        settings = QSettings("Asteroid", "Asteroid")
+        settings.setValue("language", lang)
+        self.en_action.setChecked(lang == "en")
+        self.es_action.setChecked(lang == "es")
+        self.retranslate_ui()
+
+    def retranslate_ui(self) -> None:
+        """Retranslate all UI elements."""
+        self.update_window_title()
+        self._retranslate_menus()
+        self.sidebar.retranslate()
+        self.properties_panel.retranslate()
+
+    def _retranslate_menus(self) -> None:
+        """Retranslate menu texts."""
+        self.new_action.setText(tr("&New project"))
+        self.load_action.setText(tr("&Load project..."))
+        self.save_action.setText(tr("&Save project..."))
+        self.export_image_action.setText(tr("&Export as image..."))
+        self.export_pdf_action.setText(tr("&Export to PDF..."))
+        self.undo_action.setText(tr("&Undo"))
+        self.redo_action.setText(tr("&Redo"))
+        self.validation_action.setText(tr("&Validator mode"))
+        self.en_action.setText(tr("&English"))
+        self.es_action.setText(tr("&Spanish"))
+        self.elements_action.setText(tr("&Elements"))
+        self.examples_action.setText(tr("&Examples"))
+        self.validation_help_action.setText(tr("&Validator mode"))
+        self.quick_help_action.setText(tr("&Quick help"))
+        self.about_action.setText(tr("&About Asteroid"))
+
+        self.file_menu.setTitle(tr("&File"))
+        self.edit_menu.setTitle(tr("&Edit"))
+        self.view_menu.setTitle(tr("&View"))
+        self.validation_menu.setTitle(tr("&Validation"))
+        self.lang_menu.setTitle(tr("&Language"))
+        self.help_menu.setTitle(tr("&Help"))
+
+        self.theme_action.setText(tr("&Dark mode"))
+
     def check_unsaved_changes(self) -> bool:
         """
         Check Unsaved Changes.
@@ -388,8 +483,8 @@ class MainWindow(QMainWindow):
 
         reply = QMessageBox.question(
             self,
-            "Cambios sin guardar",
-            "¿Desea guardar los cambios del proyecto actual?",
+            tr("Unsaved changes"),
+            tr("Do you want to save the current project?"),
             QMessageBox.StandardButton.Save
             | QMessageBox.StandardButton.Discard
             | QMessageBox.StandardButton.Cancel,
@@ -426,37 +521,37 @@ class MainWindow(QMainWindow):
             filename: The filename.
         """
         current_dir = Path(__file__).parent
-        help_dir = current_dir / "help" / "content"
-        return help_dir / filename
+        lang_dir = current_dir / "help" / "content" / get_language()
+        if lang_dir.exists():
+            return lang_dir / filename
+        return current_dir / "help" / "content" / filename
 
     def show_elements_help(self):
         """Show Elements Help."""
         md_file = self.get_help_file_path("elements.md")
-        dialog = HelpModal("Elementos de Asteroid", md_file, self)
+        dialog = HelpModal(tr("Asteroid Elements"), md_file, self)
         dialog.exec()
 
     def show_examples_help(self):
         """Show Examples Help."""
         md_file = self.get_help_file_path("examples.md")
-        dialog = HelpModal("Ejemplos de Uso", md_file, self)
+        dialog = HelpModal(tr("Usage Examples"), md_file, self)
         dialog.exec()
 
     def show_about_help(self):
         """Show About Help."""
         md_file = self.get_help_file_path("about.md")
-        dialog = HelpModal("Acerca de Asteroid", md_file, self)
+        dialog = HelpModal(tr("About Asteroid"), md_file, self)
         dialog.exec()
 
     def show_validation_help(self):
         """Show Validation Help."""
         md_file = self.get_help_file_path("validation_help.md")
-        dialog = HelpModal("Modo Validador", md_file, self)
+        dialog = HelpModal(tr("Validator Mode"), md_file, self)
         dialog.exec()
 
     def show_quick_help(self):
         """Show Quick Help."""
-
-        # Puedes create contenido temporal for the ayuda rápida
         md_file = self.get_help_file_path("quick_help.md")
-        dialog = HelpModal("Ayuda Rápida - Atajos de Teclado", md_file, self)
+        dialog = HelpModal(tr("Quick Help - Keyboard Shortcuts"), md_file, self)
         dialog.exec()

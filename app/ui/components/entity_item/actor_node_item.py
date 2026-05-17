@@ -11,6 +11,7 @@ from PyQt6.QtGui import QPen
 
 from app.core.models.entity.actor import Actor
 from app.ui.components.base_node_item import BaseNodeItem
+from app.ui.theme_manager import theme_manager
 
 
 class ActorNodeItem(BaseNodeItem):
@@ -54,16 +55,20 @@ class ActorNodeItem(BaseNodeItem):
         fill_color = (
             QColor(self.model.color) if hasattr(self.model, "color") else default_color
         )
-        border_color = (
-            QColor(self.model.border_color)
-            if hasattr(self.model, "border_color")
-            else default_border
-        )
-        text_color = (
-            QColor(self.model.text_color)
-            if hasattr(self.model, "text_color")
-            else default_text
-        )
+        if theme_manager().is_dark:
+            border_color = QColor("#ffffff")
+            text_color = QColor("#ffffff")
+        else:
+            border_color = (
+                QColor(self.model.border_color)
+                if hasattr(self.model, "border_color")
+                else default_border
+            )
+            text_color = (
+                QColor(self.model.text_color)
+                if hasattr(self.model, "text_color")
+                else default_text
+            )
 
         # 2. DIBUJAR THE CONTAINER
         painter.setBrush(QBrush(fill_color))

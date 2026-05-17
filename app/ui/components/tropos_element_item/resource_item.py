@@ -16,6 +16,7 @@ from PyQt6.QtGui import QPen
 
 from app.core.models.tropos_element.resource import Resource
 from app.ui.components.base_tropos_item import BaseTroposItem
+from app.ui.theme_manager import theme_manager
 
 
 class ResourceNodeItem(BaseTroposItem):
@@ -108,16 +109,20 @@ class ResourceNodeItem(BaseTroposItem):
         fill_color = (
             QColor(self.model.color) if hasattr(self.model, "color") else default_color
         )
-        border_color = (
-            QColor(self.model.border_color)
-            if hasattr(self.model, "border_color")
-            else default_border
-        )
-        text_color = (
-            QColor(self.model.text_color)
-            if hasattr(self.model, "text_color")
-            else default_text
-        )
+        if theme_manager().is_dark:
+            border_color = QColor("#ffffff")
+            text_color = QColor("#ffffff")
+        else:
+            border_color = (
+                QColor(self.model.border_color)
+                if hasattr(self.model, "border_color")
+                else default_border
+            )
+            text_color = (
+                QColor(self.model.text_color)
+                if hasattr(self.model, "text_color")
+                else default_text
+            )
 
         painter.setRenderHint(painter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(fill_color))

@@ -20,6 +20,7 @@ from PyQt6.QtGui import QPolygonF
 from PyQt6.QtWidgets import QStyleOptionGraphicsItem
 from PyQt6.QtWidgets import QWidget
 
+from app.i18n import tr
 from app.ui.components.base_edge_item import BaseEdgeItem
 
 
@@ -112,7 +113,7 @@ class WhyLinkArrowItem(BaseEdgeItem):
         font.setBold(True)
         painter.setFont(font)
         fm = QFontMetrics(font)
-        txt = "WHY"
+        txt = tr("WHY")
         w = fm.horizontalAdvance(txt)
         h = fm.height()
 

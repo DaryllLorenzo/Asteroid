@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import QStyleOptionGraphicsItem
 from PyQt6.QtWidgets import QWidget
 
 from app.ui.components.control_point_handle import ControlPointHandle
+from app.ui.theme_manager import theme_manager
 
 
 class BaseEdgeItem(QGraphicsPathItem):
@@ -95,6 +96,9 @@ class BaseEdgeItem(QGraphicsPathItem):
         self.cp_changed_callback = None
 
         self.update_position()
+
+        # Apply current theme
+        self.update_theme()
 
         # Conectar a the cambios of position of the nodes
         self._connect_to_nodes()
@@ -661,6 +665,18 @@ class BaseEdgeItem(QGraphicsPathItem):
 
         painter.setBrush(self.pen().color())
         painter.drawPolygon(QPolygonF([adjusted_end, arrow_p1, arrow_p2]))
+
+    def update_theme(self):
+        """Update pen color based on current theme."""
+        if theme_manager().is_dark:
+            color = QColor("#ffffff")
+        else:
+            color = self.edge_color
+        pen = QPen(color, 2)
+        if self.is_dashed:
+            pen.setStyle(Qt.PenStyle.DashLine)
+        self.setPen(pen)
+        self.update()
 
     def clear_handles(self):
         """Clear Handles."""

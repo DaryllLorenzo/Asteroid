@@ -9,6 +9,8 @@ from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
 
+from app.i18n import tr
+
 
 class ToggleSubcanvasCommand(QUndoCommand):
     """
@@ -29,7 +31,7 @@ class ToggleSubcanvasCommand(QUndoCommand):
             node_item (Any): The node item.
         """
         was_open = getattr(node_item.model, "show_subcanvas", False)
-        super().__init__("Cerrar subcanvas" if was_open else "Abrir subcanvas")
+        super().__init__(tr("Close subcanvas") if was_open else tr("Open subcanvas"))
         self._controller = controller
         self._node_item = node_item
 

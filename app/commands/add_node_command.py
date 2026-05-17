@@ -10,6 +10,7 @@ from typing import Any
 from PyQt6.QtGui import QUndoCommand
 
 from app.controller_types import CanvasNodeItem
+from app.i18n import tr
 
 
 class AddNodeCommand(QUndoCommand):
@@ -38,7 +39,7 @@ class AddNodeCommand(QUndoCommand):
             x (float): The x.
             y (float): The y.
         """
-        super().__init__("Añadir nodo")
+        super().__init__(tr("Add node"))
         self._controller = controller
         self._node_type = node_type
         self._x = x

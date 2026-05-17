@@ -111,6 +111,7 @@ asteroid/
 │   │   ├── canvas.py                  # Main QGraphicsView
 │   │   ├── main_window.py             # Main window
 │   │   ├── pdf_export_dialog.py      # PDF export dialog
+│   │   ├── theme_manager.py          # Dark/light theme manager
 │   │   ├── sidebar.py                 # Sidebar with draggable elements
 │   │   ├── components/
 │   │   │   ├── __init__.py
@@ -142,12 +143,24 @@ asteroid/
 │   │   └── help/                       # Help system
 │   │       ├── help_modal.py           
 │   │       ├── markdown_viewer.py
-│   │       └── content/
+│   │   └── content/
 │   │           ├── about.md
 │   │           ├── elements.md
 │   │           ├── examples.md
 │   │           ├── quick_help.md
-│   │           └── validation_help.md
+│   │           ├── validation_help.md
+│   │           ├── en/                     # English help pages
+│   │           │   ├── about.md
+│   │           │   ├── elements.md
+│   │           │   ├── examples.md
+│   │           │   ├── quick_help.md
+│   │           │   └── validation_help.md
+│   │           └── es/                     # Spanish help pages
+│   │               ├── about.md
+│   │               ├── elements.md
+│   │               ├── examples.md
+│   │               ├── quick_help.md
+│   │               └── validation_help.md
 │   ├── validation/               # Tropos methodology validation
 │   │   ├── __init__.py
 │   │   ├── rule.py               # Abstract base class for rules
@@ -161,6 +174,9 @@ asteroid/
 │   │       ├── no_or_decomposition_between_entities.py
 │   │       ├── no_and_decomposition_between_entities.py
 │   │       └── no_contribution_between_entities.py
+│   ├── i18n/                      # Internationalization
+│   │   ├── __init__.py            # Translation loader and tr()
+│   │   └── es.json                # Spanish translations
 │   └── utils/                    # Utils (serialization, export)
 │       ├── astr_format.py       # .astr serializer
 │       └── pdf_export.py        # PDFs generator
@@ -256,11 +272,15 @@ python main.py
     - Toggleable validator mode (Validation menu)
     - Pluggable rule system with auto-discovery
     - 7 built-in rules (entity-in-subcanvas, 6 link-type rules)
+- [x] Multi-language support (English, Spanish) with language switcher
+- [x] Visual themes (light/dark mode)
+    - Ver → "Modo oscuro" toggle in menu
+    - Persistent preference via QSettings
+    - Full dark QSS for sidebar, panels, dialogs, help system
+    - Theme-aware node borders, text, and edge colors
 
 ### In Progress / Planned
-- [ ] Visual themes (light/dark mode)
 - [ ] Diagram templates for common Tropos patterns
-- [ ] Multi-language support (English, Spanish) with language switcher
 
 ---
 
@@ -285,6 +305,26 @@ Each validation rule lives in its own file inside `app/validation/rules/`. To ad
 3. Export the instance as `rule = YourRule()`
 
 The system auto-discovers all rules at startup. No other files need to be modified.
+
+### Adding a New Language
+
+The application uses a JSON-based translation system. To add a new language:
+
+1. **Create a translation file** in `app/i18n/` named `{lang_code}.json` (e.g., `fr.json` for French). Copy the structure from `es.json` and translate the values while keeping the keys in English.
+
+2. **Create localized help content** in `app/ui/help/content/{lang_code}/` — copy the English `.md` files from `app/ui/help/content/en/` and translate their content.
+
+3. **Register the language in the UI** by editing `app/ui/main_window.py`:
+   - Add a new `QAction` for the language in the `_create_menus()` method (follow the pattern for `en_action` / `es_action`)
+   - Bind the action to trigger `self._change_language("{lang_code}")`
+   - Update the checked state in `_change_language()` method:
+     ```python
+     self.{lang}_action.setChecked(lang == "{lang_code}")
+     ```
+
+4. **Update the retranslation method** `_retranslate_menus()` to set the new action's text with `tr(...)`.
+
+The `tr()` function falls back to the English key if no translation is found for the selected language, so you only need to translate the strings that differ from English.
 
 ### Reporting Issues
 Found a bug? Have a feature request? [Open an issue](https://github.com/DaryllLorenzo/asteroid/issues) with a clear description and, if possible, steps to reproduce.

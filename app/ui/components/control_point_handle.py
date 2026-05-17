@@ -15,6 +15,8 @@ from PyQt6.QtGui import QPen
 from PyQt6.QtWidgets import QGraphicsEllipseItem
 from PyQt6.QtWidgets import QGraphicsItem
 
+from app.ui.theme_manager import theme_manager
+
 
 class ControlPointHandle(QGraphicsEllipseItem):
     """
@@ -67,8 +69,9 @@ class ControlPointHandle(QGraphicsEllipseItem):
         self._click_offset = QPointF(0, 0)
 
         # Configure apariencia
-        self.setPen(QPen(QColor(0, 100, 200), 2))
-        self.setBrush(QBrush(QColor(255, 255, 255)))
+        colors = theme_manager().current
+        self.setPen(QPen(QColor(colors.control_point_border), 2))
+        self.setBrush(QBrush(QColor(colors.control_point_fill)))
 
         # NO usar ItemIsMovable - lo manejamos manualmente
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
@@ -147,7 +150,8 @@ class ControlPointHandle(QGraphicsEllipseItem):
         Args:
             event: The event.
         """
-        self.setBrush(QBrush(QColor(200, 230, 255)))
+        colors = theme_manager().current
+        self.setBrush(QBrush(QColor(colors.control_point_hover)))
         super().hoverEnterEvent(event)
 
     def hoverLeaveEvent(self, event):
@@ -158,7 +162,8 @@ class ControlPointHandle(QGraphicsEllipseItem):
             event: The event.
         """
         if not self.isSelected():
-            self.setBrush(QBrush(QColor(255, 255, 255)))
+            colors = theme_manager().current
+            self.setBrush(QBrush(QColor(colors.control_point_fill)))
         super().hoverLeaveEvent(event)
 
     def update_appearance(self, is_selected: bool):
@@ -168,7 +173,8 @@ class ControlPointHandle(QGraphicsEllipseItem):
         Args:
             is_selected (bool): The is selected.
         """
+        colors = theme_manager().current
         if is_selected:
-            self.setBrush(QBrush(QColor(0, 100, 200)))
+            self.setBrush(QBrush(QColor(colors.control_point_selected)))
         else:
-            self.setBrush(QBrush(QColor(255, 255, 255)))
+            self.setBrush(QBrush(QColor(colors.control_point_fill)))

@@ -9,6 +9,7 @@ from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
 
+from app.i18n import tr
 from app.model_types import PropertyMap
 
 
@@ -40,7 +41,7 @@ class ChangePropertyCommand(QUndoCommand):
             old_properties (PropertyMap): The old properties.
             new_properties (PropertyMap): The new properties.
         """
-        super().__init__("Cambiar propiedades")
+        super().__init__(tr("Change properties"))
         self._controller = controller
         self._node_item = node_item
         self._old_properties = old_properties

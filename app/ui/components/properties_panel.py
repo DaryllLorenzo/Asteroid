@@ -22,9 +22,11 @@ from PyQt6.QtWidgets import QSpinBox
 from PyQt6.QtWidgets import QVBoxLayout
 from PyQt6.QtWidgets import QWidget
 
+from app.i18n import tr
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.control_point_handle import ControlPointHandle
 from app.ui.components.position_controll_widget import PositionControlWidget
+from app.ui.theme_manager import theme_manager
 
 
 class PropertiesPanel(QWidget):
@@ -71,6 +73,29 @@ class PropertiesPanel(QWidget):
             )
             controller.selection_changed.connect(self.on_selection_changed)
 
+        theme_manager().theme_changed.connect(self._on_theme_changed)
+
+    def _on_theme_changed(self, dark: bool):
+        """Update hardcoded styles when theme changes."""
+        if dark:
+            self.edge_group.setStyleSheet(
+                "QGroupBox { color: #e0e0e0; font-weight: bold; }"
+            )
+            self.edge_info_label.setStyleSheet("color: #e0e0e0; font-weight: bold;")
+            self.instructions_label.setStyleSheet(
+                "background-color: #2d2d2d; color: #cccccc; "
+                "padding: 8px; border-radius: 4px; margin: 4px 0;"
+            )
+        else:
+            self.edge_group.setStyleSheet(
+                "QGroupBox { color: #FFFFFF; font-weight: bold; }"
+            )
+            self.edge_info_label.setStyleSheet("color: #FFFFFF; font-weight: bold;")
+            self.instructions_label.setStyleSheet(
+                "background-color: #f5f5f5; color: #333333; "
+                "padding: 8px; border-radius: 4px; margin: 4px 0;"
+            )
+
     def init_ui(self):
         """Init Ui."""
         main_layout = QVBoxLayout(self)
@@ -85,35 +110,39 @@ class PropertiesPanel(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
 
-        # --- Grupo of Properties of NODE ---
-        self.node_group = QGroupBox("Propiedades del Nodo")
+        # --- Node Properties ---
+        self.node_group = QGroupBox(tr("Node Properties"))
         node_layout = QFormLayout()
 
         self.label_edit = QPlainTextEdit()
-        self.label_edit.setPlaceholderText("Nombre del nodo...")
+        self.label_edit.setPlaceholderText(tr("Node name..."))
         self.label_edit.setMaximumHeight(60)
         self.label_edit.textChanged.connect(self.on_node_property_changed)
-        node_layout.addRow("Nombre:", self.label_edit)
+        self.name_label = QLabel(tr("Name:"))
+        node_layout.addRow(self.name_label, self.label_edit)
 
         self.radius_spin = QSpinBox()
         self.radius_spin.setRange(10, 500)
         self.radius_spin.setSuffix(" px")
         self.radius_spin.valueChanged.connect(self.on_node_property_changed)
-        node_layout.addRow("Radio:", self.radius_spin)
+        self.radius_label = QLabel(tr("Radius:"))
+        node_layout.addRow(self.radius_label, self.radius_spin)
 
         self.font_size_spin = QSpinBox()
         self.font_size_spin.setRange(5, 100)
         self.font_size_spin.setSuffix(" pt")
         self.font_size_spin.valueChanged.connect(self.on_node_property_changed)
-        node_layout.addRow("Tam. Letra:", self.font_size_spin)
+        self.font_size_label = QLabel(tr("Font Size:"))
+        node_layout.addRow(self.font_size_label, self.font_size_spin)
 
         self.text_width_spin = QSpinBox()
         self.text_width_spin.setRange(50, 800)
         self.text_width_spin.setSuffix(" px")
         self.text_width_spin.valueChanged.connect(self.on_node_property_changed)
-        node_layout.addRow("Ancho Texto:", self.text_width_spin)
+        self.text_width_label = QLabel(tr("Text Width:"))
+        node_layout.addRow(self.text_width_label, self.text_width_spin)
 
-        # --- Alignment Compacta ---
+        # --- Alignment ---
         align_layout = QHBoxLayout()
         align_layout.setSpacing(2)
         self.align_group = QButtonGroup(self)
@@ -130,30 +159,34 @@ class PropertiesPanel(QWidget):
 
         self.btn_align_center.setChecked(True)
         self.align_group.buttonClicked.connect(self.on_node_property_changed)
-        node_layout.addRow("Alineación:", align_layout)
+        self.align_label = QLabel(tr("Alignment:"))
+        node_layout.addRow(self.align_label, align_layout)
 
         self.node_group.setLayout(node_layout)
         layout.addWidget(self.node_group)
 
-        # --- Colores ---
-        self.colors_group = QGroupBox("Colores")
+        # --- Colors ---
+        self.colors_group = QGroupBox(tr("Colors"))
         colors_layout = QFormLayout()
         self.color_btn = QPushButton("▆▆▆")
         self.color_btn.clicked.connect(lambda: self.choose_color("color"))
-        colors_layout.addRow("Relleno:", self.color_btn)
+        self.fill_label = QLabel(tr("Fill:"))
+        colors_layout.addRow(self.fill_label, self.color_btn)
 
         self.border_color_btn = QPushButton("▆▆▆")
         self.border_color_btn.clicked.connect(lambda: self.choose_color("border_color"))
-        colors_layout.addRow("Borde:", self.border_color_btn)
+        self.border_label = QLabel(tr("Border:"))
+        colors_layout.addRow(self.border_label, self.border_color_btn)
 
         self.text_color_btn = QPushButton("▆▆▆")
         self.text_color_btn.clicked.connect(lambda: self.choose_color("text_color"))
-        colors_layout.addRow("Texto:", self.text_color_btn)
+        self.text_color_label = QLabel(tr("Text:"))
+        colors_layout.addRow(self.text_color_label, self.text_color_btn)
         self.colors_group.setLayout(colors_layout)
         layout.addWidget(self.colors_group)
 
-        # --- Position Canvas ---
-        self.pos_group = QGroupBox("Behaviour Canvas")
+        # --- Behaviour Canvas ---
+        self.pos_group = QGroupBox(tr("Behaviour Canvas"))
         pos_layout = QVBoxLayout()
         self.pos_control = PositionControlWidget()
         self.pos_control.position_changed.connect(self.on_position_in_subcanvas_changed)
@@ -162,51 +195,49 @@ class PropertiesPanel(QWidget):
         pos_container.addWidget(self.pos_control)
         pos_container.addStretch()
         pos_layout.addLayout(pos_container)
-        self.pos_reset_btn = QPushButton("Centrar")
+        self.pos_reset_btn = QPushButton(tr("Center"))
         self.pos_reset_btn.clicked.connect(self.reset_position_in_subcanvas)
         pos_layout.addWidget(self.pos_reset_btn)
         self.pos_group.setLayout(pos_layout)
         layout.addWidget(self.pos_group)
 
-        # --- Flecha ---
-        self.edge_group = QGroupBox("Flecha")
+        # --- Arrow ---
+        self.edge_group = QGroupBox(tr("Arrow"))
         self.edge_group.setStyleSheet(
             "QGroupBox { color: #FFFFFF; font-weight: bold; }"
         )
         edge_layout = QVBoxLayout()
 
-        # Information of the flecha
-        self.edge_info_label = QLabel("Flecha seleccionada")
+        self.edge_info_label = QLabel(tr("Selected arrow"))
         self.edge_info_label.setStyleSheet("color: #FFFFFF; font-weight: bold;")
         edge_layout.addWidget(self.edge_info_label)
 
-        # Instrucciones of edición
-        instructions_label = QLabel(
-            "<b>Edición de Flecha</b><br><br>"
-            "• Arrastra los puntos para modificar la forma<br>"
-            "• Doble-click en la línea para agregar un punto<br>"
-            "• Selecciona un punto y presiona Delete para eliminar<br>"
-            "• Click en 'Enderezar' para línea recta"
+        self._arrow_instructions = (
+            "<b>Arrow Editing</b><br><br>"
+            "• Drag points to adjust the shape<br>"
+            "• Double-click on the line to add a point<br>"
+            "• Select a point and press Delete to remove it<br>"
+            "• Click 'Straighten' for a straight line"
         )
-        instructions_label.setWordWrap(True)
-        instructions_label.setStyleSheet(
+        self.instructions_label = QLabel(tr(self._arrow_instructions))
+        self.instructions_label.setWordWrap(True)
+        self.instructions_label.setStyleSheet(
             "background-color: #f5f5f5; color: #333333; "
             "padding: 8px; border-radius: 4px; margin: 4px 0;"
         )
-        edge_layout.addWidget(instructions_label)
+        edge_layout.addWidget(self.instructions_label)
 
-        # Button for enderezar the flecha
-        self.straighten_button = QPushButton("Enderezar Flecha")
+        self.straighten_button = QPushButton(tr("Straighten Arrow"))
         self.straighten_button.clicked.connect(self.on_straighten_edge_clicked)
         edge_layout.addWidget(self.straighten_button)
 
         self.edge_group.setLayout(edge_layout)
         layout.addWidget(self.edge_group)
 
-        # --- Acciones ---
-        self.actions_group = QGroupBox("Acciones")
+        # --- Actions ---
+        self.actions_group = QGroupBox(tr("Actions"))
         actions_layout = QVBoxLayout()
-        self.delete_button = QPushButton(" Eliminar Elemento")
+        self.delete_button = QPushButton(tr("Delete Element"))
         self.delete_button.setStyleSheet(
             "background-color: #ff4444; color: white; font-weight: bold; padding: 6px;"
         )
@@ -215,7 +246,7 @@ class PropertiesPanel(QWidget):
         self.actions_group.setLayout(actions_layout)
         layout.addWidget(self.actions_group)
 
-        self.no_selection_label = QLabel(" Selecciona un elemento")
+        self.no_selection_label = QLabel(tr("Select an element"))
         self.no_selection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.no_selection_label)
 
@@ -223,6 +254,28 @@ class PropertiesPanel(QWidget):
         scroll.setWidget(container)
         main_layout.addWidget(scroll)
         self.update_visibility()
+
+    def retranslate(self):
+        """Retranslate all UI text in the properties panel."""
+        self.node_group.setTitle(tr("Node Properties"))
+        self.label_edit.setPlaceholderText(tr("Node name..."))
+        self.name_label.setText(tr("Name:"))
+        self.radius_label.setText(tr("Radius:"))
+        self.font_size_label.setText(tr("Font Size:"))
+        self.text_width_label.setText(tr("Text Width:"))
+        self.align_label.setText(tr("Alignment:"))
+        self.colors_group.setTitle(tr("Colors"))
+        self.fill_label.setText(tr("Fill:"))
+        self.border_label.setText(tr("Border:"))
+        self.text_color_label.setText(tr("Text:"))
+        self.pos_group.setTitle(tr("Behaviour Canvas"))
+        self.pos_reset_btn.setText(tr("Center"))
+        self.edge_group.setTitle(tr("Arrow"))
+        self.instructions_label.setText(tr(self._arrow_instructions))
+        self.straighten_button.setText(tr("Straighten Arrow"))
+        self.actions_group.setTitle(tr("Actions"))
+        self.delete_button.setText(tr("Delete Element"))
+        self.no_selection_label.setText(tr("Select an element"))
 
     def on_selection_changed(self, item):
         """
@@ -248,18 +301,17 @@ class PropertiesPanel(QWidget):
         Args:
             edge: The edge.
         """
-        # Get the type of flecha
-        edge_type = "Flecha"
+        edge_type = tr("Arrow")
         if hasattr(edge, "source_node") and hasattr(edge, "dest_node"):
             src_name = (
-                getattr(edge.source_node.model, "label", "Nodo")
+                getattr(edge.source_node.model, "label", tr("Node"))
                 if hasattr(edge.source_node, "model")
-                else "Nodo"
+                else tr("Node")
             )
             dst_name = (
-                getattr(edge.dest_node.model, "label", "Nodo")
+                getattr(edge.dest_node.model, "label", tr("Node"))
                 if hasattr(edge.dest_node, "model")
-                else "Nodo"
+                else tr("Node")
             )
             edge_type = f"{src_name} → {dst_name}"
 

@@ -28,6 +28,8 @@ from reportlab.platypus import Spacer
 from reportlab.platypus import Table
 from reportlab.platypus import TableStyle
 
+from app.i18n import tr
+
 
 class PDFGenerator:
     """
@@ -121,8 +123,8 @@ class PDFGenerator:
 
             QMessageBox.information(
                 self.canvas_controller.canvas,
-                "Exportación completada",
-                f"PDF exportado exitosamente:\n{filename}",
+                tr("Export completed"),
+                f"{tr('PDF exported successfully')}:\n{filename}",
             )
             if diagram_image:
                 os.remove(diagram_image)  # Delete the file temporal

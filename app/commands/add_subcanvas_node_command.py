@@ -9,6 +9,8 @@ from typing import Any
 
 from PyQt6.QtGui import QUndoCommand
 
+from app.i18n import tr
+
 
 class AddSubcanvasNodeCommand(QUndoCommand):
     """
@@ -40,7 +42,7 @@ class AddSubcanvasNodeCommand(QUndoCommand):
             local_x (float): The local x.
             local_y (float): The local y.
         """
-        super().__init__("Añadir nodo a subcanvas")
+        super().__init__(tr("Add node to subcanvas"))
         self._controller = controller
         self._parent_node_item = parent_node_item
         self._subcanvas = subcanvas

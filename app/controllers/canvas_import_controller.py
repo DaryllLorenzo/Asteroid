@@ -18,6 +18,7 @@ from app.controllers.canvas_registry_controller import _ARROW_TYPES
 from app.controllers.canvas_registry_controller import _MODEL_MAP
 from app.controllers.canvas_registry_controller import _NODE_MAP
 from app.core.models.composite_model_wrapper import CompositeModelWrapper
+from app.i18n import tr
 from app.model_types import PropertyMap
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.base_node_item import BaseNodeItem
@@ -154,7 +155,10 @@ class CanvasImportController(CanvasControllerMixin):
         try:
             if not filename:
                 filename, _ = QFileDialog.getOpenFileName(
-                    self.canvas, "Load .astr project", "", "Asteroid Files (*.astr)"
+                    self.canvas,
+                    tr("Load .astr project"),
+                    "",
+                    tr("Asteroid Files (*.astr)"),
                 )
                 if not filename:
                     return False
@@ -382,7 +386,9 @@ class CanvasImportController(CanvasControllerMixin):
 
             traceback.print_exc()
             QMessageBox.critical(
-                self.canvas, "Error", f"Could not load project:\n{error}"
+                self.canvas,
+                tr("Error"),
+                tr("Could not load project:\n{error}").format(error=error),
             )
             return False
 
