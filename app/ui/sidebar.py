@@ -217,7 +217,10 @@ class DraggableLabel(QLabel):
             y = int(H / 2)
 
             from PyQt6.QtGui import QColor
-            edge_color = QColor("#ffffff") if theme_manager().is_dark else QColor("#000000")
+
+            edge_color = (
+                QColor("#ffffff") if theme_manager().is_dark else QColor("#000000")
+            )
             pen = painter.pen()
             pen.setWidth(2)
             pen.setColor(edge_color)
@@ -524,9 +527,7 @@ class Sidebar(QWidget):
                     "font-weight:bold; font-size:14px; margin:8px; color: #e0e0e0;"
                 )
             else:
-                title.setStyleSheet(
-                    "font-weight:bold; font-size:14px; margin:8px;"
-                )
+                title.setStyleSheet("font-weight:bold; font-size:14px; margin:8px;")
 
     def _start_composite(self, node_type):
         """
