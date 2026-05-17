@@ -13,8 +13,6 @@ from PyQt6.QtGui import QPainter
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QFileDialog
 from PyQt6.QtWidgets import QMessageBox
-
-from app.i18n import tr
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
@@ -29,6 +27,8 @@ from reportlab.platypus import SimpleDocTemplate
 from reportlab.platypus import Spacer
 from reportlab.platypus import Table
 from reportlab.platypus import TableStyle
+
+from app.i18n import tr
 
 
 class PDFGenerator:

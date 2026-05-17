@@ -18,7 +18,6 @@ from PyQt6.QtWidgets import QVBoxLayout
 from PyQt6.QtWidgets import QWidget
 
 from app.i18n import tr
-from app.ui.theme_manager import theme_manager
 from app.ui.components.dependency_item.and_decomposition_edge_item import (
     AndDecompositionArrowItem,
 )
@@ -43,6 +42,7 @@ from app.ui.components.tropos_element_item.hard_goal_item import HardGoalNodeIte
 from app.ui.components.tropos_element_item.plan_item import PlanNodeItem
 from app.ui.components.tropos_element_item.resource_item import ResourceNodeItem
 from app.ui.components.tropos_element_item.soft_goal_item import SoftGoalNodeItem
+from app.ui.theme_manager import theme_manager
 
 
 class DraggableLabel(QLabel):
@@ -493,6 +493,7 @@ class Sidebar(QWidget):
         """Retranslate all sidebar text."""
         for child in self.findChildren(DraggableLabel):
             child.retranslate()
+
     def _update_tooltip_style(self):
         """Update tooltip stylesheet based on theme."""
         if theme_manager().is_dark:
