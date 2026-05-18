@@ -5,6 +5,8 @@
 # License: MIT License
 # ---------------------------------------------------
 import json
+import os
+import re
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter
@@ -26,6 +28,22 @@ class CanvasExportController(CanvasControllerMixin):
         export_to_image: Export To Image.
     """
 
+    @staticmethod
+    def _sanitize_filename(name: str) -> str:
+        name = re.sub(r'[\\/:*?"<>|]', "_", name)
+        name = name.strip(". ")
+        if not name:
+            name = "untitled"
+        return name[:200]
+
+    def _get_default_basename(self) -> str:
+        path = getattr(self, "_current_file_path", None)
+        if path:
+            base = path.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+            base = base.rsplit(".", 1)[0] if "." in base else base
+            return self._sanitize_filename(base)
+        return "diagram"
+
     def export_to_astr(
         self,
         filename: str | None = None,
@@ -41,10 +59,11 @@ class CanvasExportController(CanvasControllerMixin):
         """
         try:
             if not filename:
+                default_name = self._get_default_basename() + ".astr"
                 filename, _ = QFileDialog.getSaveFileName(
                     self.canvas,
                     tr("Export as .astr"),
-                    "",
+                    default_name,
                     tr("Asteroid Files (*.astr)"),
                 )
                 if not filename:
@@ -52,6 +71,10 @@ class CanvasExportController(CanvasControllerMixin):
 
                 if not filename.endswith(".astr"):
                     filename += ".astr"
+
+            dir_part, file_part = os.path.split(filename)
+            file_part = self._sanitize_filename(file_part)
+            filename = os.path.join(dir_part, file_part)
 
             scene_data = AstrFormat.serialize_scene(self.nodes, self.edges)
 
@@ -86,10 +109,11 @@ class CanvasExportController(CanvasControllerMixin):
         """
         try:
             if not filename:
+                default_name = self._get_default_basename() + ".png"
                 filename, _ = QFileDialog.getSaveFileName(
                     self.canvas,
                     tr("Export as image"),
-                    "",
+                    default_name,
                     tr("PNG Images (*.png);;JPEG Images (*.jpg *.jpeg)"),
                 )
                 if not filename:
@@ -97,6 +121,10 @@ class CanvasExportController(CanvasControllerMixin):
 
                 if not filename.endswith(".png"):
                     filename += ".png"
+
+            dir_part, file_part = os.path.split(filename)
+            file_part = self._sanitize_filename(file_part)
+            filename = os.path.join(dir_part, file_part)
 
             scene = self.canvas.scene()
             if scene is None:
