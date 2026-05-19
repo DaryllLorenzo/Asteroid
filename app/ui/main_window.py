@@ -445,9 +445,9 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 tr("Export complete"),
-                tr(
-                    "Agent reports exported successfully to:\n{path}"
-                ).format(path=output_dir),
+                tr("Agent reports exported successfully to:\n{path}").format(
+                    path=output_dir
+                ),
             )
         else:
             QMessageBox.warning(

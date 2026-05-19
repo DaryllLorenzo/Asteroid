@@ -12,6 +12,7 @@ from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtGui import QImage
 from PyQt6.QtGui import QPainter
 from PyQt6.QtGui import QPen
+from PyQt6.QtWidgets import QGraphicsItem
 from PyQt6.QtWidgets import QGraphicsRectItem
 from PyQt6.QtWidgets import QGraphicsScene
 from PyQt6.QtWidgets import QGraphicsSimpleTextItem
@@ -85,7 +86,7 @@ class AgentReportExporter:
             tree_set = self._collect_tree_set(agent)
             relationships = self._get_relationships(agent, tree_set, all_edges)
 
-            saved_visibility: dict[object, bool] = {}
+            saved_visibility: dict[QGraphicsItem, bool] = {}
             for item in all_items:
                 if item not in tree_set:
                     saved_visibility[item] = item.isVisible()
@@ -131,16 +132,15 @@ class AgentReportExporter:
 
         return True
 
-    def _collect_tree_set(self, root: BaseNodeItem) -> set[object]:
-        items: set[object] = set()
+    def _collect_tree_set(self, root: BaseNodeItem) -> set[QGraphicsItem]:
+        items: set[QGraphicsItem] = set()
 
-        def collect(item: object) -> None:
+        def collect(item: QGraphicsItem) -> None:
             if item in items:
                 return
             items.add(item)
-            if hasattr(item, "childItems"):
-                for child in item.childItems():
-                    collect(child)
+            for child in item.childItems():
+                collect(child)
 
         collect(root)
         return items
@@ -208,7 +208,7 @@ class AgentReportExporter:
     def _get_relationships(
         self,
         agent: BaseNodeItem,
-        tree_set: set[object],
+        tree_set: set[QGraphicsItem],
         all_edges: list[BaseEdgeItem],
     ) -> list[RelationshipInfo]:
         rels: list[RelationshipInfo] = []
@@ -258,31 +258,26 @@ class AgentReportExporter:
         return type(edge).__name__.replace("ArrowItem", "").replace("EdgeItem", "")
 
     def _agent_visual_rect(
-        self, agent: BaseNodeItem, tree_set: set[object]
+        self, agent: BaseNodeItem, tree_set: set[QGraphicsItem]
     ) -> QRectF:
         rect = QRectF()
         for item in tree_set:
-            if hasattr(item, "sceneBoundingRect"):
-                try:
-                    r = item.sceneBoundingRect()
-                    rect = rect.united(r) if not rect.isEmpty() else r
-                except RuntimeError:
-                    pass
+            try:
+                r = item.sceneBoundingRect()
+                rect = rect.united(r) if not rect.isEmpty() else r
+            except RuntimeError:
+                pass
         if rect.isEmpty():
-            r = float(getattr(agent.model, "radius", 50))
+            radius = float(getattr(agent.model, "radius", 50))
             p = agent.scenePos()
-            rect = QRectF(p.x() - r, p.y() - r, 2 * r, 2 * r)
+            rect = QRectF(p.x() - radius, p.y() - radius, 2 * radius, 2 * radius)
         return rect
 
-    def _annotations_rect(self, annotations: list[object]) -> QRectF:
+    def _annotations_rect(self, annotations: list[QGraphicsItem]) -> QRectF:
         rect = QRectF()
         for ann in annotations:
             try:
-                r = (
-                    ann.sceneBoundingRect()
-                    if hasattr(ann, "sceneBoundingRect")
-                    else ann.boundingRect()
-                )
+                r = ann.sceneBoundingRect()
                 rect = rect.united(r) if not rect.isEmpty() else r
             except RuntimeError:
                 pass
@@ -297,8 +292,8 @@ class AgentReportExporter:
         scene: QGraphicsScene,
         panel_x: float,
         panel_y: float,
-    ) -> list[object]:
-        annotations: list[object] = []
+    ) -> list[QGraphicsItem]:
+        annotations: list[QGraphicsItem] = []
         lh = 26
         title_font = QFont("Arial", 20, QFont.Weight.Bold)
         sec_font = QFont("Arial", 14, QFont.Weight.Bold)
@@ -365,10 +360,7 @@ class AgentReportExporter:
 
         panel_w = max(max_text_width + 28, 380)
 
-        panel_h = sum(
-            lh if txt else lh * 0.4
-            for txt, _, _ in rows
-        ) + 30
+        panel_h = sum(lh if txt else lh * 0.4 for txt, _, _ in rows) + 30
 
         bg = QGraphicsRectItem(panel_x, panel_y, panel_w, panel_h)
         bg.setBrush(QBrush(QColor(248, 248, 248)))
