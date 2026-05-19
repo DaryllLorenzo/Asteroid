@@ -32,6 +32,7 @@ from app.ui.pdf_export_dialog import PDFExportDialog
 from app.ui.sidebar import Sidebar
 from app.ui.theme_manager import generate_stylesheet
 from app.ui.theme_manager import theme_manager
+from app.utils.agent_report_export import AgentReportExporter
 from app.utils.pdf_export import PDFGenerator
 
 
@@ -283,6 +284,11 @@ class MainWindow(QMainWindow):
         self.export_pdf_action.setShortcut("Ctrl+P")
         self.export_pdf_action.triggered.connect(self.export_pdf)
 
+        file_menu.addSeparator()
+
+        self.export_agents_action = file_menu.addAction(tr("&Export agent reports..."))
+        self.export_agents_action.triggered.connect(self.export_agent_reports)
+
         # Edit menu
         self.edit_menu = menubar.addMenu(tr("&Edit"))
         edit_menu = self.edit_menu
@@ -422,6 +428,34 @@ class MainWindow(QMainWindow):
         pdf_generator = PDFGenerator(self.canvas_controller)
         pdf_generator.export_to_pdf(with_additional_info=with_info)
 
+    def export_agent_reports(self):
+        """Export Agent Reports."""
+        from PyQt6.QtWidgets import QFileDialog
+
+        output_dir = QFileDialog.getExistingDirectory(
+            self, tr("Select output folder for agent reports"), ""
+        )
+        if not output_dir:
+            return
+
+        exporter = AgentReportExporter(self.canvas_controller)
+        success = exporter.export_reports(output_dir)
+
+        if success:
+            QMessageBox.information(
+                self,
+                tr("Export complete"),
+                tr(
+                    "Agent reports exported successfully to:\n{path}"
+                ).format(path=output_dir),
+            )
+        else:
+            QMessageBox.warning(
+                self,
+                tr("Export failed"),
+                tr("No top-level agents found in the diagram."),
+            )
+
     def new_project(self):
         """New Project."""
         if self.check_unsaved_changes():
@@ -451,6 +485,7 @@ class MainWindow(QMainWindow):
         self.save_action.setText(tr("&Save project..."))
         self.export_image_action.setText(tr("&Export as image..."))
         self.export_pdf_action.setText(tr("&Export to PDF..."))
+        self.export_agents_action.setText(tr("&Export agent reports..."))
         self.undo_action.setText(tr("&Undo"))
         self.redo_action.setText(tr("&Redo"))
         self.validation_action.setText(tr("&Validator mode"))
