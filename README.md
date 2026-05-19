@@ -178,6 +178,7 @@ asteroid/
 │   │   ├── __init__.py            # Translation loader and tr()
 │   │   └── es.json                # Spanish translations
 │   └── utils/                    # Utils (serialization, export)
+│       ├── agent_report_export.py # Per-agent PNG export
 │       ├── astr_format.py       # .astr serializer
 │       └── pdf_export.py        # PDFs generator
 ├── images/
