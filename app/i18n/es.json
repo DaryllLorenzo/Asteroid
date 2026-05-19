@@ -112,5 +112,16 @@
   "Cannot create a Means-End between Actors/Agents. Links are for Tropos elements inside the subcanvas.": "No se puede crear un enlace Means-End entre Actores/Agentes. Los enlaces son para elementos Tropos dentro del subcanvas.",
   "Cannot add an Actor/Agent inside another Actor/Agent's subcanvas. Subcanvases are for Tropos elements (Goals, Resources, Plans, Softgoals).": "No se puede agregar un Actor/Agente dentro del subcanvas de otro Actor/Agente. Los subcanvases son para elementos Tropos (Metas, Recursos, Planes, Softgoals).",
   "WHY": "WHY",
-  "+": "+"
+  "+": "+",
+  "Outgoing": "Salientes",
+  "Incoming": "Entrantes",
+  "towards": "hacia",
+  "from": "desde",
+  "(No relationships)": "(Sin relaciones)",
+  "&Export agent reports...": "&Exportar informes de agentes...",
+  "Select output folder for agent reports": "Seleccionar carpeta de destino para informes de agentes",
+  "Export complete": "Exportación completada",
+  "Agent reports exported successfully to:\n{path}": "Informes de agentes exportados exitosamente a:\n{path}",
+  "Export failed": "Exportación fallida",
+  "No top-level agents found in the diagram.": "No se encontraron agentes de nivel superior en el diagrama."
 }
