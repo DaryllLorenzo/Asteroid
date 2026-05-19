@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import QGraphicsScene
 from PyQt6.QtWidgets import QGraphicsSimpleTextItem
 
 from app.controllers.canvas_controller import CanvasController
+from app.i18n import tr
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.base_node_item import BaseNodeItem
 from app.ui.components.dependency_item.and_decomposition_edge_item import (
@@ -35,12 +36,12 @@ from app.ui.components.dependency_item.or_decomposition_edge_item import (
 from app.ui.components.dependency_item.why_link_edge_item import WhyLinkArrowItem
 
 EDGE_DISPLAY_NAMES: dict[type[BaseEdgeItem], str] = {
-    MeansEndArrowItem: "Medio-Fin",
-    DependencyLinkArrowItem: "Dependencia",
-    ContributionArrowItem: "Contribución",
-    OrDecompositionArrowItem: "O-Descomposición",
-    AndDecompositionArrowItem: "Y-Descomposición",
-    WhyLinkArrowItem: "Por qué",
+    MeansEndArrowItem: "Means-End",
+    DependencyLinkArrowItem: "Dependency",
+    ContributionArrowItem: "Contribution",
+    OrDecompositionArrowItem: "OR Decomposition",
+    AndDecompositionArrowItem: "AND Decomposition",
+    WhyLinkArrowItem: "Why",
 }
 
 
@@ -218,9 +219,10 @@ class AgentReportExporter:
             if source_in and not dest_in:
                 external = edge.dest_node
                 ext_label = self._get_node_label(external)
-                edge_display = EDGE_DISPLAY_NAMES.get(
+                edge_key = EDGE_DISPLAY_NAMES.get(
                     type(edge), self._get_edge_class_name(edge)
                 )
+                edge_display = tr(edge_key)
                 owning = self._get_owning_agent(external)
                 owner_label = self._get_node_label(owning) if owning else None
                 if not owner_label:
@@ -231,9 +233,10 @@ class AgentReportExporter:
             elif not source_in and dest_in:
                 external = edge.source_node
                 ext_label = self._get_node_label(external)
-                edge_display = EDGE_DISPLAY_NAMES.get(
+                edge_key = EDGE_DISPLAY_NAMES.get(
                     type(edge), self._get_edge_class_name(edge)
                 )
+                edge_display = tr(edge_key)
                 owning = self._get_owning_agent(external)
                 owner_label = self._get_node_label(owning) if owning else None
                 if not owner_label:
@@ -304,7 +307,7 @@ class AgentReportExporter:
 
         rows: list[tuple[str, QFont, QColor]] = []
 
-        raw_label = str(getattr(agent.model, "label", "Agente")).replace("\n", " ")
+        raw_label = str(getattr(agent.model, "label", tr("Agent"))).replace("\n", " ")
         rows.append((raw_label, title_font, QColor("#c64600")))
         rows.append(("", text_font, QColor(0, 0, 0)))
 
@@ -312,10 +315,11 @@ class AgentReportExporter:
         incoming = [r for r in relationships if r.direction == "incoming"]
 
         if outgoing:
-            rows.append(("--- Salientes ---", sec_font, QColor("#c64600")))
+            out_header = f"--- {tr('Outgoing')} ---"
+            rows.append((out_header, sec_font, QColor("#c64600")))
             for r in outgoing:
                 agent_tag = (
-                    f"  [hacia {r.owning_agent_label}]"
+                    f"  [{tr('towards')} {r.owning_agent_label}]"
                     if r.owning_agent_label
                     else ""
                 )
@@ -328,10 +332,11 @@ class AgentReportExporter:
             rows.append(("", text_font, QColor(0, 0, 0)))
 
         if incoming:
-            rows.append(("--- Entrantes ---", sec_font, QColor("#1a5fb4")))
+            in_header = f"--- {tr('Incoming')} ---"
+            rows.append((in_header, sec_font, QColor("#1a5fb4")))
             for r in incoming:
                 agent_tag = (
-                    f"  [desde {r.owning_agent_label}]"
+                    f"  [{tr('from')} {r.owning_agent_label}]"
                     if r.owning_agent_label
                     else ""
                 )
@@ -341,7 +346,7 @@ class AgentReportExporter:
                 rows.append((edge_line, small_font, QColor(130, 130, 130)))
 
         if not outgoing and not incoming:
-            rows.append(("(Sin relaciones)", small_font, QColor(150, 150, 150)))
+            rows.append((tr("(No relationships)"), small_font, QColor(150, 150, 150)))
 
         font_metrics = {
             title_font: QFontMetrics(title_font),
