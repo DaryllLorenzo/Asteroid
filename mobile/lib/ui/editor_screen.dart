@@ -55,11 +55,13 @@ class _EditorScreenState extends State<EditorScreen> {
       availableHeight / bounds.height,
     ).clamp(.3, 1.6).toDouble();
     _transform.value = Matrix4.identity()
-      ..translate(
+      ..setEntry(0, 0, scale)
+      ..setEntry(1, 1, scale)
+      ..setTranslationRaw(
         viewport.width / 2 - bounds.center.dx * scale,
         availableHeight / 2 - bounds.center.dy * scale,
-      )
-      ..scale(scale);
+        0,
+      );
   }
 
   @override

@@ -116,7 +116,6 @@ class NodeShapePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
     final fill = Paint()..color = Color(node.fillColor);
     final border = Paint()
       ..color = connectionSource ? const Color(0xfff2b134) : (selected ? const Color(0xff18a999) : Color(node.borderColor))
@@ -153,7 +152,11 @@ class NodeShapePainter extends CustomPainter {
           final angle = i * math.pi * 2 / points;
           final wave = i.isEven ? 1.0 : .82;
           final point = center + Offset(math.cos(angle) * r * wave, math.sin(angle) * r * .72 * wave);
-          if (i == 0) path.moveTo(point.dx, point.dy); else path.lineTo(point.dx, point.dy);
+          if (i == 0) {
+            path.moveTo(point.dx, point.dy);
+          } else {
+            path.lineTo(point.dx, point.dy);
+          }
         }
         return path..close();
     }
@@ -170,9 +173,13 @@ class GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = dark ? const Color(0xff273244) : const Color(0xffdce2e8);
-    for (double x = 0; x < size.width; x += 32) canvas.drawCircle(Offset(x, 0), 1, paint);
+    for (double x = 0; x < size.width; x += 32) {
+      canvas.drawCircle(Offset(x, 0), 1, paint);
+    }
     for (double y = 0; y < size.height; y += 32) {
-      for (double x = 0; x < size.width; x += 32) canvas.drawCircle(Offset(x, y), 1, paint);
+      for (double x = 0; x < size.width; x += 32) {
+        canvas.drawCircle(Offset(x, y), 1, paint);
+      }
     }
   }
 
