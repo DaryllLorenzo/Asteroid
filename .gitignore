@@ -8,3 +8,30 @@ wheels/
 
 # Virtual environments
 .venv
+
+# --- Flutter / Mobile (mobile) ---
+# Flutter/Dart generated files (pubspec.lock is committed for applications).
+/mobile/.dart_tool/
+/mobile/build/
+/mobile/.flutter-plugins
+/mobile/.flutter-plugins-dependencies
+/mobile/.packages
+
+# Android generated files and signing material.
+/mobile/android/.gradle/
+/mobile/android/local.properties
+/mobile/android/key.properties
+/mobile/**/*.apk
+/mobile/**/*.aab
+/mobile/**/*.jks
+/mobile/**/*.keystore
+
+# iOS generated files (for future mobile targets).
+/mobile/ios/Pods/
+/mobile/ios/.symlinks/
+/mobile/ios/**/*.xcworkspace
+
+# Mobile IDE metadata.
+/mobile/.idea/
+/mobile/*.iml
+/mobile/.vscode/

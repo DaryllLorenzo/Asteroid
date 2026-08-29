@@ -1,0 +1,65 @@
+name: Flutter Mobile CI
+
+on:
+  push:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/flutter-build.yml'
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/flutter-build.yml'
+
+jobs:
+  build:
+    name: Analyze, test, and build Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.6'
+          channel: stable
+          cache: true
+
+      - name: Cache pub and Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            mobile/.dart_tool
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-flutter-${{ hashFiles('mobile/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze Flutter project
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Install required CMake version
+        working-directory: ${{ github.workspace }}
+        run: |
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "cmake;3.22.1"
+
+      - name: Build release Android APK
+        run: flutter build apk --release --split-per-abi
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: mobile/build/app/outputs/flutter-apk/*.apk

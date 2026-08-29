@@ -1,0 +1,24 @@
+name: asteroid_mobile
+description: Touch-first Tropos and i-star diagram editor for Android and iOS.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: 1.0.9
+  file_picker: 8.3.7
+  shared_preferences: 2.5.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/AsteroidLogo_favicons/android-chrome-192x192.png
