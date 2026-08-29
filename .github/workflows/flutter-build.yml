@@ -50,6 +50,11 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
+      - name: Install required CMake version
+        working-directory: ${{ github.workspace }}
+        run: |
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "cmake;3.22.1"
+
       - name: Build release Android APK
         run: flutter build apk --release
 
