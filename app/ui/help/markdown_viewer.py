@@ -4,6 +4,7 @@
 # Year: 2025
 # License: MIT License
 # ---------------------------------------------------
+import logging
 from pathlib import Path
 
 import markdown
@@ -16,44 +17,26 @@ from PyQt6.QtWidgets import QWidget
 from app.i18n import tr
 from app.ui.theme_manager import theme_manager
 
+logger = logging.getLogger(__name__)
+
 
 class MarkdownViewer(QWidget):
-    """
-    Markdown Viewer.
-
-    Methods:
-        __init__: Initialize the instance.
-        setup_ui: Setup Ui.
-        get_stylesheet: Get Stylesheet.
-        load_markdown: Load Markdown.
-        show_error: Show Error.
-    """
-
     def __init__(self, parent=None):
-        """
-        Initialize the instance.
-
-        Args:
-            parent: The parent.
-        """
         super().__init__(parent)
         self.setup_ui()
 
     def setup_ui(self):
-        """Setup Ui."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.text_browser = QTextBrowser()
         self.text_browser.setOpenExternalLinks(True)
 
-        # Configure font base
         font = QFont()
         font.setFamily("Segoe UI")
         font.setPointSize(13)
         self.text_browser.setFont(font)
 
-        # Configure scroll
         self.text_browser.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAsNeeded
         )
@@ -64,7 +47,6 @@ class MarkdownViewer(QWidget):
         layout.addWidget(self.text_browser)
 
     def get_stylesheet(self):
-        """Get Stylesheet."""
         if theme_manager().is_dark:
             return self._get_dark_stylesheet()
         return self._get_light_stylesheet()
@@ -528,12 +510,6 @@ class MarkdownViewer(QWidget):
         """
 
     def load_markdown(self, file_path):
-        """
-        Load Markdown.
-
-        Args:
-            file_path: The file path.
-        """
         try:
             file_path = Path(file_path)
 
@@ -556,16 +532,10 @@ class MarkdownViewer(QWidget):
             self.text_browser.setHtml(html)
 
         except Exception as e:
-            print(f"Error loading markdown: {e}")
+            logger.exception("Error loading markdown")
             self.show_error(f"{tr('Error')}: {str(e)}")
 
     def show_error(self, message):
-        """
-        Show Error.
-
-        Args:
-            message: The message.
-        """
         error_html = f"""
         <div class="warning">
             <h3>⚠️ {tr("Error")}</h3>

@@ -14,23 +14,7 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class DeleteEdgeCommand(QUndoCommand):
-    """
-    Delete Edge Command.
-
-    Methods:
-        __init__: Initialize the instance.
-        redo: Redo.
-        undo: Undo.
-    """
-
     def __init__(self, controller: Any, edge: BaseEdgeItem) -> None:
-        """
-        Initialize the instance.
-
-        Args:
-            controller (Any): The controller.
-            edge (BaseEdgeItem): The edge.
-        """
         super().__init__(tr("Delete arrow"))
         self._controller = controller
         self._edge = edge
@@ -39,7 +23,6 @@ class DeleteEdgeCommand(QUndoCommand):
         self._parent_item = edge.parentItem()
 
     def redo(self) -> None:
-        """Redo."""
         edge_scene = self._edge.scene()
         if edge_scene is not None:
             if hasattr(self._edge, "cleanup"):
@@ -55,7 +38,6 @@ class DeleteEdgeCommand(QUndoCommand):
             self._controller.selection_changed.emit(None)
 
     def undo(self) -> None:
-        """Undo."""
         parent = self._parent_item
         if self._edge.scene() is None:
             if parent is not None and parent.scene() is not None:

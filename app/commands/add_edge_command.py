@@ -15,36 +15,18 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class AddEdgeCommand(QUndoCommand):
-    """
-    Add Edge Command.
-
-    Methods:
-        __init__: Initialize the instance.
-        redo: Redo.
-        undo: Undo.
-    """
-
     def __init__(
         self,
         controller: Any,
         edge: BaseEdgeItem,
         parent_item: QGraphicsItem | None = None,
     ) -> None:
-        """
-        Initialize the instance.
-
-        Args:
-            controller (Any): The controller.
-            edge (BaseEdgeItem): The edge.
-            parent_item (QGraphicsItem | None): The parent item.
-        """
         super().__init__(tr("Add arrow"))
         self._controller = controller
         self._edge = edge
         self._parent_item = parent_item
 
     def redo(self) -> None:
-        """Redo."""
         if self._edge.scene() is None:
             parent = self._parent_item
             if parent is not None and parent.scene() is not None:
@@ -63,7 +45,6 @@ class AddEdgeCommand(QUndoCommand):
         self._edge.update_position()
 
     def undo(self) -> None:
-        """Undo."""
         edge_scene = self._edge.scene()
         if edge_scene is not None:
             if hasattr(self._edge, "cleanup"):

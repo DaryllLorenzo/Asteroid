@@ -5,47 +5,26 @@
 # License: MIT License
 # ---------------------------------------------------
 
-import importlib
-import pkgutil
-
 from app.validation.rule import Rule
+from app.validation.rules.no_entity_in_entity_subcanvas import (
+    rule as no_entity_in_entity_subcanvas,
+)
+from app.validation.rules.no_link_between_entities import (
+    rules as no_link_between_entities_rules,
+)
 
 
 class Validator:
-    """
-    Validator.
-
-    Methods:
-        __init__: Initialize the instance.
-        validate: Validate.
-    """
+    """Runs the active Rule set against a canvas action's context."""
 
     def __init__(self) -> None:
-        """Initialize the instance."""
         self.active: bool = False
-        self._rules: list[Rule] = []
-        self._discover_rules()
-
-    def _discover_rules(self) -> None:
-        """Discover Rules."""
-        import app.validation.rules as rules_pkg
-
-        for _, module_name, _ in pkgutil.iter_modules(rules_pkg.__path__):
-            module = importlib.import_module(f"app.validation.rules.{module_name}")
-            if hasattr(module, "rule") and isinstance(module.rule, Rule):
-                self._rules.append(module.rule)
+        self._rules: list[Rule] = [
+            no_entity_in_entity_subcanvas,
+            *no_link_between_entities_rules,
+        ]
 
     def validate(self, action_type: str, context: dict) -> list[str]:
-        """
-        Validate.
-
-        Args:
-            action_type (str): The action type.
-            context (dict): The context.
-
-        Returns:
-            list[str]: Validate.
-        """
         if not self.active:
             return []
         errors: list[str] = []

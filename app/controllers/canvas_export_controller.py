@@ -5,6 +5,7 @@
 # License: MIT License
 # ---------------------------------------------------
 import json
+import logging
 import os
 import re
 
@@ -18,15 +19,11 @@ from app.controllers._canvas_mixin import CanvasControllerMixin
 from app.i18n import tr
 from app.utils.astr_format import AstrFormat
 
+logger = logging.getLogger(__name__)
+
 
 class CanvasExportController(CanvasControllerMixin):
-    """
-    Canvas Export Controller.
-
-    Methods:
-        export_to_astr: Export To Astr.
-        export_to_image: Export To Image.
-    """
+    """Serializes the canvas to a .astr file or a PNG/JPEG image."""
 
     @staticmethod
     def _sanitize_filename(name: str) -> str:
@@ -48,15 +45,6 @@ class CanvasExportController(CanvasControllerMixin):
         self,
         filename: str | None = None,
     ) -> bool:
-        """
-        Export To Astr.
-
-        Args:
-            filename (str | None): The filename.
-
-        Returns:
-            bool: Export To Astr.
-        """
         try:
             if not filename:
                 default_name = self._get_default_basename() + ".astr"
@@ -81,12 +69,12 @@ class CanvasExportController(CanvasControllerMixin):
             with open(filename, "w", encoding="utf-8") as file:
                 json.dump(scene_data, file, indent=2, ensure_ascii=False)
 
-            print(f"Project exported successfully: {filename}")
+            logger.info("Project exported successfully: %s", filename)
             self.mark_as_saved(filename)
             return True
 
         except Exception as error:
-            print(f"Error exporting project: {error}")
+            logger.exception("Error exporting project")
             QMessageBox.critical(
                 self.canvas,
                 tr("Error"),
@@ -98,15 +86,6 @@ class CanvasExportController(CanvasControllerMixin):
         self,
         filename: str | None = None,
     ) -> bool:
-        """
-        Export To Image.
-
-        Args:
-            filename (str | None): The filename.
-
-        Returns:
-            bool: Export To Image.
-        """
         try:
             if not filename:
                 default_name = self._get_default_basename() + ".png"
@@ -140,11 +119,11 @@ class CanvasExportController(CanvasControllerMixin):
             painter.end()
 
             pixmap.save(filename)
-            print(f"Image exported successfully: {filename}")
+            logger.info("Image exported successfully: %s", filename)
             return True
 
         except Exception as error:
-            print(f"Error exporting image: {error}")
+            logger.exception("Error exporting image")
             QMessageBox.critical(
                 self.canvas, "Error", f"Could not export image:\n{error}"
             )

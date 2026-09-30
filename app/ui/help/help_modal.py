@@ -18,28 +18,12 @@ from .markdown_viewer import MarkdownViewer
 
 
 class HelpModal(QDialog):
-    """
-    Help Modal.
-
-    Methods:
-        __init__: Initialize the instance.
-    """
-
     def __init__(self, title, md_file_path, parent=None):
-        """
-        Initialize the instance.
-
-        Args:
-            title: The title.
-            md_file_path: The md file path.
-            parent: The parent.
-        """
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setMinimumSize(900, 650)
         self.resize(1000, 750)
 
-        # Configure style of the dialog - PROFESSIONAL
         dark = theme_manager().is_dark
         if dark:
             self.setStyleSheet("""
@@ -100,15 +84,12 @@ class HelpModal(QDialog):
                 }
             """)
 
-        # Layout main with margins elegant
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
 
-        # Create visor of markdown
         self.viewer = MarkdownViewer()
 
-        # Aplicar style al QTextBrowser for borders redondeados, etc.
         if dark:
             self.viewer.text_browser.setStyleSheet("""
                 QTextBrowser {
@@ -212,9 +193,8 @@ class HelpModal(QDialog):
                 }
             """)
 
-        main_layout.addWidget(self.viewer, 1)  # The 1 hace that itself expanda
+        main_layout.addWidget(self.viewer, 1)  # stretch factor: viewer fills space
 
-        # Container for the button with alignment centered
         button_container = QWidget()
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(0, 15, 0, 0)
@@ -224,7 +204,6 @@ class HelpModal(QDialog):
         close_btn.setFixedSize(120, 42)
         close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        # Style adicional for the button
         if dark:
             close_btn.setStyleSheet("""
                 QPushButton {
@@ -248,11 +227,6 @@ class HelpModal(QDialog):
 
         main_layout.addWidget(button_container)
 
-        # Load the file markdown
         self.viewer.load_markdown(md_file_path)
-
-        # Foco in the button by defecto
         close_btn.setFocus()
-
-        # Añadir sombra of window (efecto visual)
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.Window)

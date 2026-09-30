@@ -5,6 +5,7 @@
 # License: MIT License
 # ---------------------------------------------------
 from functools import partial
+import logging
 
 from app.controller_types import CanvasNodeItem
 from app.controllers._canvas_mixin import CanvasControllerMixin
@@ -12,33 +13,16 @@ from app.controllers.canvas_registry_controller import _NODE_MAP
 from app.ui.components.entity_item.actor_node_item import ActorNodeItem
 from app.ui.components.entity_item.agent_node_item import AgentNodeItem
 
+logger = logging.getLogger(__name__)
+
 
 class CanvasNodeController(CanvasControllerMixin):
-    """
-    Canvas Node Controller.
-
-    Methods:
-        add_node: Add Node.
-        on_node_properties_changed: On Node Properties Changed.
-    """
-
     def add_node(
         self,
         node_type: str,
         x: float,
         y: float,
     ) -> CanvasNodeItem | None:
-        """
-        Add Node.
-
-        Args:
-            node_type (str): The node type.
-            x (float): The x.
-            y (float): The y.
-
-        Returns:
-            CanvasNodeItem | None: Add Node.
-        """
         NodeClass = _NODE_MAP.get(node_type)
         if NodeClass is None:
             return None
@@ -60,7 +44,7 @@ class CanvasNodeController(CanvasControllerMixin):
         if hasattr(node_item, "properties_changed"):
             node_item.properties_changed.connect(self.on_node_properties_changed)
         else:
-            print(f"Warning: node {node_type} lacks properties_changed signal")
+            logger.warning("Node %s lacks properties_changed signal", node_type)
 
         if hasattr(node_item, "subcanvas_toggled"):
             node_item.subcanvas_toggled.connect(self._on_subcanvas_toggled)
@@ -83,12 +67,6 @@ class CanvasNodeController(CanvasControllerMixin):
         self,
         node_item: CanvasNodeItem,
     ) -> None:
-        """
-        Restore Node.
-
-        Args:
-            node_item (CanvasNodeItem): The node item.
-        """
         scene = self.canvas.scene()
         if scene is not None and node_item.scene() is None:
             scene.addItem(node_item)
@@ -117,13 +95,6 @@ class CanvasNodeController(CanvasControllerMixin):
         node_item: CanvasNodeItem,
         properties: dict[str, object],
     ) -> None:
-        """
-        On Node Properties Changed.
-
-        Args:
-            node_item (CanvasNodeItem): The node item.
-            properties (dict[str, object]): The properties.
-        """
         if node_item == self.selected_node:
             self.selected_node_properties_changed.emit(properties)
 
@@ -139,13 +110,6 @@ class CanvasNodeController(CanvasControllerMixin):
         parent_node_item: CanvasNodeItem,
         subcanvas,
     ) -> None:
-        """
-        On Subcanvas Toggled.
-
-        Args:
-            parent_node_item (CanvasNodeItem): The parent node item.
-            subcanvas: The subcanvas.
-        """
         if subcanvas is None:
             stored = self._subcanvas_handlers.pop(parent_node_item, None)
             if stored:
@@ -153,8 +117,8 @@ class CanvasNodeController(CanvasControllerMixin):
                 try:
                     prev_subcanvas.subnode_dropped.disconnect(handler_node)
                     prev_subcanvas.subarrow_dropped.disconnect(handler_arrow)
-                except Exception:
-                    pass
+                except TypeError:
+                    pass  # already disconnected
             return
 
         stored = self._subcanvas_handlers.get(parent_node_item)
@@ -165,8 +129,8 @@ class CanvasNodeController(CanvasControllerMixin):
             try:
                 prev_subcanvas.subnode_dropped.disconnect(handler_node)
                 prev_subcanvas.subarrow_dropped.disconnect(handler_arrow)
-            except Exception:
-                pass
+            except TypeError:
+                pass  # already disconnected
 
         handler_node = partial(
             self._on_subcanvas_node_dropped, parent_node_item, subcanvas
@@ -181,10 +145,7 @@ class CanvasNodeController(CanvasControllerMixin):
             handler_arrow,
         )
 
-        try:
-            subcanvas.setZValue(parent_node_item.zValue() - 1)
-        except Exception:
-            pass
+        subcanvas.setZValue(parent_node_item.zValue() - 1)
 
     def _add_to_subcanvas(
         self,
@@ -194,19 +155,6 @@ class CanvasNodeController(CanvasControllerMixin):
         local_x: float,
         local_y: float,
     ) -> CanvasNodeItem | None:
-        """
-        Add To Subcanvas.
-
-        Args:
-            parent_node_item (CanvasNodeItem): The parent node item.
-            subcanvas: The subcanvas.
-            item_type (str): The item type.
-            local_x (float): The local x.
-            local_y (float): The local y.
-
-        Returns:
-            CanvasNodeItem | None: Add To Subcanvas.
-        """
         NodeClass = _NODE_MAP.get(item_type)
         if NodeClass is None:
             return None
@@ -227,7 +175,9 @@ class CanvasNodeController(CanvasControllerMixin):
         if hasattr(child, "properties_changed"):
             child.properties_changed.connect(self.on_node_properties_changed)
         else:
-            print(f"Warning: internal node {item_type} lacks properties_changed signal")
+            logger.warning(
+                "Internal node %s lacks properties_changed signal", item_type
+            )
 
         if hasattr(child, "drag_finished"):
             child.drag_finished.connect(self._on_node_drag_finished)
@@ -255,16 +205,6 @@ class CanvasNodeController(CanvasControllerMixin):
         local_x: float,
         local_y: float,
     ) -> None:
-        """
-        On Subcanvas Node Dropped.
-
-        Args:
-            parent_node_item (CanvasNodeItem): The parent node item.
-            subcanvas: The subcanvas.
-            item_type (str): The item type.
-            local_x (float): The local x.
-            local_y (float): The local y.
-        """
         errors = self.validator.validate(
             "subcanvas_add_node",
             {

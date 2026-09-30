@@ -17,21 +17,7 @@ from app.ui.theme_manager import theme_manager
 
 
 class PDFExportDialog(QDialog):
-    """
-    P D F Export Dialog.
-
-    Methods:
-        __init__: Initialize the instance.
-        should_export_with_info: Should Export With Info.
-    """
-
     def __init__(self, parent=None):
-        """
-        Initialize the instance.
-
-        Args:
-            parent: The parent.
-        """
         super().__init__(parent)
         self.setWindowTitle(tr("Export to PDF"))
         self.setModal(True)
@@ -42,14 +28,12 @@ class PDFExportDialog(QDialog):
         self._setup_ui()
 
     def _setup_ui(self):
-        """Setup Ui."""
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
 
         dark = theme_manager().is_dark
 
-        # Title
         title_label = QLabel(tr("What would you like to include in the PDF?"))
         if dark:
             title_label.setStyleSheet(
@@ -59,7 +43,6 @@ class PDFExportDialog(QDialog):
             title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
         layout.addWidget(title_label)
 
-        # Export options
         options_group = QGroupBox(tr("Export options"))
         options_layout = QVBoxLayout(options_group)
 
@@ -94,7 +77,6 @@ class PDFExportDialog(QDialog):
 
         layout.addWidget(options_group)
 
-        # Buttons of action
         button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
@@ -103,14 +85,7 @@ class PDFExportDialog(QDialog):
         layout.addWidget(button_box)
 
     def _on_option_changed(self) -> None:
-        """On Option Changed."""
         self.export_with_info = self.radio_with_info.isChecked()
 
     def should_export_with_info(self) -> bool:
-        """
-        Should Export With Info.
-
-        Returns:
-            bool: Should Export With Info.
-        """
         return self.export_with_info

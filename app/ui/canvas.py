@@ -19,49 +19,28 @@ from app.ui.theme_manager import theme_manager
 
 
 class Canvas(QGraphicsView):
-    """
-    Canvas.
+    """The QGraphicsView hosting the diagram scene."""
 
-    Methods:
-        __init__: Initialize the instance.
-        dragEnterEvent: Dragenterevent.
-        dragMoveEvent: Dragmoveevent.
-        dropEvent: Dropevent.
-        mousePressEvent: Mousepressevent.
-        mouseDoubleClickEvent: Mousedoubleclickevent.
-        mouseMoveEvent: Mousemoveevent.
-        wheelEvent: Wheelevent.
-        zoom_in: Zoom In.
-        zoom_out: Zoom Out.
-        reset_zoom: Reset Zoom.
-        keyPressEvent: Keypressevent.
-    """
-
-    zoom_changed = pyqtSignal(float)  # New factor of zoom
+    zoom_changed = pyqtSignal(float)
     node_dropped = pyqtSignal(str, float, float)  # type, x, y
-    arrow_dropped = pyqtSignal(str)  # type of flecha
-    node_clicked = pyqtSignal(object)  # for controladores
+    arrow_dropped = pyqtSignal(str)  # arrow type
+    node_clicked = pyqtSignal(object)
 
     def __init__(self):
-        """Initialize the instance."""
         super().__init__()
         self._scene = QGraphicsScene()
         self.setScene(self._scene)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # White background
         self.setBackgroundBrush(Qt.GlobalColor.white)
         self._scene.setBackgroundBrush(Qt.GlobalColor.white)
 
-        # Drag & Drop
         self.setAcceptDrops(True)
 
-        # Zoom
         self.zoom_factor = 1.0
         self.min_zoom = 0.1
         self.max_zoom = 5.0
 
-        # Configuration of vista
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -79,38 +58,20 @@ class Canvas(QGraphicsView):
     # Drag & Drop
     # ---------------------
     def dragEnterEvent(self, event):
-        """
-        Dragenterevent.
-
-        Args:
-            event: The event.
-        """
         if event.mimeData().hasText():
             event.acceptProposedAction()
 
     def dragMoveEvent(self, event):
-        """
-        Dragmoveevent.
-
-        Args:
-            event: The event.
-        """
         event.acceptProposedAction()
 
     def dropEvent(self, event):
-        """
-        Dropevent.
-
-        Args:
-            event: The event.
-        """
         if not event.mimeData().hasText():
             return
 
         item_type = event.mimeData().text()
         scene_pos = self.mapToScene(event.position().toPoint())
 
-        # review if itself dropped over a subcanvas
+        # Check whether the drop landed on a subcanvas first.
         viewport_pos = event.position().toPoint()
         items = self.items(viewport_pos)
         for it in items:
@@ -126,17 +87,15 @@ class Canvas(QGraphicsView):
                     "contribution",
                     "means_end",
                 ]:
-                    # forward a subcanvas
                     it.subarrow_dropped.emit(item_type)
                 else:
-                    # forward a subcanvas node
                     it.subnode_dropped.emit(
                         item_type, float(local_pt.x()), float(local_pt.y())
                     )
                 event.acceptProposedAction()
                 return
 
-        # if no there is subcanvas below, dropeo global
+        # No subcanvas under the cursor: drop on the main canvas.
         if item_type in [
             "actor",
             "agent",
@@ -161,78 +120,48 @@ class Canvas(QGraphicsView):
             event.acceptProposedAction()
 
     def mousePressEvent(self, event):
-        """
-        Mousepressevent.
-
-        Args:
-            event: The event.
-        """
         items = self.items(event.pos())
 
-        # Prioridad: first buscar nodes regulares
-        # (incluyendo nodes parent with subcanvas)
+        # Prefer a regular node (including ones with a subcanvas) over an
+        # edge or a subcanvas item.
         for item in items:
-            # If es a node regular (no edge, no subcanvas)
             if not isinstance(item, (BaseEdgeItem, SubCanvasItem)):
                 self.node_clicked.emit(item)
                 super().mousePressEvent(event)
                 return
 
-            # If it's a subcanvas, find the parent node and emit that
             if isinstance(item, SubCanvasItem):
                 parent = item.parentItem()
-                # Buscar recursivamente until find a node that no sea subcanvas
+                # Walk up until we find a node that isn't itself a subcanvas.
                 while parent is not None and isinstance(parent, SubCanvasItem):
                     parent = parent.parentItem()
 
-                # If we find a node parent valid, usarlo
                 if parent is not None and not isinstance(parent, BaseEdgeItem):
                     self.node_clicked.emit(parent)
-                else:
-                    # If no there is parent valid, ignore
-                    pass
                 super().mousePressEvent(event)
                 return
 
-        # Comportamiento por defecto
         if items:
             self.node_clicked.emit(items[0])
         super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event):
-        """
-        Mousedoubleclickevent.
-
-        Args:
-            event: The event.
-        """
         scene_pos = self.mapToScene(event.position().toPoint())
         items = self.items(event.position().toPoint())
 
-        # Buscar if there is a edge under the cursor
         for item in items:
             if isinstance(item, BaseEdgeItem) and not isinstance(
                 item, ControlPointHandle
             ):
-                # Add control point in the position of the doble-click
                 item.add_control_point(scene_pos)
-                # Seleccionar the edge for show the handles
                 item.setSelected(True)
                 return
 
-        # If no es in a edge, comportamiento by defecto
         super().mouseDoubleClickEvent(event)
 
     def mouseMoveEvent(self, event):
-        """
-        Mousemoveevent.
-
-        Args:
-            event: The event.
-        """
         items = self.items(event.position().toPoint())
 
-        # Buscar if there is a handle under the cursor
         cursor_over_handle = False
         for item in items:
             if isinstance(item, ControlPointHandle):
@@ -242,7 +171,6 @@ class Canvas(QGraphicsView):
         if cursor_over_handle:
             self.setCursor(Qt.CursorShape.SizeAllCursor)
         else:
-            # Verificar if this over a edge
             cursor_over_edge = False
             for item in items:
                 if isinstance(item, BaseEdgeItem) and item.isSelected():
@@ -260,12 +188,6 @@ class Canvas(QGraphicsView):
     # Zoom
     # ---------------------
     def wheelEvent(self, event: QWheelEvent | None) -> None:
-        """
-        Wheelevent.
-
-        Args:
-            event (QWheelEvent | None): The event.
-        """
         if event is None:
             return
 
@@ -282,7 +204,6 @@ class Canvas(QGraphicsView):
             super().wheelEvent(event)
 
     def zoom_in(self):
-        """Zoom In."""
         factor = 1.2
         new_zoom = self.zoom_factor * factor
         if new_zoom <= self.max_zoom:
@@ -291,7 +212,6 @@ class Canvas(QGraphicsView):
             self.zoom_changed.emit(self.zoom_factor)
 
     def zoom_out(self):
-        """Zoom Out."""
         factor = 0.8
         new_zoom = self.zoom_factor * factor
         if new_zoom >= self.min_zoom:
@@ -300,18 +220,10 @@ class Canvas(QGraphicsView):
             self.zoom_changed.emit(self.zoom_factor)
 
     def reset_zoom(self):
-        """Reset Zoom."""
         self.resetTransform()
         self.zoom_factor = 1.0
         self.zoom_changed.emit(self.zoom_factor)
 
     def keyPressEvent(self, event):
-        """
-        Keypressevent.
-
-        Args:
-            event: The event.
-        """
-        # Delegar the manejo of keys al controlador
-        # The keys Delete y Ctrl+D already están handled by the QShortcut
+        # Delete/Ctrl+D are already handled by QShortcut elsewhere.
         super().keyPressEvent(event)

@@ -4,6 +4,8 @@
 # Year: 2025
 # License: MIT License
 # ---------------------------------------------------
+import logging
+
 from app.controller_types import CanvasNodeItem
 from app.controllers._canvas_mixin import CanvasControllerMixin
 from app.ui.components.base_edge_item import BaseEdgeItem
@@ -11,23 +13,11 @@ from app.ui.components.base_node_item import BaseNodeItem
 from app.ui.components.base_tropos_item import BaseTroposItem
 from app.ui.components.control_point_handle import ControlPointHandle
 
+logger = logging.getLogger(__name__)
+
 
 class CanvasDeletionController(CanvasControllerMixin):
-    """
-    Canvas Deletion Controller.
-
-    Methods:
-        delete_selected_item: Delete Selected Item.
-        delete_selected_node: Delete Selected Node.
-        delete_selected_edge: Delete Selected Edge.
-        delete_node: Delete Node.
-        delete_edge: Delete Edge.
-        straighten_edge: Straighten Edge.
-        clear_canvas: Clear Canvas.
-    """
-
     def delete_selected_item(self) -> None:
-        """Delete Selected Item."""
         scene = self.canvas.scene()
         if scene is None:
             return
@@ -43,18 +33,12 @@ class CanvasDeletionController(CanvasControllerMixin):
         elif self.selected_node:
             self.delete_selected_node()
         else:
-            print("No element selected for deletion")
+            logger.debug("No element selected for deletion")
 
     def _delete_selected_control_point(
         self,
         handle: ControlPointHandle,
     ) -> None:
-        """
-        Delete Selected Control Point.
-
-        Args:
-            handle (ControlPointHandle): The handle.
-        """
         if not handle.parent_edge:
             return
 
@@ -63,47 +47,38 @@ class CanvasDeletionController(CanvasControllerMixin):
             index = edge.control_handles.index(handle)
             edge.remove_control_point(index)
             self.mark_as_modified()
-            print(f"Control point removed from edge {edge}")
+            logger.debug("Control point removed from edge %s", edge)
         except ValueError:
             pass
 
     def delete_selected_node(self) -> None:
-        """Delete Selected Node."""
         if not self.selected_node:
-            print("No node selected for deletion")
+            logger.debug("No node selected for deletion")
             return
 
-        print(f"Deleting node: {self.selected_node}")
         self.delete_node(self.selected_node)
 
     def delete_selected_edge(self) -> None:
-        """Delete Selected Edge."""
         if not self.selected_edge:
-            print("No edge selected for deletion")
+            logger.debug("No edge selected for deletion")
             return
 
-        print(f"Deleting edge: {self.selected_edge}")
+        logger.debug("Deleting edge: %s", self.selected_edge)
         self.delete_edge(self.selected_edge)
 
     def delete_node(
         self,
         node_to_delete: CanvasNodeItem,
     ) -> None:
-        """
-        Delete Node.
-
-        Args:
-            node_to_delete (CanvasNodeItem): The node to delete.
-        """
         if node_to_delete not in self.nodes:
             if node_to_delete.scene():
-                print("Deleting node directly from scene (not in list)")
+                logger.debug("Deleting node directly from scene (not in list)")
                 self._remove_node_from_scene(node_to_delete)
                 return
-            print(f"Node not found and not in scene: {node_to_delete}")
+            logger.warning("Node not found and not in scene: %s", node_to_delete)
             return
 
-        print(f"Deleting node: {node_to_delete}")
+        logger.debug("Deleting node: %s", node_to_delete)
 
         edges_to_remove = []
         for edge in self.edges[:]:
@@ -114,7 +89,7 @@ class CanvasDeletionController(CanvasControllerMixin):
             self.delete_edge(edge)
 
         if hasattr(node_to_delete, "child_nodes") and node_to_delete.child_nodes:
-            print(f"Deleting {len(node_to_delete.child_nodes)} child nodes...")
+            logger.debug("Deleting %d child nodes...", len(node_to_delete.child_nodes))
             child_nodes_copy = node_to_delete.child_nodes.copy()
             for child_node in child_nodes_copy:
                 if isinstance(child_node, (BaseNodeItem, BaseTroposItem)):
@@ -140,18 +115,12 @@ class CanvasDeletionController(CanvasControllerMixin):
 
         self.node_deleted.emit(node_to_delete)
         self.mark_as_modified()
-        print(f"Node successfully deleted: {node_to_delete}")
+        logger.debug("Node successfully deleted: %s", node_to_delete)
 
     def delete_edge(
         self,
         edge_to_delete: BaseEdgeItem,
     ) -> None:
-        """
-        Delete Edge.
-
-        Args:
-            edge_to_delete (BaseEdgeItem): The edge to delete.
-        """
         if edge_to_delete in self.edges:
             if hasattr(edge_to_delete, "cleanup"):
                 edge_to_delete.cleanup()
@@ -169,35 +138,23 @@ class CanvasDeletionController(CanvasControllerMixin):
 
             self.edge_deleted.emit(edge_to_delete)
             self.mark_as_modified()
-            print(f"Edge deleted: {edge_to_delete}")
+            logger.debug("Edge deleted: %s", edge_to_delete)
         else:
-            print(f"Edge not found in list: {edge_to_delete}")
+            logger.warning("Edge not found in list: %s", edge_to_delete)
 
     def straighten_edge(
         self,
         edge: BaseEdgeItem,
     ) -> None:
-        """
-        Straighten Edge.
-
-        Args:
-            edge (BaseEdgeItem): The edge.
-        """
         if edge and hasattr(edge, "clear_control_points"):
             edge.clear_control_points()
             self.mark_as_modified()
-            print(f"Edge straightened: {edge}")
+            logger.debug("Edge straightened: %s", edge)
 
     def _remove_node_clean(
         self,
         node: CanvasNodeItem,
     ) -> None:
-        """
-        Remove Node Clean.
-
-        Args:
-            node (CanvasNodeItem): The node.
-        """
         node_scene = node.scene()
         if node_scene is not None:
             node_scene.removeItem(node)
@@ -214,15 +171,6 @@ class CanvasDeletionController(CanvasControllerMixin):
         self,
         node_item: CanvasNodeItem,
     ) -> list[dict]:
-        """
-        Collect Edges For Node.
-
-        Args:
-            node_item (CanvasNodeItem): The node item.
-
-        Returns:
-            list[dict]: Collect Edges For Node.
-        """
         edges_data = []
         for edge in list(self.edges):
             if edge.source_node is node_item or edge.dest_node is node_item:
@@ -239,19 +187,12 @@ class CanvasDeletionController(CanvasControllerMixin):
         self,
         node: CanvasNodeItem,
     ) -> None:
-        """
-        Remove Node From Scene.
-
-        Args:
-            node (CanvasNodeItem): The node.
-        """
         if node.scene():
             scene = node.scene()
             if scene is not None:
                 scene.removeItem(node)
 
     def clear_canvas(self) -> None:
-        """Clear Canvas."""
         if hasattr(self, "undo_stack"):
             self.undo_stack.clear()
         self.selected_node = None
@@ -275,4 +216,4 @@ class CanvasDeletionController(CanvasControllerMixin):
             scene.clearSelection()
         self.is_modified = False
         self._current_file_path = None
-        print("Canvas cleared")
+        logger.debug("Canvas cleared")

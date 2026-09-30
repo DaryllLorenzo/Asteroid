@@ -5,7 +5,6 @@
 # License: MIT License
 # ---------------------------------------------------
 
-# app/ui/components/dependency_item/why_link_edge_item.py
 import math
 
 from PyQt6.QtCore import QPointF
@@ -25,28 +24,13 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class WhyLinkArrowItem(BaseEdgeItem):
-    """
-    Why Link Arrow Item.
-
-    Methods:
-        __init__: Initialize the instance.
-        boundingRect: Boundingrect.
-        paint: Paint.
-    """
+    """Arrow with a filled triangle and a "WHY" label at the midpoint."""
 
     def __init__(self, source_node, dest_node):
-        """
-        Initialize the instance.
-
-        Args:
-            source_node: The source node.
-            dest_node: The dest node.
-        """
         super().__init__(source_node, dest_node, color=QColor(0, 0, 0), dashed=False)
 
     def boundingRect(self):
-        """Boundingrect."""
-        extra = 20  # suficiente for triángulo + text
+        extra = 20  # room for the triangle and the label
         return super().boundingRect().adjusted(-extra, -extra, extra, extra)
 
     def paint(
@@ -55,14 +39,6 @@ class WhyLinkArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
-        """
-        Paint.
-
-        Args:
-            painter (QPainter | None): The painter.
-            option (QStyleOptionGraphicsItem | None): The option.
-            widget (QWidget | None): The widget.
-        """
         if painter is None:
             return
         del option, widget
@@ -74,7 +50,7 @@ class WhyLinkArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() here for avoid temblor
+        # Don't call update_position() here - it would jitter while dragging.
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -85,15 +61,13 @@ class WhyLinkArrowItem(BaseEdgeItem):
         painter.setPen(self.pen())
         painter.drawPath(path)
 
-        # Triángulo y text "WHY" in the punto MIDDLE REAL of the path curvo
-        # Usamos the method utilitario for get the punto y ángulo correctos
+        # Triangle and "WHY" label at the true midpoint of the (possibly
+        # curved) path.
         mid_point, mid_angle = self._get_point_at_percentage(0.5)
 
-        # Ángulo of the path in the punto middle
         angle = mid_angle
         size = 12.0
 
-        # Dibujamos triángulo relleno apuntando in the dirección of the path
         p_tip = mid_point
         p1 = QPointF(
             p_tip.x() - size * math.cos(angle - math.pi / 6),
@@ -107,8 +81,6 @@ class WhyLinkArrowItem(BaseEdgeItem):
         painter.setBrush(QBrush(self.pen().color()))
         painter.drawPolygon(QPolygonF([p_tip, p1, p2]))
 
-        # Text "WHY" centrado above of the flecha
-        # Rotado for alinearse with the path
         font = QFont("Arial", 9)
         font.setBold(True)
         painter.setFont(font)
@@ -117,13 +89,12 @@ class WhyLinkArrowItem(BaseEdgeItem):
         w = fm.horizontalAdvance(txt)
         h = fm.height()
 
-        # Desplazamiento vertical for that no choque with the triángulo
-        # Usamos coordinates rotadas for alinear with the path
+        # Rotate into the path's local frame so the label sits above the
+        # line and reads along its direction, clear of the triangle.
         painter.save()
         painter.translate(mid_point)
         painter.rotate(math.degrees(angle))
 
-        # The text itself dibuja perpendicularmente top of the path
         text_offset = size + 2
         text_rect = QRectF(-w / 2, -text_offset - h / 2, w, h)
         painter.setPen(self.pen().color())

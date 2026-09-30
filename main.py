@@ -13,7 +13,6 @@ from app.ui.main_window import MainWindow
 
 
 def main():
-    """Main."""
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

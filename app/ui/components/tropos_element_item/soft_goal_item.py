@@ -15,56 +15,21 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtGui import QPainterPath
 from PyQt6.QtGui import QPen
 
-from app.core.models.tropos_element.soft_goal import SoftGoal
+from app.core.models.typed_node import TypedNode
 from app.ui.components.base_tropos_item import BaseTroposItem
 from app.ui.theme_manager import theme_manager
 
 
 class SoftGoalNodeItem(BaseTroposItem):
-    """
-    Soft Goal Node Item.
-
-    Methods:
-        __init__: Initialize the instance.
-        boundingRect: Boundingrect.
-        set_radius: Set Radius.
-        paint: Paint.
-        get_serializable_properties: Get Serializable Properties.
-        update_properties: Update Properties.
-    """
-
     def __init__(self, x=0, y=0, radius=30):
-        """
-        Initialize the instance.
-
-        Args:
-            x: The x.
-            y: The y.
-            radius: The radius.
-        """
-        super().__init__(SoftGoal(x, y, radius))
+        super().__init__(TypedNode("soft_goal", x, y, radius))
         self.model.radius = radius
         self.path: QPainterPath = self._create_cloud_path()
 
     def _create_cloud_path(self) -> QPainterPath:
-        """
-        Create Cloud Path.
-
-        Returns:
-            QPainterPath: Create Cloud Path.
-        """
         return self._create_cloud_path_for_radius(float(self.model.radius))
 
     def _create_cloud_path_for_radius(self, r: float) -> QPainterPath:
-        """
-        Create Cloud Path For Radius.
-
-        Args:
-            r (float): The r.
-
-        Returns:
-            QPainterPath: Create Cloud Path For Radius.
-        """
         path = QPainterPath()
         w = r * 2.8
         h = r * 0.95
@@ -80,13 +45,6 @@ class SoftGoalNodeItem(BaseTroposItem):
         return path
 
     def boundingRect(self) -> QRectF:
-        # Use _independent_model if it exists (for internal composite nodes)
-        """
-        Boundingrect.
-
-        Returns:
-            QRectF: Boundingrect.
-        """
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
@@ -98,16 +56,6 @@ class SoftGoalNodeItem(BaseTroposItem):
         return self.path.boundingRect().adjusted(-2, -2, 2, 2)
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        """
-        Get Distance To Border.
-
-        Args:
-            pos (QPointF): The pos.
-
-        Returns:
-            float: Get Distance To Border.
-        """
-        # Use _independent_model if it exists
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
@@ -115,48 +63,29 @@ class SoftGoalNodeItem(BaseTroposItem):
         )
 
         if hasattr(self, "path") and not self.path.isEmpty():
-            # Create a stroker for simular the border
             from PyQt6.QtGui import QPainterPathStroker
 
             stroker = QPainterPathStroker()
-            stroker.setWidth(10)  # Ancho of the área of detección
-
-            # Create path for the border
+            stroker.setWidth(10)  # width of the hit-test band around the outline
             stroke_path = stroker.createStroke(self.path)
 
-            # If the punto this in the border, distancia = 0
             if stroke_path.contains(pos):
                 return 0
             else:
-                # Calculate distancia al bounding rect as aproximación
+                # Approximate: distance from the bounding-rect center, offset
+                # by the nominal radius (the cloud isn't a true circle).
                 br = self.path.boundingRect()
                 center = br.center()
                 dist_to_center = math.sqrt(
                     (pos.x() - center.x()) ** 2 + (pos.y() - center.y()) ** 2
                 )
-                # Aproximación simple
                 return abs(dist_to_center - float(model_for_props.radius))
         return super()._get_distance_to_border(pos)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
-        """
-        Get New Radius From Pos.
-
-        Args:
-            pos (QPointF): The pos.
-
-        Returns:
-            float: Get New Radius From Pos.
-        """
         return float(max((pos.x() ** 2 + pos.y() ** 2) ** 0.5, 15.0))
 
     def set_radius(self, new_r: float) -> None:
-        """
-        Set Radius.
-
-        Args:
-            new_r (float): The new r.
-        """
         self.prepareGeometryChange()
         old_r = (
             self._independent_model.radius
@@ -164,13 +93,11 @@ class SoftGoalNodeItem(BaseTroposItem):
             else self.model.radius
         )
 
-        # Use the independent model if available
         if self._independent_model:
             self._independent_model.radius = new_r
         else:
             self.model.radius = new_r
 
-        # Recreate the path with the new radius
         r = (
             self._independent_model.radius
             if self._independent_model
@@ -184,21 +111,12 @@ class SoftGoalNodeItem(BaseTroposItem):
             self.properties_changed.emit(self, {"radius": new_r})
 
     def paint(self, painter, option, widget=None):
-        """
-        Paint.
-
-        Args:
-            painter: The painter.
-            option: The option.
-            widget: The widget.
-        """
         clipped = self.apply_subcanvas_clipping(painter)
 
         default_color = QColor(220, 220, 180)
         default_border = QColor(0, 0, 0)
         default_text = QColor(0, 0, 0)
 
-        # Colores son sincronizados, usar self.model (wrapper)
         fill_color = (
             QColor(self.model.color) if hasattr(self.model, "color") else default_color
         )
@@ -221,11 +139,8 @@ class SoftGoalNodeItem(BaseTroposItem):
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
 
-        # Draw the cloud using the current path
         painter.drawPath(self.path)
 
-        # DIBUJAR TEXT MULTILÍNEA
-        # The text itself dibujará centrado over the nube
         self.draw_multiline_text(painter, text_color)
 
         if self.isSelected():
@@ -236,17 +151,5 @@ class SoftGoalNodeItem(BaseTroposItem):
         if clipped:
             painter.restore()
 
-    def get_serializable_properties(self):
-        """Get Serializable Properties."""
-        base_properties = super().get_serializable_properties()
-        base_properties["node_type"] = "soft_goal"
-        return base_properties
-
     def update_properties(self, properties: dict):
-        """
-        Update Properties.
-
-        Args:
-            properties (dict): The properties.
-        """
         super().update_properties(properties)

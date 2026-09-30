@@ -15,17 +15,6 @@ from app.i18n import tr
 
 
 class MoveNodeCommand(QUndoCommand):
-    """
-    Move Node Command.
-
-    Methods:
-        __init__: Initialize the instance.
-        id: Id.
-        redo: Redo.
-        undo: Undo.
-        mergeWith: Mergewith.
-    """
-
     def __init__(
         self,
         controller: Any,
@@ -33,15 +22,6 @@ class MoveNodeCommand(QUndoCommand):
         old_pos: QPointF,
         new_pos: QPointF,
     ) -> None:
-        """
-        Initialize the instance.
-
-        Args:
-            controller (Any): The controller.
-            node_item (CanvasNodeItem): The node item.
-            old_pos (QPointF): The old pos.
-            new_pos (QPointF): The new pos.
-        """
         super().__init__(tr("Move node"))
         self._controller = controller
         self._node_item = node_item
@@ -49,16 +29,9 @@ class MoveNodeCommand(QUndoCommand):
         self._new_pos = new_pos
 
     def id(self) -> int:
-        """
-        Id.
-
-        Returns:
-            int: Id.
-        """
         return 1002
 
     def redo(self) -> None:
-        """Redo."""
         self._node_item.setPos(self._new_pos)
         if hasattr(self._node_item, "model") and hasattr(self._node_item.model, "x"):
             self._node_item.model.x = self._new_pos.x()
@@ -66,7 +39,6 @@ class MoveNodeCommand(QUndoCommand):
             self._node_item.model.y = self._new_pos.y()
 
     def undo(self) -> None:
-        """Undo."""
         self._node_item.setPos(self._old_pos)
         if hasattr(self._node_item, "model") and hasattr(self._node_item.model, "x"):
             self._node_item.model.x = self._old_pos.x()
@@ -74,15 +46,6 @@ class MoveNodeCommand(QUndoCommand):
             self._node_item.model.y = self._old_pos.y()
 
     def mergeWith(self, other: QUndoCommand) -> bool:  # type: ignore[override]
-        """
-        Mergewith.
-
-        Args:
-            other (QUndoCommand): The other.
-
-        Returns:
-            bool: Mergewith.
-        """
         if not isinstance(other, MoveNodeCommand):
             return False
         if other._node_item is not self._node_item:

@@ -4,11 +4,10 @@
 # Year: 2025
 # License: MIT License
 # ---------------------------------------------------
+from functools import partial
+
 from app.controller_types import NodeItemFactory
-from app.core.models.tropos_element.hard_goal import HardGoal
-from app.core.models.tropos_element.plan import Plan
-from app.core.models.tropos_element.resource import Resource
-from app.core.models.tropos_element.soft_goal import SoftGoal
+from app.core.models.typed_node import TypedNode
 from app.model_types import ModelFactory
 from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.dependency_item.and_decomposition_edge_item import (
@@ -42,10 +41,10 @@ _NODE_MAP: dict[str, NodeItemFactory] = {
 }
 
 _MODEL_MAP: dict[str, ModelFactory] = {
-    "hard_goal": HardGoal,
-    "soft_goal": SoftGoal,
-    "plan": Plan,
-    "resource": Resource,
+    "hard_goal": partial(TypedNode, "hard_goal"),
+    "soft_goal": partial(TypedNode, "soft_goal"),
+    "plan": partial(TypedNode, "plan"),
+    "resource": partial(TypedNode, "resource"),
 }
 
 _ARROW_TYPES: dict[str, type[BaseEdgeItem]] = {

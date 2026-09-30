@@ -5,7 +5,6 @@
 # License: MIT License
 # ---------------------------------------------------
 
-# app/ui/components/dependency_item/dependency_link_edge_item.py
 import math
 
 from PyQt6.QtCore import QPointF
@@ -20,28 +19,13 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class DependencyLinkArrowItem(BaseEdgeItem):
-    """
-    Dependency Link Arrow Item.
-
-    Methods:
-        __init__: Initialize the instance.
-        boundingRect: Boundingrect.
-        paint: Paint.
-    """
+    """Arrow with a filled triangle at the path's midpoint."""
 
     def __init__(self, source_node, dest_node):
-        """
-        Initialize the instance.
-
-        Args:
-            source_node: The source node.
-            dest_node: The dest node.
-        """
         super().__init__(source_node, dest_node, color=QColor(0, 0, 0), dashed=False)
 
     def boundingRect(self):
-        """Boundingrect."""
-        extra = 15  # suficiente for the triángulo
+        extra = 15  # room for the triangle
         return super().boundingRect().adjusted(-extra, -extra, extra, extra)
 
     def paint(
@@ -50,14 +34,6 @@ class DependencyLinkArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
-        """
-        Paint.
-
-        Args:
-            painter (QPainter | None): The painter.
-            option (QStyleOptionGraphicsItem | None): The option.
-            widget (QWidget | None): The widget.
-        """
         if painter is None:
             return
         del option, widget
@@ -69,7 +45,7 @@ class DependencyLinkArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() here for avoid temblor
+        # Don't call update_position() here - it would jitter while dragging.
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -78,19 +54,13 @@ class DependencyLinkArrowItem(BaseEdgeItem):
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
-
-        # Dibujar the path (line with control points if existen)
         painter.drawPath(path)
 
-        # Triángulo in the punto MIDDLE REAL of the path curvo
-        # Usamos the method utilitario for get the punto y ángulo correctos
+        # Triangle at the true midpoint of the (possibly curved) path.
         mid_point, mid_angle = self._get_point_at_percentage(0.5)
 
-        # Dibujar triángulo apuntando in the dirección of the path
         size = 12.0
-        # The vértice of the triángulo apunta in the dirección of the path
         p_tip = mid_point
-        # The otros dos vértices forman the base of the triángulo
 
         p1 = QPointF(
             p_tip.x() - size * math.cos(mid_angle - math.pi / 6),
