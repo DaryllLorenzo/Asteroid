@@ -4,6 +4,8 @@
 # Year: 2025
 # License: MIT License
 # ---------------------------------------------------
+import logging
+
 from PyQt6.QtCore import QObject
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QUndoStack
@@ -26,6 +28,8 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.control_point_handle import ControlPointHandle
 from app.validation.validator import Validator
 
+logger = logging.getLogger(__name__)
+
 
 class CanvasController(
     QObject,
@@ -36,14 +40,6 @@ class CanvasController(
     CanvasExportController,
     CanvasImportController,
 ):
-    """
-    Canvas Controller.
-
-    Methods:
-        __init__: Initialize the instance.
-        delete_selected_item: Delete Selected Item.
-    """
-
     node_selected = pyqtSignal(object)
     selected_node_properties_changed = pyqtSignal(dict)
     node_deleted = pyqtSignal(object)
@@ -53,12 +49,6 @@ class CanvasController(
     project_modified = pyqtSignal(bool)
 
     def __init__(self, canvas: Canvas) -> None:
-        """
-        Initialize the instance.
-
-        Args:
-            canvas (Canvas): The canvas.
-        """
         super().__init__()
         self.canvas = canvas
         self.nodes: list[CanvasNodeItem] = []
@@ -108,22 +98,10 @@ class CanvasController(
         self._setup_delete_shortcut()
 
     def _on_clean_changed(self, clean: bool) -> None:
-        """
-        On Clean Changed.
-
-        Args:
-            clean (bool): The clean.
-        """
         self._is_modified = not clean
         self.project_modified.emit(not clean)
 
     def _show_validation_errors(self, errors: list[str]) -> None:
-        """
-        Show Validation Errors.
-
-        Args:
-            errors (list[str]): The errors.
-        """
         msg = QMessageBox(self.canvas.window() if self.canvas.window() else self.canvas)
         msg.setIcon(QMessageBox.Icon.Warning)
         msg.setWindowTitle(tr("Validation error"))
@@ -131,7 +109,6 @@ class CanvasController(
         msg.exec()
 
     def delete_selected_item(self) -> None:
-        """Delete Selected Item."""
         scene = self.canvas.scene()
         if scene is None:
             return
@@ -147,4 +124,4 @@ class CanvasController(
         elif self.selected_node:
             self.undo_stack.push(DeleteNodeCommand(self, self.selected_node))
         else:
-            print("No element selected for deletion")
+            logger.debug("No element selected for deletion")

@@ -5,7 +5,6 @@
 # License: MIT License
 # ---------------------------------------------------
 
-# app/ui/components/dependency_item/contribution_edge_item.py
 import math
 
 from PyQt6.QtCore import QPointF
@@ -19,31 +18,14 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class ContributionArrowItem(BaseEdgeItem):
-    """
-    Contribution Arrow Item.
-
-    Methods:
-        __init__: Initialize the instance.
-        boundingRect: Boundingrect.
-        paint: Paint.
-    """
+    """Arrow with an open V head and a '+' at the path's midpoint."""
 
     def __init__(self, source_node, dest_node):
-        """
-        Initialize the instance.
-
-        Args:
-            source_node: The source node.
-            dest_node: The dest node.
-        """
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
 
     def boundingRect(self):
-        """Boundingrect."""
-        # Get boundingRect base of the line
         base_rect = super().boundingRect()
-        # Extra for the V abierta (~12px) y the símbolo '+'
-        extra = 20
+        extra = 20  # room for the open V head and the '+' symbol
         return base_rect.adjusted(-extra, -extra, extra, extra)
 
     def paint(
@@ -52,14 +34,6 @@ class ContributionArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
-        """
-        Paint.
-
-        Args:
-            painter (QPainter | None): The painter.
-            option (QStyleOptionGraphicsItem | None): The option.
-            widget (QWidget | None): The widget.
-        """
         if painter is None:
             return
         del option, widget
@@ -71,7 +45,7 @@ class ContributionArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() here for avoid temblor
+        # Don't call update_position() here - it would jitter while dragging.
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -80,20 +54,15 @@ class ContributionArrowItem(BaseEdgeItem):
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
-
-        # Dibujar the path (line with control points if existen)
         painter.drawPath(path)
 
-        # Get punto final y dirección for the punta of flecha
         end_point = self._end_point
 
-        # Determinar the last segmento for dibujar the punta
         if self.control_points:
             last_point = self.control_points[-1]
         else:
             last_point = self._start_point
 
-        # Calculate ángulo of the last segmento
         dx = end_point.x() - last_point.x()
         dy = end_point.y() - last_point.y()
 
@@ -108,7 +77,6 @@ class ContributionArrowItem(BaseEdgeItem):
 
         size = 12.0
 
-        # V abierta (punta de flecha)
         pA = QPointF(
             end_point.x() - ux * size + perp_x * (size * 0.4),
             end_point.y() - uy * size + perp_y * (size * 0.4),
@@ -120,22 +88,18 @@ class ContributionArrowItem(BaseEdgeItem):
         painter.drawLine(end_point, pA)
         painter.drawLine(end_point, pB)
 
-        # símbolo '+' in the punto middle REAL of the path curvo
-        # Usamos the method utilitario for get the punto y ángulo correctos
+        # '+' symbol at the true midpoint of the (possibly curved) path.
         mid_point, mid_angle = self._get_point_at_percentage(0.5)
 
         painter.save()
-        # Rotar the sistema of coordinates for alinear the '+' with the path
         painter.translate(mid_point)
         painter.rotate(math.degrees(mid_angle))
 
         painter.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        # Dibujar '+' centrado, ligeramente desplazado perpendicularmente
-        # for no tapar the line
         fm = painter.fontMetrics()
         w = fm.horizontalAdvance("+")
         h = fm.height()
-        # Small offset perpendicular for that the '+' no itself superponga with the line
+        # Offset perpendicular to the path so the '+' doesn't sit on the line.
         offset_perp = 8.0
         painter.drawText(QPointF(-w / 2, -h / 2 - offset_perp), "+")
         painter.restore()

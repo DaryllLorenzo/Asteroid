@@ -5,6 +5,7 @@
 # License: MIT License
 # ---------------------------------------------------
 import json
+import logging
 from typing import TypedDict
 from typing import cast
 
@@ -24,49 +25,21 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 from app.ui.components.base_node_item import BaseNodeItem
 from app.ui.components.base_tropos_item import BaseTroposItem
 
+logger = logging.getLogger(__name__)
+
 
 class PositionData(TypedDict):
-    """
-    Position Data.
-
-    Attributes:
-        x (float): x.
-        y (float): y.
-    """
-
     x: float
     y: float
 
 
 class SerializedSubcanvasData(TypedDict, total=False):
-    """
-    Serialized Subcanvas Data.
-
-    Attributes:
-        visible (bool): visible.
-        radius (float): radius.
-        original_radius (float): original radius.
-    """
-
     visible: bool
     radius: float
     original_radius: float
 
 
 class SerializedNodeData(TypedDict, total=False):
-    """
-    Serialized Node Data.
-
-    Attributes:
-        id (int): id.
-        type (str): type.
-        position (PositionData): position.
-        properties (dict[str, object]): properties.
-        parent_id (int | None): parent id.
-        model_properties (dict[str, object]): model properties.
-        subcanvas (SerializedSubcanvasData): subcanvas.
-    """
-
     id: int
     type: str
     position: PositionData
@@ -77,18 +50,6 @@ class SerializedNodeData(TypedDict, total=False):
 
 
 class SerializedEdgeData(TypedDict, total=False):
-    """
-    Serialized Edge Data.
-
-    Attributes:
-        type (str): type.
-        source_id (int): source id.
-        target_id (int): target id.
-        properties (dict[str, object]): properties.
-        parent_id (int | None): parent id.
-        control_points (list[PositionData]): control points.
-    """
-
     type: str
     source_id: int
     target_id: int
@@ -98,29 +59,11 @@ class SerializedEdgeData(TypedDict, total=False):
 
 
 class SerializedSceneData(TypedDict):
-    """
-    Serialized Scene Data.
-
-    Attributes:
-        nodes (list[SerializedNodeData]): nodes.
-        edges (list[SerializedEdgeData]): edges.
-    """
-
     nodes: list[SerializedNodeData]
     edges: list[SerializedEdgeData]
 
 
 def _as_float(value: object, default: float) -> float:
-    """
-    As Float.
-
-    Args:
-        value (object): The value.
-        default (float): The default.
-
-    Returns:
-        float: As Float.
-    """
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, str):
@@ -132,26 +75,13 @@ def _as_float(value: object, default: float) -> float:
 
 
 class CanvasImportController(CanvasControllerMixin):
-    """
-    Canvas Import Controller.
-
-    Methods:
-        import_from_astr: Import From Astr.
-    """
+    """Loads a scene from a .astr file, skipping malformed elements."""
 
     def import_from_astr(
         self,
         filename: str | None = None,
     ) -> bool:
-        """
-        Import From Astr.
-
-        Args:
-            filename (str | None): The filename.
-
-        Returns:
-            bool: Import From Astr.
-        """
+        skipped: list[str] = []
         try:
             if not filename:
                 filename, _ = QFileDialog.getOpenFileName(
@@ -163,14 +93,15 @@ class CanvasImportController(CanvasControllerMixin):
                 if not filename:
                     return False
 
-            print(f"Loading project from: {filename}")
+            logger.info("Loading project from: %s", filename)
 
             with open(filename, encoding="utf-8") as file:
                 scene_data = cast(SerializedSceneData, json.load(file))
 
-            print(
-                f"Project contains: {len(scene_data.get('nodes', []))} nodes, "
-                f"{len(scene_data.get('edges', []))} edges"
+            logger.info(
+                "Project contains: %d nodes, %d edges",
+                len(scene_data.get("nodes", [])),
+                len(scene_data.get("edges", [])),
             )
 
             self.clear_canvas()
@@ -179,23 +110,22 @@ class CanvasImportController(CanvasControllerMixin):
             parent_child_map: dict[int, list[int]] = {}
 
             for node_data in scene_data.get("nodes", []):
-                print(f"Processing node {node_data['id']} of type {node_data['type']}")
-                node = self._create_node_from_data(node_data)
-                if node:
-                    node_map[node_data["id"]] = node
+                node_id = node_data.get("id")
+                try:
+                    node = self._create_node_from_data(node_data)
+                except Exception:
+                    logger.exception("Skipping malformed node %r", node_id)
+                    skipped.append(tr("Node {id}: failed to load").format(id=node_id))
+                    continue
+                if node and node_id is not None:
+                    node_map[node_id] = node
                     parent_id = node_data.get("parent_id")
                     if parent_id is not None:
-                        if parent_id not in parent_child_map:
-                            parent_child_map[parent_id] = []
-                        parent_child_map[parent_id].append(node_data["id"])
+                        parent_child_map.setdefault(parent_id, []).append(node_id)
 
             for parent_id, child_ids in parent_child_map.items():
                 parent_node = node_map.get(parent_id)
                 if isinstance(parent_node, BaseNodeItem):
-                    print(
-                        f"Moving {len(child_ids)} nodes to subcanvas "
-                        f"of node {parent_id}"
-                    )
                     for child_id in child_ids:
                         child_node = node_map.get(child_id)
                         if child_node:
@@ -205,7 +135,12 @@ class CanvasImportController(CanvasControllerMixin):
             edge_parent_map = {}
 
             for edge_data in scene_data.get("edges", []):
-                edge = self._create_edge_from_data(edge_data, node_map)
+                try:
+                    edge = self._create_edge_from_data(edge_data, node_map)
+                except Exception:
+                    logger.exception("Skipping malformed edge %r", edge_data)
+                    skipped.append(tr("An edge failed to load"))
+                    continue
                 if edge:
                     edge_count += 1
                     parent_id = edge_data.get("parent_id")
@@ -240,7 +175,9 @@ class CanvasImportController(CanvasControllerMixin):
                         break
 
                 if not target_node:
-                    print(f"No outgoing edge found for composite node {node_id}")
+                    logger.warning(
+                        "No outgoing edge found for composite node %s", node_id
+                    )
                     continue
 
                 if isinstance(target_node, BaseNodeItem) and target_node.subcanvas:
@@ -274,11 +211,24 @@ class CanvasImportController(CanvasControllerMixin):
                             if dist < min_dist:
                                 min_dist = dist
                                 internal_node = candidate
+                        logger.warning(
+                            "Composite node %s: %d internal candidates matched "
+                            "by type; picked the closest by position, which may "
+                            "not be the original link",
+                            node_id,
+                            len(candidates),
+                        )
+                        skipped.append(
+                            tr(
+                                "Composite node {id}: relinked to the nearest"
+                                " matching internal node (ambiguous)"
+                            ).format(id=node_id)
+                        )
                     else:
-                        print(
-                            f"No internal nodes of type "
-                            f"{type(external_node).__name__} found in "
-                            f"subcanvas of {target_node}"
+                        logger.warning(
+                            "No internal nodes of type %s found in subcanvas of %s",
+                            type(external_node).__name__,
+                            target_node,
                         )
 
                     if internal_node:
@@ -340,14 +290,6 @@ class CanvasImportController(CanvasControllerMixin):
                                 value: object,
                                 node: BaseNodeItem | BaseTroposItem = external_node,
                             ) -> None:
-                                """
-                                On External Changed.
-
-                                Args:
-                                    prop_name (str): The prop name.
-                                    value (object): The value.
-                                    node (BaseNodeItem | BaseTroposItem): The node.
-                                """
                                 node.update()
                                 node.properties_changed.emit(node, {prop_name: value})
 
@@ -356,35 +298,40 @@ class CanvasImportController(CanvasControllerMixin):
                                 value: object,
                                 node: CanvasNodeItem = internal_node,
                             ) -> None:
-                                """
-                                On Internal Changed.
-
-                                Args:
-                                    prop_name (str): The prop name.
-                                    value (object): The value.
-                                    node (CanvasNodeItem): The node.
-                                """
                                 del prop_name, value
                                 node.update()
 
                             wrapper.add_change_callback(on_external_changed)
                             wrapper.add_change_callback(on_internal_changed)
                     else:
-                        print(f"No internal node found in subcanvas of {target_node}")
+                        logger.warning(
+                            "No internal node found in subcanvas of %s", target_node
+                        )
                 else:
-                    print(f"Target {target_node} has no subcanvas")
+                    logger.warning("Target %s has no subcanvas", target_node)
 
-            print(f"Project loaded successfully: {filename}")
-            print(f"Summary: {len(node_map)} nodes, {edge_count} edges reconstructed")
+            logger.info(
+                "Project loaded: %s (%d nodes, %d edges)",
+                filename,
+                len(node_map),
+                edge_count,
+            )
 
             self.mark_as_saved(filename)
+
+            if skipped:
+                QMessageBox.warning(
+                    self.canvas,
+                    tr("Project loaded with warnings"),
+                    tr(
+                        "The project loaded, but some elements could not be"
+                        " restored exactly:\n\n{items}"
+                    ).format(items="\n".join(f"- {item}" for item in skipped)),
+                )
             return True
 
         except Exception as error:
-            print(f"Error loading project: {error}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception("Error loading project")
             QMessageBox.critical(
                 self.canvas,
                 tr("Error"),
@@ -397,20 +344,12 @@ class CanvasImportController(CanvasControllerMixin):
         child_node: CanvasNodeItem,
         parent_node: BaseNodeItem,
     ) -> bool:
-        """
-        Move Node To Subcanvas.
-
-        Args:
-            child_node (CanvasNodeItem): The child node.
-            parent_node (BaseNodeItem): The parent node.
-
-        Returns:
-            bool: Move Node To Subcanvas.
-        """
         try:
             subcanvas = parent_node.ensure_subcanvas_visible()
             if not subcanvas:
-                print(f"Could not get subcanvas from parent node {parent_node}")
+                logger.warning(
+                    "Could not get subcanvas from parent node %s", parent_node
+                )
                 return False
 
             child_scene = child_node.scene()
@@ -428,11 +367,10 @@ class CanvasImportController(CanvasControllerMixin):
             if child_node not in parent_node.child_nodes:
                 parent_node.child_nodes.append(child_node)
 
-            print(f"Node moved to subcanvas of {parent_node} at position {current_pos}")
             return True
 
-        except Exception as error:
-            print(f"Error moving node to subcanvas: {error}")
+        except Exception:
+            logger.exception("Error moving node to subcanvas")
             return False
 
     def _create_composite_internal_node(
@@ -440,21 +378,12 @@ class CanvasImportController(CanvasControllerMixin):
         parent_node: BaseNodeItem,
         model_props: PropertyMap,
     ) -> bool:
-        """
-        Create Composite Internal Node.
-
-        Args:
-            parent_node (BaseNodeItem): The parent node.
-            model_props (PropertyMap): The model props.
-
-        Returns:
-            bool: Create Composite Internal Node.
-        """
         try:
             subcanvas = parent_node.ensure_subcanvas_visible()
             if not subcanvas:
-                print(
-                    f"Could not get subcanvas for composite internal of {parent_node}"
+                logger.warning(
+                    "Could not get subcanvas for composite internal of %s",
+                    parent_node,
                 )
                 return False
 
@@ -473,13 +402,6 @@ class CanvasImportController(CanvasControllerMixin):
             internal_node._independent_model = internal_model
 
             def on_model_changed(prop_name: str, value: object) -> None:
-                """
-                On Model Changed.
-
-                Args:
-                    prop_name (str): The prop name.
-                    value (object): The value.
-                """
                 del prop_name, value
                 internal_node.update()
 
@@ -504,39 +426,18 @@ class CanvasImportController(CanvasControllerMixin):
                 parent_node.child_nodes = []
             parent_node.child_nodes.append(internal_node)
 
-            print(
-                f"Internal composite node '{node_type}' created in "
-                f"subcanvas of {parent_node} at ({offset_x:.1f}, "
-                f"{offset_y:.1f})"
-            )
             return True
 
-        except Exception as error:
-            print(f"Error creating internal composite node: {error}")
-            import traceback
-
-            traceback.print_exc()
+        except Exception:
+            logger.exception("Error creating internal composite node")
             return False
 
     def _create_node_from_data(
         self,
         node_data: SerializedNodeData,
     ) -> CanvasNodeItem | None:
-        """
-        Create Node From Data.
-
-        Args:
-            node_data (SerializedNodeData): The node data.
-
-        Returns:
-            CanvasNodeItem | None: Create Node From Data.
-        """
         node_type = node_data["type"]
         pos_data = node_data["position"]
-
-        print(
-            f"Creating node {node_type} at position ({pos_data['x']}, {pos_data['y']})"
-        )
 
         node = self.add_node(node_type, 0, 0)
         if not node:
@@ -572,13 +473,6 @@ class CanvasImportController(CanvasControllerMixin):
                         prop_name: str,
                         value: object,
                     ) -> None:
-                        """
-                        On Model Changed.
-
-                        Args:
-                            prop_name (str): The prop name.
-                            value (object): The value.
-                        """
                         node.update()
                         node.properties_changed.emit(node, {prop_name: value})
 
@@ -718,11 +612,6 @@ class CanvasImportController(CanvasControllerMixin):
             node.apply_position_in_subcanvas()
 
         node.update()
-        print(
-            f"Node {node_type} created. Subcanvas position: "
-            f"({node.model.position_in_subcanvas_x}, "
-            f"{node.model.position_in_subcanvas_y})"
-        )
         return node
 
     def _create_edge_from_data(
@@ -730,16 +619,6 @@ class CanvasImportController(CanvasControllerMixin):
         edge_data: SerializedEdgeData,
         node_map: dict[int, CanvasNodeItem],
     ) -> BaseEdgeItem | None:
-        """
-        Create Edge From Data.
-
-        Args:
-            edge_data (SerializedEdgeData): The edge data.
-            node_map (dict[int, CanvasNodeItem]): The node map.
-
-        Returns:
-            BaseEdgeItem | None: Create Edge From Data.
-        """
         edge_type = edge_data["type"]
         source_id = edge_data["source_id"]
         target_id = edge_data["target_id"]
@@ -748,15 +627,16 @@ class CanvasImportController(CanvasControllerMixin):
         target_node = node_map.get(target_id)
 
         if not source_node or not target_node:
-            print(
-                f"Could not create edge: source({source_id}) or "
-                f"target({target_id}) nodes not found"
+            logger.warning(
+                "Could not create edge: source(%s) or target(%s) nodes not found",
+                source_id,
+                target_id,
             )
             return None
 
         ArrowClass = _ARROW_TYPES.get(edge_type)
         if not ArrowClass:
-            print(f"Unknown edge type: {edge_type}")
+            logger.warning("Unknown edge type: %s", edge_type)
             return None
 
         edge_item = ArrowClass(source_node, target_node)
@@ -788,20 +668,12 @@ class CanvasImportController(CanvasControllerMixin):
         edge: BaseEdgeItem,
         parent_node: BaseNodeItem,
     ) -> bool:
-        """
-        Move Edge To Subcanvas.
-
-        Args:
-            edge (BaseEdgeItem): The edge.
-            parent_node (BaseNodeItem): The parent node.
-
-        Returns:
-            bool: Move Edge To Subcanvas.
-        """
         try:
             subcanvas = parent_node.ensure_subcanvas_visible()
             if not subcanvas:
-                print(f"Could not get subcanvas from parent node {parent_node}")
+                logger.warning(
+                    "Could not get subcanvas from parent node %s", parent_node
+                )
                 return False
 
             edge_scene = edge.scene()
@@ -809,9 +681,8 @@ class CanvasImportController(CanvasControllerMixin):
                 edge_scene.removeItem(edge)
 
             edge.setParentItem(subcanvas)
-            print(f"Edge moved to subcanvas of {parent_node}")
             return True
 
-        except Exception as error:
-            print(f"Error moving edge to subcanvas: {error}")
+        except Exception:
+            logger.exception("Error moving edge to subcanvas")
             return False

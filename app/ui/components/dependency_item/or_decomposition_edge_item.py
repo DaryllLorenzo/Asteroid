@@ -5,7 +5,6 @@
 # License: MIT License
 # ---------------------------------------------------
 
-# app/ui/components/dependency_item/or_decomposition_edge_item.py
 import math
 
 from PyQt6.QtCore import QPointF
@@ -21,31 +20,14 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class OrDecompositionArrowItem(BaseEdgeItem):
-    """
-    Or Decomposition Arrow Item.
-
-    Methods:
-        __init__: Initialize the instance.
-        boundingRect: Boundingrect.
-        paint: Paint.
-    """
+    """Arrow with an open (unfilled) triangular head."""
 
     def __init__(self, source_node, dest_node):
-        """
-        Initialize the instance.
-
-        Args:
-            source_node: The source node.
-            dest_node: The dest node.
-        """
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
 
     def boundingRect(self):
-        """Boundingrect."""
-        # Get boundingRect base of the line
         base_rect = super().boundingRect()
-        # Extra for the cabeza of flecha (triángulo of ~12px)
-        extra = 15
+        extra = 15  # room for the ~12px triangle head
         return base_rect.adjusted(-extra, -extra, extra, extra)
 
     def paint(
@@ -54,14 +36,6 @@ class OrDecompositionArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
-        """
-        Paint.
-
-        Args:
-            painter (QPainter | None): The painter.
-            option (QStyleOptionGraphicsItem | None): The option.
-            widget (QWidget | None): The widget.
-        """
         if painter is None:
             return
         del option, widget
@@ -73,7 +47,7 @@ class OrDecompositionArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() here for avoid temblor
+        # Don't call update_position() here - it would jitter while dragging.
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -83,13 +57,10 @@ class OrDecompositionArrowItem(BaseEdgeItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen())
 
-        # Size of the cabeza of flecha
         size = 12.0
 
-        # Calculate ángulo usando the LAST segmento real of the path curvo
         end_point = self._end_point
 
-        # Determinar the last segmento for calculate the ángulo correcto
         if self.control_points:
             last_point = self.control_points[-1]
         else:
@@ -103,36 +74,29 @@ class OrDecompositionArrowItem(BaseEdgeItem):
 
         angle = math.atan2(dy, dx)
 
-        # Calculate the punto donde termina the line (base of the triángulo)
+        # Where the line stops short, to leave room for the triangle head.
         line_end_point = QPointF(
             end_point.x() - size * math.cos(angle),
             end_point.y() - size * math.sin(angle),
         )
 
-        # Create a path modificado that termine in the base of the triángulo
-        # Get todos the puntos of the path original (already in coordinates local)
         path_points, start_point, _ = self._calculate_path_points()
 
         if len(path_points) >= 2:
-            # If there is control points, the last segmento va of the last control point
-            # al end_point. Reemplazamos the last punto with line_end_point
             if self.control_points:
                 modified_points = path_points[:-1] + [line_end_point]
             else:
                 modified_points = [start_point, line_end_point]
 
-            # The puntos already están in coordinates local
             modified_path = QPainterPath(modified_points[0])
             for point in modified_points[1:]:
                 modified_path.lineTo(point)
 
-            # Dibujar the path modificado (line that termina before)
             painter.drawPath(modified_path)
         else:
-            # Fallback: dibujar path original
             painter.drawPath(path)
 
-        # Dibujar triángulo without relleno in the punta
+        # Open (unfilled) triangular head.
         perp_x = math.sin(angle) * (size * 0.5)
         perp_y = -math.cos(angle) * (size * 0.5)
 

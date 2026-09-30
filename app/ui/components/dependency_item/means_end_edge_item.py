@@ -5,7 +5,6 @@
 # License: MIT License
 # ---------------------------------------------------
 
-# app/ui/components/dependency_item/means_end_edge_item.py
 import math
 
 from PyQt6.QtCore import QPointF
@@ -18,31 +17,14 @@ from app.ui.components.base_edge_item import BaseEdgeItem
 
 
 class MeansEndArrowItem(BaseEdgeItem):
-    """
-    Means End Arrow Item.
-
-    Methods:
-        __init__: Initialize the instance.
-        boundingRect: Boundingrect.
-        paint: Paint.
-    """
+    """Arrow with an open V head."""
 
     def __init__(self, source_node, dest_node):
-        """
-        Initialize the instance.
-
-        Args:
-            source_node: The source node.
-            dest_node: The dest node.
-        """
         super().__init__(source_node, dest_node, color=QPen().color(), dashed=False)
 
     def boundingRect(self):
-        """Boundingrect."""
-        # Get boundingRect base of the line
         base_rect = super().boundingRect()
-        # Extra for the V abierta (~12px)
-        extra = 15
+        extra = 15  # room for the open V head
         return base_rect.adjusted(-extra, -extra, extra, extra)
 
     def paint(
@@ -51,14 +33,6 @@ class MeansEndArrowItem(BaseEdgeItem):
         option: QStyleOptionGraphicsItem | None,
         widget: QWidget | None = None,
     ) -> None:
-        """
-        Paint.
-
-        Args:
-            painter (QPainter | None): The painter.
-            option (QStyleOptionGraphicsItem | None): The option.
-            widget (QWidget | None): The widget.
-        """
         if painter is None:
             return
         del option, widget
@@ -70,7 +44,7 @@ class MeansEndArrowItem(BaseEdgeItem):
                 painter.restore()
             return
 
-        # NO llamar a update_position() here for avoid temblor
+        # Don't call update_position() here - it would jitter while dragging.
         path = self.path()
         if path.isEmpty():
             if clipped:
@@ -83,7 +57,6 @@ class MeansEndArrowItem(BaseEdgeItem):
 
         end_point = self._end_point
 
-        # Determinar the last segmento for calculate the ángulo
         if self.control_points:
             last_point = self.control_points[-1]
         else:

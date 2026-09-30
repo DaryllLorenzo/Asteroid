@@ -1,3 +1,10 @@
+# ---------------------------------------------------
+# Project: Asteroid
+# Author: Daryll Lorenzo Alfonso
+# Year: 2025
+# License: MIT License
+# ---------------------------------------------------
+
 from dataclasses import dataclass
 
 from PyQt6.QtCore import QObject

@@ -13,22 +13,7 @@ from app.i18n import tr
 
 
 class AddCompositeDependencyCommand(QUndoCommand):
-    """
-    Add Composite Dependency Command.
-
-    Methods:
-        __init__: Initialize the instance.
-        redo: Redo.
-        undo: Undo.
-    """
-
     def __init__(self, controller: Any) -> None:
-        """
-        Initialize the instance.
-
-        Args:
-            controller (Any): The controller.
-        """
         super().__init__(tr("Create composite dependency"))
         self._controller = controller
         self._mid_node: Any = None
@@ -40,7 +25,6 @@ class AddCompositeDependencyCommand(QUndoCommand):
         self._dst: Any = nodes_for_arrow[1] if len(nodes_for_arrow) >= 2 else None
 
     def redo(self) -> None:
-        """Redo."""
         if self._mid_node is not None:
             self._restore_all()
             return
@@ -50,7 +34,6 @@ class AddCompositeDependencyCommand(QUndoCommand):
         self._mid_node, self._internal_node, self._e1, self._e2 = result
 
     def _restore_all(self) -> None:
-        """Restore All."""
         ctrl = self._controller
         scene = ctrl.canvas.scene()
         if scene is None:
@@ -87,7 +70,6 @@ class AddCompositeDependencyCommand(QUndoCommand):
             edge.update_position()
 
     def undo(self) -> None:
-        """Undo."""
         ctrl = self._controller
 
         for edge in (self._e1, self._e2):

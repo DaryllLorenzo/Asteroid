@@ -14,44 +14,16 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtGui import QPen
 from PyQt6.QtGui import QPolygonF
 
-from app.core.models.tropos_element.plan import Plan
+from app.core.models.typed_node import TypedNode
 from app.ui.components.base_tropos_item import BaseTroposItem
 from app.ui.theme_manager import theme_manager
 
 
 class PlanNodeItem(BaseTroposItem):
-    """
-    Plan Node Item.
-
-    Methods:
-        __init__: Initialize the instance.
-        paint: Paint.
-        get_serializable_properties: Get Serializable Properties.
-        update_properties: Update Properties.
-    """
-
     def __init__(self, x=0, y=0, radius=50):
-        """
-        Initialize the instance.
-
-        Args:
-            x: The x.
-            y: The y.
-            radius: The radius.
-        """
-        super().__init__(Plan(x, y, radius))
+        super().__init__(TypedNode("plan", x, y, radius))
 
     def _get_distance_to_border(self, pos: QPointF) -> float:
-        #  Usar _independent_model si existe
-        """
-        Get Distance To Border.
-
-        Args:
-            pos (QPointF): The pos.
-
-        Returns:
-            float: Get Distance To Border.
-        """
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
@@ -81,17 +53,6 @@ class PlanNodeItem(BaseTroposItem):
         a: QPointF,
         b: QPointF,
     ) -> float:
-        """
-        Point To Segment Distance.
-
-        Args:
-            p (QPointF): The p.
-            a (QPointF): The a.
-            b (QPointF): The b.
-
-        Returns:
-            float: Point To Segment Distance.
-        """
         ap = QPointF(p.x() - a.x(), p.y() - a.y())
         ab = QPointF(b.x() - a.x(), b.y() - a.y())
         ab2 = ab.x() * ab.x() + ab.y() * ab.y()
@@ -105,40 +66,23 @@ class PlanNodeItem(BaseTroposItem):
         return math.sqrt(dx * dx + dy * dy)
 
     def _get_new_radius_from_pos(self, pos: QPointF) -> float:
-        """
-        Get New Radius From Pos.
-
-        Args:
-            pos (QPointF): The pos.
-
-        Returns:
-            float: Get New Radius From Pos.
-        """
         return float(max((pos.x() ** 2 + pos.y() ** 2) ** 0.5, 15.0))
 
     def paint(self, painter, option, widget=None):
-        """
-        Paint.
-
-        Args:
-            painter: The painter.
-            option: The option.
-            widget: The widget.
-        """
         clipped = self.apply_subcanvas_clipping(painter)
 
         default_color = QColor(150, 180, 250)
         default_border = QColor(0, 0, 0)
         default_text = QColor(255, 255, 255)
 
-        #  Usar _independent_model if existe (for nodes composite internos)
+        # Internal composite nodes may have their own radius, independent
+        # of the shared (synced) model used for colors/label below.
         model_for_props = (
             self._independent_model
             if hasattr(self, "_independent_model") and self._independent_model
             else self.model
         )
 
-        # Colores son sincronizados, usar self.model (wrapper)
         fill_color = (
             QColor(self.model.color) if hasattr(self.model, "color") else default_color
         )
@@ -160,7 +104,6 @@ class PlanNodeItem(BaseTroposItem):
         painter.setBrush(QBrush(fill_color))
         painter.setPen(QPen(border_color, 2))
 
-        #  Usar radius of the model independiente
         r = model_for_props.radius
         points = [
             QPointF(-r, 0),
@@ -172,7 +115,6 @@ class PlanNodeItem(BaseTroposItem):
         ]
         painter.drawPolygon(QPolygonF(points))
 
-        #   DIBUJAR TEXT MULTILÍNEA
         self.draw_multiline_text(painter, text_color)
 
         if self.isSelected():
@@ -183,17 +125,5 @@ class PlanNodeItem(BaseTroposItem):
         if clipped:
             painter.restore()
 
-    def get_serializable_properties(self):
-        """Get Serializable Properties."""
-        base_properties = super().get_serializable_properties()
-        base_properties["node_type"] = "plan"
-        return base_properties
-
     def update_properties(self, properties: dict):
-        """
-        Update Properties.
-
-        Args:
-            properties (dict): The properties.
-        """
         super().update_properties(properties)

@@ -30,37 +30,13 @@ from app.ui.theme_manager import theme_manager
 
 
 class PropertiesPanel(QWidget):
-    """
-    Properties Panel.
-
-    Methods:
-        __init__: Initialize the instance.
-        init_ui: Init Ui.
-        on_selection_changed: On Selection Changed.
-        on_edge_selected: On Edge Selected.
-        on_straighten_edge_clicked: On Straighten Edge Clicked.
-        on_node_selected: On Node Selected.
-        on_node_property_changed: On Node Property Changed.
-        on_controller_properties_changed: On Controller Properties Changed.
-        update_visibility: Update Visibility.
-        choose_color: Choose Color.
-        update_color_buttons: Update Color Buttons.
-        on_delete_clicked: On Delete Clicked.
-        on_position_in_subcanvas_changed: On Position In Subcanvas Changed.
-        reset_position_in_subcanvas: Reset Position In Subcanvas.
-    """
+    """The sidebar panel for editing the selected node/edge's properties."""
 
     properties_changed = pyqtSignal(dict)
     selection_mode_changed = pyqtSignal(bool)
     delete_requested = pyqtSignal()
 
     def __init__(self, controller=None):
-        """
-        Initialize the instance.
-
-        Args:
-            controller: The controller.
-        """
         super().__init__()
         self.controller = controller
         self.current_selection = None
@@ -97,7 +73,6 @@ class PropertiesPanel(QWidget):
             )
 
     def init_ui(self):
-        """Init Ui."""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -278,14 +253,8 @@ class PropertiesPanel(QWidget):
         self.no_selection_label.setText(tr("Select an element"))
 
     def on_selection_changed(self, item):
-        """
-        On Selection Changed.
-
-        Args:
-            item: The item.
-        """
         self.current_selection = item
-        # Verificar if es a ControlPointHandle (no show properties)
+        # A ControlPointHandle isn't a node/edge - no properties to show.
         if isinstance(item, ControlPointHandle):
             self.update_visibility()
             return
@@ -295,12 +264,6 @@ class PropertiesPanel(QWidget):
             self.on_node_selected(item)
 
     def on_edge_selected(self, edge):
-        """
-        On Edge Selected.
-
-        Args:
-            edge: The edge.
-        """
         edge_type = tr("Arrow")
         if hasattr(edge, "source_node") and hasattr(edge, "dest_node"):
             src_name = (
@@ -319,21 +282,15 @@ class PropertiesPanel(QWidget):
         self.update_visibility()
 
     def on_straighten_edge_clicked(self):
-        """On Straighten Edge Clicked."""
         if self.current_selection and isinstance(self.current_selection, BaseEdgeItem):
             if self.controller and hasattr(self.controller, "straighten_edge"):
                 self.controller.straighten_edge(self.current_selection)
 
     def on_node_selected(self, node):
-        """
-        On Node Selected.
-
-        Args:
-            node: The node.
-        """
         if node and hasattr(node, "model"):
             self.blockSignals(True)
-            # Only update if the text es distinto for no move the cursor
+            # Only touch the widget if the text actually differs, so the
+            # cursor position isn't reset while the user is still typing.
             if self.label_edit.toPlainText() != node.model.label:
                 self.label_edit.setPlainText(node.model.label)
 
@@ -368,7 +325,6 @@ class PropertiesPanel(QWidget):
         self.update_visibility()
 
     def on_node_property_changed(self):
-        """On Node Property Changed."""
         if not self.current_selection or not hasattr(self.current_selection, "model"):
             return
 
@@ -386,28 +342,20 @@ class PropertiesPanel(QWidget):
         self.properties_changed.emit(props)
 
     def on_controller_properties_changed(self, properties: dict):
-        # This part es vital for the cursor
-        """
-        On Controller Properties Changed.
-
-        Args:
-            properties (dict): The properties.
-        """
         if not self.current_selection:
             return
 
         self.blockSignals(True)
         if "label" in properties:
-            # Only actualizamos the widget if the text realmente changed externamente
-            # y no es lo that the usuario acaba of write
+            # Only touch the widget if the text changed from outside (not
+            # from what the user is currently typing), and keep the cursor
+            # at the end so it doesn't jump mid-edit.
             if self.label_edit.toPlainText() != properties["label"]:
                 self.label_edit.setPlainText(properties["label"])
-                # Move cursor al final by if acaso
                 cursor = self.label_edit.textCursor()
                 cursor.movePosition(QTextCursor.MoveOperation.End)
                 self.label_edit.setTextCursor(cursor)
 
-        # Update the other campos without problemas of cursor
         if "radius" in properties:
             self.radius_spin.setValue(int(properties["radius"]))
         if "font_size" in properties:
@@ -418,9 +366,7 @@ class PropertiesPanel(QWidget):
         self.update_color_buttons()
 
     def update_visibility(self):
-        """Update Visibility."""
         has_selection = self.current_selection is not None
-        # Excluir ControlPointHandle of the selecciones válidas
         is_control_point = isinstance(self.current_selection, ControlPointHandle)
         is_node = (
             has_selection
@@ -434,7 +380,8 @@ class PropertiesPanel(QWidget):
         if is_node:
             type_name = self.current_selection.__class__.__name__
             is_behaviour_node = type_name in ["ActorNodeItem", "AgentNodeItem"]
-            # Usar model directamente for show_subcanvas (propiedad no sincronizada)
+            # show_subcanvas isn't a synced property, so read it straight
+            # off the model rather than through the composite wrapper.
             has_subcanvas = getattr(
                 self.current_selection.model, "show_subcanvas", False
             )
@@ -447,15 +394,8 @@ class PropertiesPanel(QWidget):
         self.no_selection_label.setVisible(not has_selection or is_control_point)
 
     def choose_color(self, color_type):
-        """
-        Choose Color.
-
-        Args:
-            color_type: The color type.
-        """
         if not self.current_selection:
             return
-        # Colores son sincronizados, usar node.model (wrapper)
         current = QColor(getattr(self.current_selection.model, color_type, "#ffffff"))
         color = QColorDialog.getColor(current, self)
         if color.isValid():
@@ -463,10 +403,8 @@ class PropertiesPanel(QWidget):
             self.update_color_buttons()
 
     def update_color_buttons(self):
-        """Update Color Buttons."""
         if not self.current_selection or not hasattr(self.current_selection, "model"):
             return
-        # Colores son sincronizados, usar node.model (wrapper)
         m = self.current_selection.model
         self.color_btn.setStyleSheet(
             f"background-color: {getattr(m, 'color', '#eee')}; border: 1px solid #999;"
@@ -481,24 +419,14 @@ class PropertiesPanel(QWidget):
         )
 
     def on_delete_clicked(self):
-        """On Delete Clicked."""
         self.delete_requested.emit()
 
     def on_position_in_subcanvas_changed(self, x, y):
-        """
-        On Position In Subcanvas Changed.
-
-        Args:
-            x: The x.
-            y: The y.
-        """
         if self.current_selection:
-            # Position es independiente, emitir as this
             self.properties_changed.emit(
                 {"position_in_subcanvas_x": x, "position_in_subcanvas_y": y}
             )
 
     def reset_position_in_subcanvas(self):
-        """Reset Position In Subcanvas."""
         self.pos_control.set_position(0, 0)
         self.on_position_in_subcanvas_changed(0, 0)

@@ -5,6 +5,7 @@
 # License: MIT License
 # ---------------------------------------------------
 
+import logging
 import os
 from pathlib import Path
 
@@ -30,23 +31,11 @@ from reportlab.platypus import TableStyle
 
 from app.i18n import tr
 
+logger = logging.getLogger(__name__)
+
 
 class PDFGenerator:
-    """
-    P D F Generator.
-
-    Methods:
-        __init__: Initialize the instance.
-        export_to_pdf: Export To Pdf.
-    """
-
     def __init__(self, canvas_controller):
-        """
-        Initialize the instance.
-
-        Args:
-            canvas_controller: The canvas controller.
-        """
         self.canvas_controller = canvas_controller
 
     def export_to_pdf(
@@ -54,18 +43,7 @@ class PDFGenerator:
         with_additional_info: bool = True,
         filename: str | None = None,
     ) -> bool:
-        """
-        Exporta el diagrama actual a PDF
-
-        Args:
-            with_additional_info: Si True, incluye información adicional de elementos
-            filename: Ruta del archivo de salida (opcional)
-
-        Returns:
-            True si la exportación fue exitosa
-        """
         try:
-            # Get name of file
             if not filename:
                 filename, _ = QFileDialog.getSaveFileName(
                     self.canvas_controller.canvas,
@@ -79,7 +57,6 @@ class PDFGenerator:
                 if not filename.endswith(".pdf"):
                     filename += ".pdf"
 
-            # Crear documento PDF
             doc = SimpleDocTemplate(
                 filename,
                 pagesize=A4,
@@ -89,11 +66,9 @@ class PDFGenerator:
                 bottomMargin=2 * cm,
             )
 
-            # Construir contenido
             story = []
             styles = getSampleStyleSheet()
 
-            # Title
             title_style = ParagraphStyle(
                 "CustomTitle",
                 parent=styles["Heading1"],
@@ -105,7 +80,6 @@ class PDFGenerator:
             story.append(Paragraph("Diagrama Asteroid", title_style))
             story.append(Spacer(1, 0.3 * inch))
 
-            # Add imagen of the diagrama
             diagram_image = self._capture_canvas_image()
             if diagram_image:
                 img = Image(diagram_image, width=6 * inch, height=4 * inch)
@@ -113,12 +87,10 @@ class PDFGenerator:
                 story.append(img)
                 story.append(Spacer(1, 0.5 * inch))
 
-            # Add information adicional if itself solicita
             if with_additional_info:
                 story.append(PageBreak())
                 self._add_additional_info(story, styles)
 
-            # Construir PDF
             doc.build(story)
 
             QMessageBox.information(
@@ -127,11 +99,12 @@ class PDFGenerator:
                 f"{tr('PDF exported successfully')}:\n{filename}",
             )
             if diagram_image:
-                os.remove(diagram_image)  # Delete the file temporal
+                os.remove(diagram_image)
 
             return True
 
         except Exception as e:
+            logger.exception("Error exporting PDF")
             QMessageBox.critical(
                 self.canvas_controller.canvas,
                 "Error",
@@ -140,57 +113,37 @@ class PDFGenerator:
             return False
 
     def _capture_canvas_image(self) -> str | None:
-        """
-        Captura el canvas como imagen y retorna la ruta temporal
-
-        Returns:
-            Ruta de la imagen temporal o None si falla
-        """
         try:
             canvas = self.canvas_controller.canvas
 
-            # Get the límites reales of todos the items + margin
-            # for avoid cortes
             scene = canvas.scene()
             if scene is None:
                 return None
 
             scene_rect = scene.itemsBoundingRect()
-            margin = 50.0  # Margin extra for asegurar that no itself corten borders
-            # (subcanvas, etc.)
+            # Extra margin so subcanvas circles near the edge aren't clipped.
+            margin = 50.0
             expanded_rect = scene_rect.adjusted(-margin, -margin, margin, margin)
 
-            # Create pixmap of the size expandido
             pixmap = QPixmap(int(expanded_rect.width()), int(expanded_rect.height()))
-            pixmap.fill(QColor(255, 255, 255))  # Usar QColor in lugar of colors.white
+            pixmap.fill(QColor(255, 255, 255))
 
-            # Renderizar the scene in the pixmap with the rect expandido
             painter = QPainter(pixmap)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-
-            # Renderizar usando the rect expandido for capturar todos the elements
             scene.render(painter, source=expanded_rect)
             painter.end()
 
-            # Save as PNG temporal
             temp_path = Path(__file__).parent.parent.parent / "temp_diagram.png"
             pixmap.save(str(temp_path), "PNG")
 
             return str(temp_path)
 
-        except Exception as e:
-            print(f"[ERROR] Error capturing canvas image: {e}")
+        except Exception:
+            logger.exception("Error capturing canvas image")
             return None
 
     def _add_additional_info(self, story: list, styles):
-        """
-        Agrega información adicional de elementos al PDF
-
-        Args:
-            story: Lista de elementos del PDF
-            styles: Estilos de ReportLab
-        """
         section_style = ParagraphStyle(
             "CustomSection",
             parent=styles["Heading2"],
@@ -200,36 +153,24 @@ class PDFGenerator:
             spaceBefore=10,
         )
 
-        # Sección of Elements
         story.append(Paragraph("Elementos del Diagrama", section_style))
         self._add_elements_table(story, styles)
 
         story.append(Spacer(1, 0.3 * inch))
 
-        # Sección of Relaciones
         story.append(Paragraph("Relaciones entre Elementos", section_style))
         self._add_relationships_table(story, styles)
 
     def _add_elements_table(self, story: list, styles):
-        """
-        Agrega tabla de elementos al PDF
-
-        Args:
-            story: Lista de elementos del PDF
-            styles: Estilos de ReportLab
-        """
         nodes = self.canvas_controller.nodes
 
-        # Encabezados
         data = [["ID", "Tipo", "Nombre/Label"]]
 
-        # Add elements
         for idx, node in enumerate(nodes, 1):
             node_type = self._get_node_type_display(node)
             label = self._get_node_label(node)
             data.append([str(idx), node_type, label])
 
-        # Create tabla
         table = Table(data, colWidths=[0.5 * inch, 1.5 * inch, 3.5 * inch])
         table.setStyle(
             TableStyle(
@@ -259,26 +200,16 @@ class PDFGenerator:
         story.append(table)
 
     def _add_relationships_table(self, story: list, styles):
-        """
-        Agrega tabla de relaciones al PDF
-
-        Args:
-            story: Lista de elementos del PDF
-            styles: Estilos de ReportLab
-        """
         edges = self.canvas_controller.edges
 
-        # Encabezados
         data = [["Origen", "Tipo de Relación", "Destino"]]
 
-        # Add relaciones
         for edge in edges:
             source_label = self._get_node_label(edge.source_node)
             target_label = self._get_node_label(edge.dest_node)
             edge_type = self._get_edge_type_display(edge)
             data.append([source_label, edge_type, target_label])
 
-        # Create tabla
         table = Table(data, colWidths=[2 * inch, 2 * inch, 2 * inch])
         table.setStyle(
             TableStyle(
@@ -308,15 +239,6 @@ class PDFGenerator:
         story.append(table)
 
     def _get_node_type_display(self, node) -> str:
-        """
-        Obtiene el nombre legible del tipo de nodo
-
-        Args:
-            node: Instancia del nodo
-
-        Returns:
-            String con el tipo de nodo
-        """
         type_map = {
             "ActorNodeItem": "Actor",
             "AgentNodeItem": "Agente",
@@ -328,15 +250,6 @@ class PDFGenerator:
         return type_map.get(node.__class__.__name__, "Desconocido")
 
     def _get_node_label(self, node) -> str:
-        """
-        Obtiene el label/nombre del nodo
-
-        Args:
-            node: Instancia del nodo
-
-        Returns:
-            String con el label del nodo
-        """
         if hasattr(node, "model") and hasattr(node.model, "label"):
             return str(node.model.label)
         elif hasattr(node, "label"):
@@ -344,15 +257,6 @@ class PDFGenerator:
         return "Sin nombre"
 
     def _get_edge_type_display(self, edge) -> str:
-        """
-        Obtiene el nombre legible del tipo de relación
-
-        Args:
-            edge: Instancia de la relación
-
-        Returns:
-            String con el tipo de relación
-        """
         type_map = {
             "SimpleArrowItem": "Conexión Simple",
             "DashedArrowItem": "Conexión Punteada",

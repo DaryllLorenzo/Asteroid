@@ -1,4 +1,3 @@
-# subcanvas_item.py (corregido)
 # ---------------------------------------------------
 # Project: Asteroid
 # Author: Daryll Lorenzo Alfonso
@@ -6,6 +5,7 @@
 # License: MIT License
 # ---------------------------------------------------
 
+import logging
 import math
 
 from PyQt6.QtCore import QPointF
@@ -21,6 +21,8 @@ from PyQt6.QtWidgets import QGraphicsRectItem
 
 from app.ui.theme_manager import theme_manager
 
+logger = logging.getLogger(__name__)
+
 # List of tipos of "links" soportados inside of the subcanvas
 ARROW_TYPES = {
     "dependency_link",
@@ -33,22 +35,9 @@ ARROW_TYPES = {
 
 
 class ResizeHandle(QGraphicsRectItem):
-    """
-    Resize Handle.
-
-    Methods:
-        __init__: Initialize the instance.
-        mouseMoveEvent: Mousemoveevent.
-    """
+    """The draggable handle for resizing a SubCanvasItem."""
 
     def __init__(self, parent_subcanvas, size: float = 10.0):
-        """
-        Initialize the instance.
-
-        Args:
-            parent_subcanvas: The parent subcanvas.
-            size (float): The size.
-        """
         super().__init__(-size / 2.0, -size / 2.0, size, size)
         self.setParentItem(parent_subcanvas)
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsMovable, True)
@@ -58,12 +47,6 @@ class ResizeHandle(QGraphicsRectItem):
         self.setCursor(Qt.CursorShape.SizeAllCursor)
 
     def mouseMoveEvent(self, event):
-        """
-        Mousemoveevent.
-
-        Args:
-            event: The event.
-        """
         local_scene = event.scenePos()
         center_scene = self.parent_subcanvas.mapToScene(QPointF(0.0, 0.0))
         dx = local_scene.x() - center_scene.x()
@@ -74,41 +57,17 @@ class ResizeHandle(QGraphicsRectItem):
 
 
 class SubCanvasItem(QGraphicsObject):
-    # item_type, local_x, local_y  (nodes)
-    """
-    Sub Canvas Item.
+    """The circular inner canvas hosted inside an Actor/Agent node."""
 
-    Methods:
-        __init__: Initialize the instance.
-        boundingRect: Boundingrect.
-        shape: Shape.
-        paint: Paint.
-        set_radius: Set Radius.
-        mousePressEvent: Mousepressevent.
-        mouseDoubleClickEvent: Mousedoubleclickevent.
-        reset_to_original_size: Reset To Original Size.
-        dragEnterEvent: Dragenterevent.
-        dragMoveEvent: Dragmoveevent.
-        dropEvent: Dropevent.
-    """
-
-    subnode_dropped = pyqtSignal(str, float, float)
-    # arrow_type (links)
-    subarrow_dropped = pyqtSignal(str)
+    subnode_dropped = pyqtSignal(str, float, float)  # item_type, local_x, local_y
+    subarrow_dropped = pyqtSignal(str)  # arrow_type
 
     def __init__(self, radius: float = 80.0, parent=None):
-        """
-        Initialize the instance.
-
-        Args:
-            radius (float): The radius.
-            parent: The parent.
-        """
         super().__init__(parent)
         self.radius = float(radius)
         self.original_radius = float(radius)
 
-        # no movible by separado; itself moves with the node parent
+        # Not independently movable - it follows its parent node.
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable, False)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsSelectable, False)
         self.setAcceptDrops(True)
@@ -116,17 +75,11 @@ class SubCanvasItem(QGraphicsObject):
         self.border_pen = QPen(Qt.GlobalColor.black, 2)
         self.bg_brush = QBrush(Qt.GlobalColor.white)
 
-        # Create handle as child (no scene.addItem for the handle)
+        # The handle is a child item, not added to the scene separately.
         self.handle = ResizeHandle(self, size=10)
         self._update_handle_pos()
 
     def boundingRect(self) -> QRectF:
-        """
-        Boundingrect.
-
-        Returns:
-            QRectF: Boundingrect.
-        """
         r = float(self.radius)
         margin = 4.0
         return QRectF(
@@ -134,21 +87,12 @@ class SubCanvasItem(QGraphicsObject):
         )
 
     def shape(self):
-        """Shape."""
         path = QPainterPath()
         r = float(self.radius)
         path.addEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
         return path
 
     def paint(self, painter, option, widget=None):
-        """
-        Paint.
-
-        Args:
-            painter: The painter.
-            option: The option.
-            widget: The widget.
-        """
         painter.save()
 
         r = float(self.radius)
@@ -171,87 +115,49 @@ class SubCanvasItem(QGraphicsObject):
 
         painter.restore()
 
-        # Dibujar border outside of the clipping
+        # Border is drawn outside the clip, so it isn't dimmed by the fill.
         painter.setPen(border_pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
 
         painter.drawEllipse(QRectF(-r, -r, 2.0 * r, 2.0 * r))
 
     def set_radius(self, new_r: float):
-        """
-        Set Radius.
-
-        Args:
-            new_r (float): The new r.
-        """
         self.prepareGeometryChange()
         self.radius = max(20.0, float(new_r))
         self._update_handle_pos()
         self.update()
 
     def _update_handle_pos(self):
-        """Update Handle Pos."""
         if hasattr(self, "handle") and self.handle is not None:
             self.handle.setPos(self.radius, 0.0)
 
-    # MODIFICADO: Now the subcanvas NO acepta eventos of mouse,
-    # for permitir that pasen al node parent
+    # The subcanvas ignores mouse events so they fall through to the
+    # parent node (e.g. dragging the node itself still works).
     def mousePressEvent(self, event):
-        """
-        Mousepressevent.
-
-        Args:
-            event: The event.
-        """
-        event.ignore()  # IMPORTANTE: Ignore for that llegue al node parent
+        event.ignore()
 
     def mouseDoubleClickEvent(self, event):
-        """
-        Mousedoubleclickevent.
-
-        Args:
-            event: The event.
-        """
-        event.ignore()  # IMPORTANTE: Ignore for that llegue al node parent
+        event.ignore()
 
     def reset_to_original_size(self):
-        """Reset To Original Size."""
         self.set_radius(self.original_radius)
 
     # -------------------------
-    # Drag & Drop (mantener funcionalidad)
+    # Drag & Drop
     # -------------------------
     def dragEnterEvent(self, event):
-        """
-        Dragenterevent.
-
-        Args:
-            event: The event.
-        """
         if event.mimeData().hasText():
             event.acceptProposedAction()
         else:
             event.ignore()
 
     def dragMoveEvent(self, event):
-        """
-        Dragmoveevent.
-
-        Args:
-            event: The event.
-        """
         if event.mimeData().hasText():
             event.acceptProposedAction()
         else:
             event.ignore()
 
     def dropEvent(self, event):
-        """
-        Dropevent.
-
-        Args:
-            event: The event.
-        """
         if not event.mimeData().hasText():
             event.ignore()
             return
@@ -259,17 +165,15 @@ class SubCanvasItem(QGraphicsObject):
         item_type = event.mimeData().text()
         pos = event.pos()
 
-        # If es a type of flecha (links new)
         if item_type in ARROW_TYPES:
-            print(f"SubCanvasItem: arrow dropped '{item_type}' (local {pos})")
+            logger.debug("Arrow dropped '%s' (local %s)", item_type, pos)
             self.subarrow_dropped.emit(item_type)
             event.acceptProposedAction()
             return
 
         # If no es flecha, lo tratamos as node tropos
-        print(
-            f"SubCanvasItem: node dropped '{item_type}' at "
-            f"local ({pos.x():.1f}, {pos.y():.1f})"
+        logger.debug(
+            "Node dropped '%s' at local (%.1f, %.1f)", item_type, pos.x(), pos.y()
         )
         self.subnode_dropped.emit(item_type, float(pos.x()), float(pos.y()))
         event.acceptProposedAction()
