@@ -42,3 +42,29 @@ ignore_missing_imports = true
 strict_optional = true
 no_implicit_optional = true
 disable_error_code = "no-untyped-def"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+# Let `import app` resolve without installing the project, so that a bare
+# `pytest` (rather than `python -m pytest`) works from the repository root.
+pythonpath = ["."]
+# Qt needs a platform plugin even with no display attached; tests/conftest.py
+# selects the "offscreen" one before PyQt6 is imported.
+addopts = "-ra --strict-markers --strict-config"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+omit = ["*/__main__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+]

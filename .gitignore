@@ -35,3 +35,10 @@ wheels/
 /mobile/.idea/
 /mobile/*.iml
 /mobile/.vscode/
+
+# pytest / coverage
+.coverage
+coverage.json
+coverage.xml
+htmlcov/
+.pytest_cache/
