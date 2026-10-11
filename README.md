@@ -165,7 +165,7 @@ asteroid/
 │   │   ├── __init__.py
 │   │   ├── rule.py               # Abstract base class for rules
 │   │   ├── validator.py          # Validator registry and checker
-│   │   └── rules/                # Auto-discovered validation rules
+│   │   └── rules/                # Rule implementations
 │   │       ├── __init__.py
 │   │       ├── no_entity_in_entity_subcanvas.py
 │   │       ├── no_dependency_link_between_entities.py
@@ -242,6 +242,38 @@ python main.py
 
 ---
 
+## Testing
+
+An automated suite of **119 tests** lives in `tests/` and runs headless — no display server is needed,
+so it behaves identically from a local terminal and from CI.
+
+```bash
+uv sync                    # install dependencies, once
+
+uv run pytest              # full suite
+uv run pytest -v           # one line per test
+uv run pytest -k "rule"    # filter by keyword
+
+uv run pytest --cov=app --cov-report=term   # coverage report
+```
+
+The suite is scoped to claims the tool actually makes rather than to GUI behaviour:
+
+| File | Tests | What it backs |
+|---|---:|---|
+| `tests/test_tropos_semantics.py` | 80 | The seven Tropos well-formedness rules, asserted in isolation **and** end-to-end through the controller |
+| `tests/test_astr_roundtrip.py` | 14 | `.astr` persistence: the reload fixpoint property, the checked-in diagram, and per-element error isolation |
+| `tests/test_export.py` | 14 | PDF export and the per-agent PNG reports |
+| `tests/test_undo_redo.py` | 5 | Undo/redo restores the serialised scene exactly |
+| `tests/test_i18n.py` | 6 | Every `tr()` literal resolves against `es.json` |
+
+`tests.md` documents what each assertion covers, including the per-package coverage table.
+
+Continuous integration runs `ruff`, `mypy`, and this suite on **Linux, Windows and macOS** — see
+`.github/workflows/ci.yml`.
+
+---
+
 ## Screenshots
 
 | Main Interface | Actor with Subcanvas |
@@ -271,7 +303,7 @@ python main.py
     - Control point add/move/remove/clear
 - [x] Model validation (Tropos methodology consistency)
     - Toggleable validator mode (Validation menu)
-    - Pluggable rule system with auto-discovery
+    - Pluggable rule system
     - 7 built-in rules (entity-in-subcanvas, 6 link-type rules)
 - [x] Multi-language support (English, Spanish) with language switcher
 - [x] Visual themes (light/dark mode)
@@ -299,13 +331,22 @@ Please read our [contributing guidelines](CONTRIBUTING.md) for more details.
 
 ### Adding Validation Rules
 
-Each validation rule lives in its own file inside `app/validation/rules/`. To add a new rule:
+The `Validator` holds an explicit list of rule instances, assembled in
+`app/validation/validator.py`. Six of the seven built-in rules share one
+shape — "reject this arrow type when both endpoints are Actors/Agents" — and are
+generated from a `{arrow_type: description}` table by `NoLinkBetweenEntitiesRule`;
+the seventh, `NoEntityInEntitySubcanvas`, has a different `action_type` and
+different context keys, so it stays its own class.
 
-1. Create a `.py` file in `app/validation/rules/`
-2. Implement a class inheriting from `Rule` with `applies_to()` and `check()` methods
-3. Export the instance as `rule = YourRule()`
+To add a rule:
 
-The system auto-discovers all rules at startup. No other files need to be modified.
+1. Implement a class inheriting from `Rule` with `applies_to()` and `check()` in `app/validation/rules/`
+2. If it matches an existing pattern, add a table entry rather than a new file
+3. Import the instance and append it to the list in `validator.py`
+
+The registry is explicit rather than auto-discovered so the complete rule set can be read in one place
+and asserted against: `tests/test_tropos_semantics.py` checks that the validator holds exactly seven
+instances and that each one actually fires.
 
 ### Adding a New Language
 

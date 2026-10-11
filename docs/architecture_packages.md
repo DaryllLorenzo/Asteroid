@@ -67,27 +67,37 @@ as a loosely-typed parameter (not a concrete `CanvasController` import) specific
 import, since `app.controllers` is what imports and drives `app.commands`.
 
 ### `app.core.models` — Domain (pure)
-The i\*/Tropos metamodel itself: abstract `BaseNode` and `BaseEdge`, plus `CompositeModelWrapper` (which
-keeps an "external" and an "internal" model in sync for nodes that have an expandable sub-canvas). Three
-subpackages hold the concrete elements:
+The i\*/Tropos metamodel itself: abstract `BaseNode` and `CompositeModelWrapper` (which keeps an "external"
+and an "internal" model in sync for nodes that have an expandable sub-canvas). There are no per-type model
+classes and no dependency models: every node type is the single `TypedNode` class, parameterised by a
+`type_name` string whose label and colours are looked up in the `NODE_STYLES` table in `typed_node.py`.
+Edges have no domain model at all — they exist only as graphics items in `app.ui.components`, so
+`app.core.models` contains:
 
-| Subpackage | Classes |
+| Module | Contents |
 |---|---|
-| `entity/` | `Actor`, `Agent` |
-| `tropos_element/` | `HardGoal`, `SoftGoal`, `Plan`, `Resource` |
-| `dependency/` | `DependencyLinkEdge`, `WhyLinkEdge`, `OrDecompositionEdge`, `AndDecompositionEdge`, `ContributionEdge`, `MeansEndEdge` |
+| `base_node.py` | `BaseNode` (abstract: position, radius, label, subcanvas state) |
+| `typed_node.py` | `TypedNode` + the `NODE_STYLES` registry |
+| `composite_model_wrapper.py` | `CompositeModelWrapper` (external/internal model pair) |
+
+Adding a node type is therefore a `NODE_STYLES` entry plus a `TypedNode` factory entry, not a new class or
+file. The Tropos-vs-i\* distinction is encoded structurally: `app.controllers.canvas_registry_controller`
+keeps a `_MODEL_MAP` with no `actor`/`agent` entry, because an entity has no internal sub-canvas model.
 
 This package imports nothing else in the app — no PyQt6, no controllers, no UI, no utils. It only uses
 `abc.ABC`/`abstractmethod` from the standard library, which is why it sits at the bottom of the diagram with
 no outgoing arrows.
 
 ### `app.validation` — Business rules
-A small Strategy/plugin engine: `Rule` is an abstract base (`applies_to`, `check`), and `Validator`
-auto-discovers every `Rule` instance under `validation/rules/` via `pkgutil.iter_modules` at startup — no
-rule has to be registered by hand. The seven current rules (`NoEntityInEntitySubcanvas`,
-`NoAndDecompositionBetweenEntities`, `NoContributionBetweenEntities`, `NoDependencyLinkBetweenEntities`,
-`NoMeansEndBetweenEntities`, `NoOrDecompositionBetweenEntities`, `NoWhyLinkBetweenEntities`) all encode i\*
-well-formedness constraints, e.g. rejecting a dependency link drawn directly between two entities.
+A small Strategy/plugin engine: `Rule` is an abstract base (`applies_to`, `check`), and `Validator` holds an
+explicit list of rule instances assembled in `validator.py`. Six of the seven rules share one shape —
+"reject this arrow type when both endpoints are Actors/Agents" — and are generated from a
+`{arrow_type: description}` table by `NoLinkBetweenEntitiesRule`, one instance per arrow type; the seventh,
+`NoEntityInEntitySubcanvas`, has a different `action_type` and different context keys, so it stays its own
+class. All seven encode Tropos well-formedness constraints rather than generic i\* ones, e.g. rejecting a
+dependency link drawn directly between two entities, or nesting an Actor inside another Actor's subcanvas.
+A rule only fires while `Validator.active` is `True`, which the Validation menu toggle controls. Each rule
+is covered by `tests/test_tropos_semantics.py`, both in isolation and end-to-end through the controller.
 
 ### `app.utils` — Export & serialization
 Three independent services: `AstrFormat` (the `.astr` project save/load format), `PDFGenerator`
@@ -142,9 +152,11 @@ imported `CanvasController` directly, the two packages would form a circular imp
 takes the controller as an untyped/duck-typed parameter — a small, deliberate coupling trade-off in exchange
 for avoiding the cycle.
 
-**Validation rules register themselves.** Adding a new i\* well-formedness constraint means dropping a new
-file into `validation/rules/` with a module-level `rule = SomeRule()` — `Validator` finds it automatically
-via `pkgutil`. Nothing else needs to change.
+**Validation rules are registered explicitly.** Adding a new Tropos well-formedness constraint means
+adding a class to `validation/rules/` and adding it to the list in `validator.py`. The registry is explicit
+rather than auto-discovered, so the complete rule set can be read in one place and asserted against — a test
+checks that every registered arrow type has both an item class and a validation rule, and that no arrow
+type ships without the entity-to-entity guard.
 
 **The domain layer has no outgoing dependencies.** `app.core.models` never imports PyQt6, `app.controllers`,
 `app.ui`, or `app.utils`. The i\*/Tropos metamodel can be reasoned about, tested, and reused independently of

@@ -5,9 +5,9 @@ description: Launch and verify the Asteroid PyQt6 desktop app (app/ + main.py) w
 
 # Running Asteroid (desktop app)
 
-This is a PyQt6 `QGraphicsView`/`QGraphicsScene` desktop app, not a web app or CLI — there is no dev
-server and no automated test suite (no `pytest`, no `tests/` directory). Verifying a change means actually
-constructing the app's objects and exercising them.
+This is a PyQt6 `QGraphicsView`/`QGraphicsScene` desktop app, not a web app or CLI. There *is* an automated
+test suite now (`tests/`, run with `pytest`); for anything the suite does not cover, verify a change by
+actually constructing the app's objects and exercising them.
 
 **Important**: `DISPLAY` in this environment is normally the user's real desktop session, not a disposable
 CI display. Do not launch `main.py` directly (`python main.py`) for automated verification — that pops a
@@ -15,6 +15,18 @@ real window on the user's screen. Xvfb (a virtual display) is also unreliable to
 Bash tool calls in this sandbox (background processes tend to get reaped between commands) — don't spend
 time fighting it. Instead, do everything below with `QT_QPA_PLATFORM=offscreen`, which runs the full Qt
 paint/layout pipeline without any real display and is completely invisible to the user.
+
+## Automated tests (run these first)
+
+```bash
+pytest                                        # 119 tests, headless
+pytest --cov=app --cov-report=term            # with coverage
+pytest tests/test_tropos_semantics.py -v      # the seven validation rules
+```
+
+`tests/conftest.py` sets `QT_QPA_PLATFORM=offscreen` and stubs the blocking `QMessageBox` calls, so the
+suite needs no display and never hangs on a dialog. Prefer `pytest` over a manual smoke test; reach for the
+recipe below only for behaviour the suite does not cover.
 
 ## Setup
 
@@ -33,8 +45,9 @@ mypy app main.py
 
 ## Headless functional smoke test
 
-A `QApplication` is required even offscreen (Qt object construction needs one alive). Build the real
-`Canvas` + `CanvasController` — don't test through `AstrFormat`/model classes in isolation only, since the
+Use this for behaviour the suite does not cover, or while developing a new test. A `QApplication` is
+required even offscreen (Qt object construction needs one alive). Build the real `Canvas` +
+`CanvasController` — don't test through `AstrFormat`/model classes in isolation only, since the
 interesting bugs tend to live in the controller glue between them.
 
 ```bash

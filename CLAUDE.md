@@ -24,15 +24,52 @@ python main.py                    # if a venv is already activated
 ruff check .
 ruff format . --check             # ruff format .  (no --check) to actually reformat
 mypy .
+
+# Tests (CI runs these on ubuntu, windows and macOS)
+pytest                            # 119 tests, no display needed
+pytest --cov=app --cov-report=term
 ```
 
-There is no automated Python test suite (no `pytest`, no `tests/` directory) — `ruff` + `mypy` passing and
-a manual run of the app are the only checks CI performs. When verifying a change, prefer a headless
-functional smoke test over trusting lint alone: construct a `Canvas` + `CanvasController` under
-`QT_QPA_PLATFORM=offscreen`, drive it through `app.controllers.canvas_registry_controller._NODE_MAP` /
-`_ARROW_TYPES`, and round-trip through `AstrFormat`/`CanvasImportController` — see the `run` skill in this
-repo (if present) for a worked example, since this environment's `DISPLAY` is normally a real user desktop
-and should not be used for automated verification.
+The suite lives in `tests/` and runs headless: `tests/conftest.py` sets
+`QT_QPA_PLATFORM=offscreen` before PyQt6 is imported and stubs out the blocking
+`QMessageBox` calls. Five files:
+
+- **`test_tropos_semantics.py`** — the seven well-formedness rules (six
+  `NoLinkBetweenEntitiesRule` instances generated from one table, plus
+  `NoEntityInEntitySubcanvas`), each asserted both against the isolated `Rule`
+  and end-to-end through the controller, so the test also proves the rules are
+  wired into the interaction path and not merely defined.
+  `TestSevenWellFormednessRules` pins the claim itself: the validator holds
+  exactly 7 instances across 2 classes, and each of the 7 actually fires. Also
+  asserts the registry invariants that encode the Tropos model: `_MODEL_MAP`
+  deliberately has no `actor`/`agent` entry, and `_NODE_MAP`/`_NODE_STYLES`/
+  `_ARROW_TYPES`/`_LINK_DESCRIPTIONS` stay in sync.
+- **`test_astr_roundtrip.py`** — `.astr` persistence. Asserts the *fixpoint*
+  property (serialise → import → serialise → import → serialise is stable) plus
+  the `.astr` diagram in the repo root, and that a malformed element is skipped
+  without aborting the load.
+- **`test_export.py`** — PDF export (magic bytes, the
+  `with_additional_info` flag actually changing output, save-dialog cancel) and
+  the per-agent PNG reports. Note `AgentReportExporter` filters on
+  `BaseNodeItem`, so only Actors/Agents get a report; Tropos elements sit on the
+  sibling class `BaseTroposItem` and are never report subjects.
+- **`test_undo_redo.py`** — one invariant rather than per-command tests:
+  undoing every pushed command must reproduce the serialised scene exactly.
+- **`test_i18n.py`** — AST scan asserting every literal passed to `tr()` is a
+  key in `es.json`. `KNOWN_UNTRANSLATED` lists the exceptions found so far; a
+  new omission fails the suite.
+
+`tests.md` documents what each test covers, plus the coverage-per-package table
+used as evidence in the paper.
+
+When verifying a change, prefer running `pytest` over trusting lint alone. For
+ad-hoc exploration that is not worth a test, drive the app headless:
+construct a `Canvas` + `CanvasController` under `QT_QPA_PLATFORM=offscreen`,
+go through `app.controllers.canvas_registry_controller._NODE_MAP` /
+`_ARROW_TYPES`, and round-trip through `AstrFormat`/`CanvasImportController` —
+see the `run` skill in this repo for a worked example, since this environment's
+`DISPLAY` is normally a real user desktop and should not be used for automated
+verification.
 
 ## Commands (mobile app, `mobile/`)
 
@@ -83,7 +120,8 @@ MVC-inspired, with domain models fully decoupled from their Qt graphical represe
   from a `{arrow_type: description}` table by `NoLinkBetweenEntitiesRule` in
   `validation/rules/no_link_between_entities.py`; `NoEntityInEntitySubcanvas` is the one structurally
   different rule (different `action_type`, different context keys) and stays its own file. A rule only
-  fires when `Validator.active` is `True` (Validation menu toggle).
+  fires when `Validator.active` is `True` (Validation menu toggle). The seven rules are the paper's
+  well-formedness claims and each one has a test in `tests/test_tropos_semantics.py`.
 - **`app.utils.astr_format`** — the `.astr` (JSON) project save/load format. `AstrFormat.serialize_scene`
   walks live `BaseNodeItem`/`BaseEdgeItem` instances; import is the reverse, in
   `CanvasImportController.import_from_astr`. Each node/edge is imported inside its own `try/except` — a
@@ -115,8 +153,8 @@ don't add new keys to `get_serializable_properties()` that collide with a model 
 
 ## Known-stale doc
 
-`docs/architecture_packages.md` (and its companion `.drawio`) describes the pre-refactor layout: it still
-shows `app.core.models.entity/` / `.tropos_element/` / `.dependency/` as separate per-type files and
-describes `Validator` as auto-discovering rules via `pkgutil`. Both were collapsed into the
-`TypedNode`/`NODE_STYLES` and explicit-rule-list design described above. Treat that doc as historical
-context, not current fact, until it's regenerated.
+`docs/architecture_packages.md`'s prose has been brought back in line with the code (`TypedNode`/`NODE_STYLES`
+instead of per-type model classes, explicit rule list instead of `pkgutil` discovery), but its companion
+`architecture_packages.drawio` still draws the pre-refactor box layout — `app.core.models.entity/` /
+`.tropos_element/` / `.dependency/` as separate packages. Treat the `.drawio` as historical context until
+it is regenerated.

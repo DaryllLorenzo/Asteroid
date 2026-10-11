@@ -33,3 +33,58 @@ jobs:
       # 3. Type checking
       - name: MyPy check
         run: mypy .
+
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    env:
+      # Qt must never try to reach a real display on a CI runner.
+      QT_QPA_PLATFORM: offscreen
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Qt system libraries (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 \
+            libgl1 \
+            libxkbcommon0 \
+            libdbus-1-3 \
+            libfontconfig1 \
+            libxcb-cursor0
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run test suite
+        run: uv run pytest -q
+
+      - name: Coverage report
+        if: matrix.os == 'ubuntu-latest'
+        run: uv run pytest -q --cov=app --cov-report=xml --cov-report=term
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+          if-no-files-found: error
